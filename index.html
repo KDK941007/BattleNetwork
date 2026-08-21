@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>BattleNetwork Movement Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      overflow: hidden;
+      background: #07111b;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .gameShell {
+      width: min(100%, 920px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .statusBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid rgba(90, 214, 255, 0.35);
+      border-radius: 10px;
+      background: rgba(3, 17, 28, 0.92);
+      color: #dff7ff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      box-shadow: 0 0 16px rgba(0, 175, 255, 0.1) inset;
+    }
+
+    .statusHint {
+      color: #7bcce7;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .battleArea {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      min-height: 280px;
+      overflow: hidden;
+      border: 2px solid rgba(84, 221, 255, 0.45);
+      border-radius: 14px;
+      background:
+        linear-gradient(rgba(24, 101, 124, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 101, 124, 0.16) 1px, transparent 1px),
+        radial-gradient(circle at 50% 38%, rgba(26, 103, 143, 0.28), transparent 46%),
+        linear-gradient(180deg, #0d2835 0%, #091720 100%);
+      background-size: 48px 48px, 48px 48px, auto, auto;
+      box-shadow: 0 0 28px rgba(30, 188, 255, 0.14) inset;
+    }
+
+    .battleArea::before,
+    .battleArea::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .battleArea::before {
+      inset: 10%;
+      border: 1px solid rgba(105, 230, 255, 0.1);
+      transform: skewY(-2deg);
+    }
+
+    .battleArea::after {
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(transparent, rgba(103, 229, 255, 0.16), transparent);
+    }
+
+    .player {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 42px;
+      height: 52px;
+      border-radius: 16px 16px 11px 11px;
+      background:
+        linear-gradient(90deg, transparent 0 20%, rgba(255,255,255,0.4) 20% 32%, transparent 32% 100%),
+        linear-gradient(180deg, #51d7ff 0%, #1d8df2 44%, #163f8b 100%);
+      border: 2px solid rgba(193, 247, 255, 0.85);
+      box-shadow:
+        0 0 12px rgba(64, 203, 255, 0.85),
+        0 7px 0 rgba(0, 0, 0, 0.2);
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      z-index: 3;
+    }
+
+    .player::before {
+      content: "";
+      position: absolute;
+      left: 9px;
+      right: 9px;
+      top: 8px;
+      height: 12px;
+      border-radius: 8px;
+      background: #081d4e;
+      box-shadow: 0 0 7px rgba(117, 235, 255, 0.9) inset;
+    }
+
+    .player::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -9px;
+      width: 38px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3);
+      transform: translateX(-50%);
+      filter: blur(2px);
+      z-index: -1;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 180px;
+      padding: 4px 6px env(safe-area-inset-bottom);
+    }
+
+    .joystick {
+      position: relative;
+      width: 164px;
+      height: 164px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(73, 210, 255, 0.14) 0 48%, transparent 49%),
+        rgba(8, 31, 42, 0.88);
+      border: 2px solid rgba(76, 202, 245, 0.42);
+      box-shadow:
+        0 0 22px rgba(37, 185, 255, 0.13) inset,
+        0 8px 24px rgba(0, 0, 0, 0.28);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .joystick::before,
+    .joystick::after {
+      content: "";
+      position: absolute;
+      background: rgba(91, 217, 255, 0.16);
+      pointer-events: none;
+    }
+
+    .joystick::before {
+      width: 2px;
+      top: 18px;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .joystick::after {
+      height: 2px;
+      left: 18px;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .joystickKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #9aedff, #3299d8 50%, #155278 100%);
+      border: 2px solid rgba(221, 251, 255, 0.9);
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.38), 0 0 12px rgba(90, 219, 255, 0.32);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    @media (max-width: 680px) {
+      body {
+        align-items: flex-start;
+        padding: 6px;
+      }
+
+      .gameShell {
+        gap: 6px;
+      }
+
+      .statusBar {
+        min-height: 34px;
+        padding: 6px 9px;
+        font-size: 13px;
+      }
+
+      .statusHint {
+        font-size: 10px;
+      }
+
+      .battleArea {
+        min-height: 240px;
+      }
+
+      .controls {
+        min-height: 164px;
+      }
+
+      .joystick {
+        width: 148px;
+        height: 148px;
+      }
+
+      .joystickKnob {
+        width: 62px;
+        height: 62px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="gameShell">
+    <header class="statusBar">
+      <span>MOVEMENT TEST</span>
+      <span class="statusHint">左スティックで自由移動</span>
+    </header>
+
+    <section class="battleArea" id="battleArea" aria-label="移動テストフィールド">
+      <div class="player" id="player" aria-label="プレイヤー"></div>
+    </section>
+
+    <section class="controls" aria-label="操作エリア">
+      <div class="joystick" id="joystick" role="application" aria-label="移動スティック">
+        <div class="joystickKnob" id="joystickKnob"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const battleArea = document.getElementById('battleArea');
+      const player = document.getElementById('player');
+      const joystick = document.getElementById('joystick');
+      const knob = document.getElementById('joystickKnob');
+
+      const state = {
+        x: 0,
+        y: 0,
+        inputX: 0,
+        inputY: 0,
+        pointerId: null,
+        lastTime: performance.now()
+      };
+
+      const SPEED = 220;
+      const DEAD_ZONE = 0.12;
+      const KNOB_LIMIT = 49;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function initializePlayerPosition() {
+        const field = battleArea.getBoundingClientRect();
+        const actor = player.getBoundingClientRect();
+        state.x = Math.max(0, (field.width - actor.width) * 0.22);
+        state.y = Math.max(0, (field.height - actor.height) * 0.5);
+        renderPlayer();
+      }
+
+      function renderPlayer() {
+        player.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
+      }
+
+      function setJoystickFromPointer(event) {
+        const rect = joystick.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = event.clientX - centerX;
+        const dy = event.clientY - centerY;
+        const radius = rect.width / 2;
+        const maxDistance = radius * 0.67;
+        const distance = Math.hypot(dx, dy);
+        const scale = distance > maxDistance ? maxDistance / distance : 1;
+        const limitedX = dx * scale;
+        const limitedY = dy * scale;
+
+        let normalizedX = limitedX / maxDistance;
+        let normalizedY = limitedY / maxDistance;
+        const normalizedLength = Math.hypot(normalizedX, normalizedY);
+
+        if (normalizedLength < DEAD_ZONE) {
+          normalizedX = 0;
+          normalizedY = 0;
+        }
+
+        state.inputX = normalizedX;
+        state.inputY = normalizedY;
+
+        const knobScale = KNOB_LIMIT / maxDistance;
+        knob.style.transform = `translate(calc(-50% + ${limitedX * knobScale}px), calc(-50% + ${limitedY * knobScale}px))`;
+      }
+
+      function resetJoystick() {
+        state.inputX = 0;
+        state.inputY = 0;
+        state.pointerId = null;
+        knob.style.transform = 'translate(-50%, -50%)';
+      }
+
+      joystick.addEventListener('pointerdown', (event) => {
+        if (state.pointerId !== null) return;
+        state.pointerId = event.pointerId;
+        joystick.setPointerCapture(event.pointerId);
+        setJoystickFromPointer(event);
+      });
+
+      joystick.addEventListener('pointermove', (event) => {
+        if (event.pointerId !== state.pointerId) return;
+        setJoystickFromPointer(event);
+      });
+
+      joystick.addEventListener('pointerup', (event) => {
+        if (event.pointerId !== state.pointerId) return;
+        resetJoystick();
+      });
+
+      joystick.addEventListener('pointercancel', (event) => {
+        if (event.pointerId !== state.pointerId) return;
+        resetJoystick();
+      });
+
+      joystick.addEventListener('lostpointercapture', resetJoystick);
+
+      function update(time) {
+        const deltaSeconds = Math.min((time - state.lastTime) / 1000, 0.05);
+        state.lastTime = time;
+
+        const field = battleArea.getBoundingClientRect();
+        const actorWidth = player.offsetWidth;
+        const actorHeight = player.offsetHeight;
+
+        state.x += state.inputX * SPEED * deltaSeconds;
+        state.y += state.inputY * SPEED * deltaSeconds;
+
+        state.x = clamp(state.x, 0, Math.max(0, field.width - actorWidth));
+        state.y = clamp(state.y, 0, Math.max(0, field.height - actorHeight));
+
+        renderPlayer();
+        requestAnimationFrame(update);
+      }
+
+      window.addEventListener('resize', () => {
+        const field = battleArea.getBoundingClientRect();
+        state.x = clamp(state.x, 0, Math.max(0, field.width - player.offsetWidth));
+        state.y = clamp(state.y, 0, Math.max(0, field.height - player.offsetHeight));
+        renderPlayer();
+      });
+
+      initializePlayerPosition();
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>
