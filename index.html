@@ -71,34 +71,48 @@
       overflow: hidden;
       border: 2px solid rgba(84, 221, 255, 0.45);
       border-radius: 12px;
-      background:
-        linear-gradient(rgba(24, 101, 124, 0.16) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(24, 101, 124, 0.16) 1px, transparent 1px),
-        radial-gradient(circle at 50% 38%, rgba(26, 103, 143, 0.28), transparent 46%),
-        linear-gradient(180deg, #0d2835 0%, #091720 100%);
-      background-size: 48px 48px, 48px 48px, auto, auto;
+      background: #07111b;
       box-shadow: 0 0 28px rgba(30, 188, 255, 0.14) inset;
     }
 
-    .battleArea::before,
-    .battleArea::after {
+    .world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2200px;
+      height: 1200px;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(24, 101, 124, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 101, 124, 0.18) 1px, transparent 1px),
+        radial-gradient(circle at 50% 42%, rgba(26, 103, 143, 0.3), transparent 45%),
+        linear-gradient(180deg, #0d2835 0%, #091720 100%);
+      background-size: 64px 64px, 64px 64px, auto, auto;
+      border: 4px solid rgba(89, 220, 255, 0.25);
+      will-change: transform;
+    }
+
+    .world::before,
+    .world::after {
       content: "";
       position: absolute;
       pointer-events: none;
     }
 
-    .battleArea::before {
-      inset: 10%;
-      border: 1px solid rgba(105, 230, 255, 0.1);
-      transform: skewY(-2deg);
-    }
-
-    .battleArea::after {
+    .world::before {
       left: 50%;
       top: 0;
       bottom: 0;
-      width: 1px;
-      background: linear-gradient(transparent, rgba(103, 229, 255, 0.16), transparent);
+      width: 2px;
+      background: linear-gradient(transparent, rgba(103, 229, 255, 0.28), transparent);
+    }
+
+    .world::after {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(103, 229, 255, 0.2), transparent);
     }
 
     .player {
@@ -224,12 +238,15 @@
 <body>
   <main class="gameShell">
     <header class="statusBar">
-      <span>MOVEMENT TEST</span>
-      <span class="statusHint">左スティックで自由移動</span>
+      <span>CAMERA FOLLOW TEST</span>
+      <span class="statusHint">左スティックで移動 / カメラ追従</span>
     </header>
 
     <section class="battleArea" id="battleArea" aria-label="移動テストフィールド">
-      <div class="player" id="player" aria-label="プレイヤー"></div>
+      <div class="world" id="world">
+        <div class="player" id="player" aria-label="プレイヤー"></div>
+      </div>
+
       <div class="joystick" id="joystick" role="application" aria-label="移動スティック">
         <div class="joystickKnob" id="joystickKnob"></div>
       </div>
@@ -241,36 +258,59 @@
   <script>
     (() => {
       const battleArea = document.getElementById('battleArea');
+      const world = document.getElementById('world');
       const player = document.getElementById('player');
       const joystick = document.getElementById('joystick');
       const knob = document.getElementById('joystickKnob');
 
+      const WORLD_WIDTH = 2200;
+      const WORLD_HEIGHT = 1200;
+      const SPEED = 260;
+      const DEAD_ZONE = 0.12;
+      const CAMERA_FOLLOW = 0.14;
+
       const state = {
-        x: 0,
-        y: 0,
+        x: WORLD_WIDTH * 0.35,
+        y: WORLD_HEIGHT * 0.5,
         inputX: 0,
         inputY: 0,
         pointerId: null,
+        cameraX: 0,
+        cameraY: 0,
         lastTime: performance.now()
       };
-
-      const SPEED = 220;
-      const DEAD_ZONE = 0.12;
 
       function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
       }
 
-      function initializePlayerPosition() {
-        const field = battleArea.getBoundingClientRect();
-        const actor = player.getBoundingClientRect();
-        state.x = Math.max(0, (field.width - actor.width) * 0.28);
-        state.y = Math.max(0, (field.height - actor.height) * 0.5);
-        renderPlayer();
+      function lerp(from, to, amount) {
+        return from + (to - from) * amount;
       }
 
-      function renderPlayer() {
+      function getCameraTarget() {
+        const view = battleArea.getBoundingClientRect();
+        const actorWidth = player.offsetWidth;
+        const actorHeight = player.offsetHeight;
+        const playerCenterX = state.x + actorWidth / 2;
+        const playerCenterY = state.y + actorHeight / 2;
+
+        return {
+          x: clamp(playerCenterX - view.width / 2, 0, Math.max(0, WORLD_WIDTH - view.width)),
+          y: clamp(playerCenterY - view.height / 2, 0, Math.max(0, WORLD_HEIGHT - view.height))
+        };
+      }
+
+      function initializeCamera() {
+        const target = getCameraTarget();
+        state.cameraX = target.x;
+        state.cameraY = target.y;
+        render();
+      }
+
+      function render() {
         player.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
+        world.style.transform = `translate3d(${-state.cameraX}px, ${-state.cameraY}px, 0)`;
       }
 
       function setJoystickFromPointer(event) {
@@ -287,9 +327,8 @@
 
         let normalizedX = limitedX / maxDistance;
         let normalizedY = limitedY / maxDistance;
-        const normalizedLength = Math.hypot(normalizedX, normalizedY);
 
-        if (normalizedLength < DEAD_ZONE) {
+        if (Math.hypot(normalizedX, normalizedY) < DEAD_ZONE) {
           normalizedX = 0;
           normalizedY = 0;
         }
@@ -334,28 +373,25 @@
         const deltaSeconds = Math.min((time - state.lastTime) / 1000, 0.05);
         state.lastTime = time;
 
-        const field = battleArea.getBoundingClientRect();
-        const actorWidth = player.offsetWidth;
-        const actorHeight = player.offsetHeight;
-
         state.x += state.inputX * SPEED * deltaSeconds;
         state.y += state.inputY * SPEED * deltaSeconds;
 
-        state.x = clamp(state.x, 0, Math.max(0, field.width - actorWidth));
-        state.y = clamp(state.y, 0, Math.max(0, field.height - actorHeight));
+        state.x = clamp(state.x, 0, Math.max(0, WORLD_WIDTH - player.offsetWidth));
+        state.y = clamp(state.y, 0, Math.max(0, WORLD_HEIGHT - player.offsetHeight));
 
-        renderPlayer();
+        const target = getCameraTarget();
+        const frameFollow = 1 - Math.pow(1 - CAMERA_FOLLOW, deltaSeconds * 60);
+        state.cameraX = lerp(state.cameraX, target.x, frameFollow);
+        state.cameraY = lerp(state.cameraY, target.y, frameFollow);
+
+        render();
         requestAnimationFrame(update);
       }
 
-      window.addEventListener('resize', () => {
-        const field = battleArea.getBoundingClientRect();
-        state.x = clamp(state.x, 0, Math.max(0, field.width - player.offsetWidth));
-        state.y = clamp(state.y, 0, Math.max(0, field.height - player.offsetHeight));
-        renderPlayer();
-      });
+      window.addEventListener('resize', initializeCamera);
 
-      initializePlayerPosition();
+      render();
+      initializeCamera();
       requestAnimationFrame(update);
     })();
   </script>
