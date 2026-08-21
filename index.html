@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>BattleNetwork Movement Prototype</title>
   <style>
     :root {
@@ -393,6 +396,49 @@
       render();
       initializeCamera();
       requestAnimationFrame(update);
+    })();
+  </script>
+
+  <script>
+    (() => {
+      if (!('serviceWorker' in navigator)) return;
+
+      let registrationRef = null;
+
+      async function checkForUpdate() {
+        if (!navigator.onLine) return;
+
+        try {
+          const registration = registrationRef || await navigator.serviceWorker.getRegistration('./');
+          if (registration) {
+            registrationRef = registration;
+            await registration.update();
+          }
+        } catch (error) {
+          console.warn('Service Worker update check failed:', error);
+        }
+      }
+
+      window.addEventListener('load', async () => {
+        try {
+          registrationRef = await navigator.serviceWorker.register('./sw.js', {
+            scope: './',
+            updateViaCache: 'none'
+          });
+
+          await checkForUpdate();
+        } catch (error) {
+          console.warn('Service Worker registration failed:', error);
+        }
+      });
+
+      window.addEventListener('pageshow', checkForUpdate);
+      window.addEventListener('online', checkForUpdate);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          checkForUpdate();
+        }
+      });
     })();
   </script>
 </body>
