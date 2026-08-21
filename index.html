@@ -16,7 +16,7 @@
     .statusBar { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:34px; padding:5px 10px; border:1px solid rgba(90,214,255,.35); border-radius:8px; background:rgba(3,17,28,.92); color:#dff7ff; font-size:13px; font-weight:700; letter-spacing:.04em; }
     .statusHint { color:#7bcce7; font-size:11px; font-weight:600; text-align:right; }
     .battleArea { position:relative; width:100%; min-height:0; overflow:hidden; border:2px solid rgba(84,221,255,.45); border-radius:12px; background:linear-gradient(180deg,#0b1a24 0%,#061018 100%); box-shadow:0 0 28px rgba(30,188,255,.14) inset; }
-    .scene { position:absolute; left:0; top:0; width:2592px; height:1296px; will-change:transform; }
+    .scene { position:absolute; left:0; top:0; width:5184px; height:2592px; will-change:transform; }
     .floor { position:absolute; inset:0; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); background:repeating-linear-gradient(26.565deg,rgba(83,194,222,.14) 0 2px,transparent 2px 72px),repeating-linear-gradient(153.435deg,rgba(83,194,222,.12) 0 2px,transparent 2px 72px),linear-gradient(180deg,rgba(58,130,151,.28) 0%,rgba(17,63,79,.32) 48%,rgba(7,27,38,.6) 100%),#0b2531; filter:drop-shadow(0 0 16px rgba(72,214,246,.12)); }
     .floorBorder { position:absolute; inset:0; pointer-events:none; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%,50% 0,50.18% .35%,.36% 50%,50% 99.65%,99.64% 50%,50% .35%); background:rgba(104,225,249,.34); }
     .centerMark { position:absolute; left:50%; top:50%; width:160px; height:80px; transform:translate(-50%,-50%); border:2px solid rgba(116,225,246,.24); background:rgba(70,178,203,.04); clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); pointer-events:none; }
@@ -36,12 +36,7 @@
   <main class="gameShell">
     <header class="statusBar"><span>PROJECTED FIELD TEST</span><span class="statusHint">内部は正方形 / 描画は斜め上視点</span></header>
     <section class="battleArea" id="battleArea" aria-label="移動テストフィールド">
-      <div class="scene" id="scene">
-        <div class="floor"></div>
-        <div class="floorBorder"></div>
-        <div class="centerMark"></div>
-        <div class="player" id="player" aria-label="プレイヤー"></div>
-      </div>
+      <div class="scene" id="scene"><div class="floor"></div><div class="floorBorder"></div><div class="centerMark"></div><div class="player" id="player" aria-label="プレイヤー"></div></div>
       <div class="joystick" id="joystick" role="application" aria-label="移動スティック"><div class="joystickKnob" id="joystickKnob"></div></div>
     </section>
   </main>
@@ -49,23 +44,18 @@
   <script>
   (()=>{
     const battleArea=document.getElementById('battleArea'),scene=document.getElementById('scene'),player=document.getElementById('player'),joystick=document.getElementById('joystick'),knob=document.getElementById('joystickKnob');
-    const WORLD_SIZE=1800,PROJ_X=.72,PROJ_Y=.36,SCENE_WIDTH=WORLD_SIZE*PROJ_X*2,SCENE_HEIGHT=WORLD_SIZE*PROJ_Y*2,SPEED=260,DEAD_ZONE=.12,CAMERA_FOLLOW=.14;
+    const WORLD_SIZE=3600,PROJ_X=.72,PROJ_Y=.36,SCENE_WIDTH=WORLD_SIZE*PROJ_X*2,SCENE_HEIGHT=WORLD_SIZE*PROJ_Y*2,SPEED=260,DEAD_ZONE=.12,CAMERA_FOLLOW=.14;
     const state={x:WORLD_SIZE*.5,y:WORLD_SIZE*.5,inputX:0,inputY:0,pointerId:null,cameraX:0,cameraY:0,lastTime:performance.now()};
-    const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-    const lerp=(a,b,t)=>a+(b-a)*t;
+    const clamp=(v,min,max)=>Math.max(min,Math.min(max,v)); const lerp=(a,b,t)=>a+(b-a)*t;
     function project(x,y){return{x:(x-y)*PROJ_X+SCENE_WIDTH/2,y:(x+y)*PROJ_Y};}
     function screenInputToWorld(sx,sy){let wx=(sx/PROJ_X+sy/PROJ_Y)/2,wy=(sy/PROJ_Y-sx/PROJ_X)/2;const len=Math.hypot(wx,wy);if(len>0){wx/=len;wy/=len;}return{x:wx,y:wy};}
     function getPlayerScreenPosition(){return project(state.x,state.y);}
     function getCameraTarget(){const view=battleArea.getBoundingClientRect(),p=getPlayerScreenPosition();return{x:clamp(p.x-view.width/2,0,Math.max(0,SCENE_WIDTH-view.width)),y:clamp(p.y-view.height*.58,0,Math.max(0,SCENE_HEIGHT-view.height))};}
     function render(){const p=getPlayerScreenPosition();player.style.transform=`translate3d(${p.x-player.offsetWidth/2}px,${p.y-player.offsetHeight}px,0)`;scene.style.transform=`translate3d(${-state.cameraX}px,${-state.cameraY}px,0)`;}
     function initializeCamera(){const t=getCameraTarget();state.cameraX=t.x;state.cameraY=t.y;render();}
-    function setJoystick(e){const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.335,d=Math.hypot(dx,dy),s=d>max?max/d:1,lx=dx*s,ly=dy*s;let sx=lx/max,sy=ly/max;const magnitude=Math.hypot(sx,sy);if(magnitude<DEAD_ZONE){sx=0;sy=0;state.inputX=0;state.inputY=0;}else{const worldInput=screenInputToWorld(sx,sy);state.inputX=worldInput.x*magnitude;state.inputY=worldInput.y*magnitude;}knob.style.transform=`translate(calc(-50% + ${lx}px),calc(-50% + ${ly}px))`;}
+    function setJoystick(e){const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.335,d=Math.hypot(dx,dy),s=d>max?max/d:1,lx=dx*s,ly=dy*s;let sx=lx/max,sy=ly/max;const magnitude=Math.hypot(sx,sy);if(magnitude<DEAD_ZONE){state.inputX=0;state.inputY=0;}else{const w=screenInputToWorld(sx,sy);state.inputX=w.x*magnitude;state.inputY=w.y*magnitude;}knob.style.transform=`translate(calc(-50% + ${lx}px),calc(-50% + ${ly}px))`;}
     function reset(){state.inputX=0;state.inputY=0;state.pointerId=null;knob.style.transform='translate(-50%,-50%)';}
-    joystick.addEventListener('pointerdown',e=>{if(state.pointerId!==null)return;state.pointerId=e.pointerId;joystick.setPointerCapture(e.pointerId);setJoystick(e);});
-    joystick.addEventListener('pointermove',e=>{if(e.pointerId===state.pointerId)setJoystick(e);});
-    joystick.addEventListener('pointerup',e=>{if(e.pointerId===state.pointerId)reset();});
-    joystick.addEventListener('pointercancel',e=>{if(e.pointerId===state.pointerId)reset();});
-    joystick.addEventListener('lostpointercapture',reset);
+    joystick.addEventListener('pointerdown',e=>{if(state.pointerId!==null)return;state.pointerId=e.pointerId;joystick.setPointerCapture(e.pointerId);setJoystick(e);});joystick.addEventListener('pointermove',e=>{if(e.pointerId===state.pointerId)setJoystick(e);});joystick.addEventListener('pointerup',e=>{if(e.pointerId===state.pointerId)reset();});joystick.addEventListener('pointercancel',e=>{if(e.pointerId===state.pointerId)reset();});joystick.addEventListener('lostpointercapture',reset);
     function update(time){const dt=Math.min((time-state.lastTime)/1000,.05);state.lastTime=time;state.x+=state.inputX*SPEED*dt;state.y+=state.inputY*SPEED*dt;state.x=clamp(state.x,0,WORLD_SIZE);state.y=clamp(state.y,0,WORLD_SIZE);const t=getCameraTarget(),f=1-Math.pow(1-CAMERA_FOLLOW,dt*60);state.cameraX=lerp(state.cameraX,t.x,f);state.cameraY=lerp(state.cameraY,t.y,f);render();requestAnimationFrame(update);}
     window.addEventListener('resize',initializeCamera);render();initializeCamera();requestAnimationFrame(update);
   })();
