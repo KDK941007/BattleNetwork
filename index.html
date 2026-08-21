@@ -8,474 +8,62 @@
   <meta http-equiv="Expires" content="0" />
   <title>BattleNetwork Movement Prototype</title>
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: none;
-    }
-
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #07111b;
-    }
-
-    body {
-      padding:
-        max(6px, env(safe-area-inset-top))
-        max(8px, env(safe-area-inset-right))
-        max(6px, env(safe-area-inset-bottom))
-        max(8px, env(safe-area-inset-left));
-    }
-
-    .gameShell {
-      width: 100%;
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 6px;
-    }
-
-    .statusBar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      min-height: 34px;
-      padding: 5px 10px;
-      border: 1px solid rgba(90, 214, 255, 0.35);
-      border-radius: 8px;
-      background: rgba(3, 17, 28, 0.92);
-      color: #dff7ff;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-
-    .statusHint {
-      color: #7bcce7;
-      font-size: 11px;
-      font-weight: 600;
-      text-align: right;
-    }
-
-    .battleArea {
-      position: relative;
-      width: 100%;
-      min-height: 0;
-      overflow: hidden;
-      border: 2px solid rgba(84, 221, 255, 0.45);
-      border-radius: 12px;
-      background:
-        linear-gradient(180deg, #0b1a24 0%, #061018 100%);
-      box-shadow: 0 0 28px rgba(30, 188, 255, 0.14) inset;
-    }
-
-    .world {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 2200px;
-      height: 1200px;
-      overflow: hidden;
-      border: 4px solid rgba(89, 220, 255, 0.24);
-      background:
-        repeating-linear-gradient(
-          28deg,
-          rgba(83, 194, 222, 0.12) 0 2px,
-          transparent 2px 72px
-        ),
-        repeating-linear-gradient(
-          152deg,
-          rgba(83, 194, 222, 0.11) 0 2px,
-          transparent 2px 72px
-        ),
-        linear-gradient(
-          180deg,
-          rgba(58, 130, 151, 0.22) 0%,
-          rgba(17, 63, 79, 0.26) 42%,
-          rgba(7, 27, 38, 0.5) 100%
-        ),
-        #0b2531;
-      box-shadow:
-        inset 0 120px 160px rgba(78, 180, 211, 0.08),
-        inset 0 -180px 220px rgba(0, 0, 0, 0.3);
-      will-change: transform;
-    }
-
-    .world::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      height: 38%;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(114, 215, 238, 0.08), transparent 78%),
-        repeating-linear-gradient(
-          0deg,
-          rgba(164, 238, 255, 0.035) 0 1px,
-          transparent 1px 34px
-        );
-    }
-
-    .world::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 34%;
-      pointer-events: none;
-      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.18));
-    }
-
-    .depthMarker {
-      position: absolute;
-      width: 220px;
-      height: 92px;
-      border: 2px solid rgba(112, 224, 245, 0.28);
-      transform: skewX(-28deg);
-      background: rgba(58, 177, 203, 0.035);
-      pointer-events: none;
-    }
-
-    .depthMarker.one { left: 300px; top: 240px; }
-    .depthMarker.two { left: 1180px; top: 460px; width: 300px; }
-    .depthMarker.three { left: 760px; top: 820px; width: 260px; }
-
-    .player {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: clamp(34px, 5.2vw, 46px);
-      height: clamp(42px, 6.3vw, 58px);
-      border-radius: 16px 16px 11px 11px;
-      background:
-        linear-gradient(90deg, transparent 0 20%, rgba(255,255,255,0.4) 20% 32%, transparent 32% 100%),
-        linear-gradient(180deg, #51d7ff 0%, #1d8df2 44%, #163f8b 100%);
-      border: 2px solid rgba(193, 247, 255, 0.85);
-      box-shadow: 0 0 12px rgba(64, 203, 255, 0.85), 0 7px 0 rgba(0, 0, 0, 0.2);
-      transform: translate3d(0, 0, 0);
-      transform-origin: 50% 100%;
-      will-change: transform;
-      z-index: 3;
-    }
-
-    .player::before {
-      content: "";
-      position: absolute;
-      left: 22%;
-      right: 22%;
-      top: 15%;
-      height: 23%;
-      border-radius: 8px;
-      background: #081d4e;
-      box-shadow: 0 0 7px rgba(117, 235, 255, 0.9) inset;
-    }
-
-    .player::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      bottom: -10px;
-      width: 96%;
-      height: 13px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.38);
-      transform: translateX(-50%) skewX(-18deg);
-      filter: blur(2px);
-      z-index: -1;
-    }
-
-    .joystick {
-      position: absolute;
-      left: max(18px, env(safe-area-inset-left));
-      bottom: max(16px, env(safe-area-inset-bottom));
-      width: clamp(112px, 16vw, 150px);
-      aspect-ratio: 1;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle, rgba(73, 210, 255, 0.14) 0 48%, transparent 49%),
-        rgba(8, 31, 42, 0.72);
-      border: 2px solid rgba(76, 202, 245, 0.42);
-      box-shadow: 0 0 22px rgba(37, 185, 255, 0.13) inset, 0 8px 24px rgba(0, 0, 0, 0.28);
-      user-select: none;
-      z-index: 10;
-    }
-
-    .joystick::before,
-    .joystick::after {
-      content: "";
-      position: absolute;
-      background: rgba(91, 217, 255, 0.16);
-      pointer-events: none;
-    }
-
-    .joystick::before {
-      width: 2px;
-      top: 12%;
-      bottom: 12%;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .joystick::after {
-      height: 2px;
-      left: 12%;
-      right: 12%;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .joystickKnob {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 42%;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #9aedff, #3299d8 50%, #155278 100%);
-      border: 2px solid rgba(221, 251, 255, 0.9);
-      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.38), 0 0 12px rgba(90, 219, 255, 0.32);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      will-change: transform;
-    }
-
-    .portraitNotice {
-      display: none;
-    }
-
-    @media (orientation: portrait) {
-      .portraitNotice {
-        position: absolute;
-        inset: 0;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: #07111b;
-        color: #dff7ff;
-        font-size: 18px;
-        font-weight: 700;
-        text-align: center;
-      }
-    }
+    :root { color-scheme: dark; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:none; }
+    html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#07111b; }
+    body { padding:max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); }
+    .gameShell { width:100%; height:100%; display:grid; grid-template-rows:auto 1fr; gap:6px; }
+    .statusBar { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:34px; padding:5px 10px; border:1px solid rgba(90,214,255,.35); border-radius:8px; background:rgba(3,17,28,.92); color:#dff7ff; font-size:13px; font-weight:700; letter-spacing:.04em; }
+    .statusHint { color:#7bcce7; font-size:11px; font-weight:600; text-align:right; }
+    .battleArea { position:relative; width:100%; min-height:0; overflow:hidden; border:2px solid rgba(84,221,255,.45); border-radius:12px; background:linear-gradient(180deg,#0b1a24 0%,#061018 100%); box-shadow:0 0 28px rgba(30,188,255,.14) inset; }
+    .world { position:absolute; left:0; top:0; width:1800px; height:1800px; overflow:hidden; border:4px solid rgba(89,220,255,.3); background:repeating-linear-gradient(28deg,rgba(83,194,222,.12) 0 2px,transparent 2px 72px),repeating-linear-gradient(152deg,rgba(83,194,222,.11) 0 2px,transparent 2px 72px),linear-gradient(180deg,rgba(58,130,151,.22) 0%,rgba(17,63,79,.26) 42%,rgba(7,27,38,.5) 100%),#0b2531; box-shadow:inset 0 160px 200px rgba(78,180,211,.08),inset 0 -220px 260px rgba(0,0,0,.3); will-change:transform; }
+    .world::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(135deg,transparent 49.92%,rgba(145,233,250,.12) 50%,transparent 50.08%),linear-gradient(45deg,transparent 49.92%,rgba(145,233,250,.08) 50%,transparent 50.08%); }
+    .world::after { content:""; position:absolute; left:0; right:0; bottom:0; height:34%; pointer-events:none; background:linear-gradient(180deg,transparent,rgba(0,0,0,.18)); }
+    .depthMarker { position:absolute; width:220px; height:92px; border:2px solid rgba(112,224,245,.28); transform:skewX(-28deg); background:rgba(58,177,203,.035); pointer-events:none; }
+    .depthMarker.one { left:300px; top:300px; }
+    .depthMarker.two { left:1080px; top:700px; width:300px; }
+    .depthMarker.three { left:650px; top:1280px; width:260px; }
+    .player { position:absolute; left:0; top:0; width:clamp(34px,5.2vw,46px); height:clamp(42px,6.3vw,58px); border-radius:16px 16px 11px 11px; background:linear-gradient(90deg,transparent 0 20%,rgba(255,255,255,.4) 20% 32%,transparent 32% 100%),linear-gradient(180deg,#51d7ff 0%,#1d8df2 44%,#163f8b 100%); border:2px solid rgba(193,247,255,.85); box-shadow:0 0 12px rgba(64,203,255,.85),0 7px 0 rgba(0,0,0,.2); transform:translate3d(0,0,0); transform-origin:50% 100%; will-change:transform; z-index:3; }
+    .player::before { content:""; position:absolute; left:22%; right:22%; top:15%; height:23%; border-radius:8px; background:#081d4e; box-shadow:0 0 7px rgba(117,235,255,.9) inset; }
+    .player::after { content:""; position:absolute; left:50%; bottom:-10px; width:96%; height:13px; border-radius:50%; background:rgba(0,0,0,.38); transform:translateX(-50%) skewX(-18deg); filter:blur(2px); z-index:-1; }
+    .joystick { position:absolute; left:max(18px,env(safe-area-inset-left)); bottom:max(16px,env(safe-area-inset-bottom)); width:clamp(112px,16vw,150px); aspect-ratio:1; border-radius:50%; background:radial-gradient(circle,rgba(73,210,255,.14) 0 48%,transparent 49%),rgba(8,31,42,.72); border:2px solid rgba(76,202,245,.42); box-shadow:0 0 22px rgba(37,185,255,.13) inset,0 8px 24px rgba(0,0,0,.28); user-select:none; z-index:10; }
+    .joystick::before,.joystick::after { content:""; position:absolute; background:rgba(91,217,255,.16); pointer-events:none; }
+    .joystick::before { width:2px; top:12%; bottom:12%; left:50%; transform:translateX(-50%); }
+    .joystick::after { height:2px; left:12%; right:12%; top:50%; transform:translateY(-50%); }
+    .joystickKnob { position:absolute; left:50%; top:50%; width:42%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 35% 30%,#9aedff,#3299d8 50%,#155278 100%); border:2px solid rgba(221,251,255,.9); box-shadow:0 5px 14px rgba(0,0,0,.38),0 0 12px rgba(90,219,255,.32); transform:translate(-50%,-50%); pointer-events:none; will-change:transform; }
+    .portraitNotice { display:none; }
+    @media (orientation:portrait) { .portraitNotice { position:absolute; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; background:#07111b; color:#dff7ff; font-size:18px; font-weight:700; text-align:center; } }
   </style>
 </head>
 <body>
   <main class="gameShell">
-    <header class="statusBar">
-      <span>ANGLED VIEW TEST</span>
-      <span class="statusHint">左スティックで移動 / 斜め上視点</span>
-    </header>
-
+    <header class="statusBar"><span>SQUARE FIELD TEST</span><span class="statusHint">正方形フィールド / 斜め上視点</span></header>
     <section class="battleArea" id="battleArea" aria-label="移動テストフィールド">
-      <div class="world" id="world">
-        <div class="depthMarker one"></div>
-        <div class="depthMarker two"></div>
-        <div class="depthMarker three"></div>
-        <div class="player" id="player" aria-label="プレイヤー"></div>
-      </div>
-
-      <div class="joystick" id="joystick" role="application" aria-label="移動スティック">
-        <div class="joystickKnob" id="joystickKnob"></div>
-      </div>
+      <div class="world" id="world"><div class="depthMarker one"></div><div class="depthMarker two"></div><div class="depthMarker three"></div><div class="player" id="player" aria-label="プレイヤー"></div></div>
+      <div class="joystick" id="joystick" role="application" aria-label="移動スティック"><div class="joystickKnob" id="joystickKnob"></div></div>
     </section>
   </main>
-
   <div class="portraitNotice">端末を横向きにしてください</div>
-
   <script>
-    (() => {
-      const battleArea = document.getElementById('battleArea');
-      const world = document.getElementById('world');
-      const player = document.getElementById('player');
-      const joystick = document.getElementById('joystick');
-      const knob = document.getElementById('joystickKnob');
-
-      const WORLD_WIDTH = 2200;
-      const WORLD_HEIGHT = 1200;
-      const SPEED = 260;
-      const DEAD_ZONE = 0.12;
-      const CAMERA_FOLLOW = 0.14;
-
-      const state = {
-        x: WORLD_WIDTH * 0.35,
-        y: WORLD_HEIGHT * 0.5,
-        inputX: 0,
-        inputY: 0,
-        pointerId: null,
-        cameraX: 0,
-        cameraY: 0,
-        lastTime: performance.now()
-      };
-
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      }
-
-      function lerp(from, to, amount) {
-        return from + (to - from) * amount;
-      }
-
-      function getCameraTarget() {
-        const view = battleArea.getBoundingClientRect();
-        const actorWidth = player.offsetWidth;
-        const actorHeight = player.offsetHeight;
-        const footX = state.x + actorWidth / 2;
-        const footY = state.y + actorHeight;
-
-        return {
-          x: clamp(footX - view.width / 2, 0, Math.max(0, WORLD_WIDTH - view.width)),
-          y: clamp(footY - view.height * 0.58, 0, Math.max(0, WORLD_HEIGHT - view.height))
-        };
-      }
-
-      function initializeCamera() {
-        const target = getCameraTarget();
-        state.cameraX = target.x;
-        state.cameraY = target.y;
-        render();
-      }
-
-      function render() {
-        player.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
-        world.style.transform = `translate3d(${-state.cameraX}px, ${-state.cameraY}px, 0)`;
-      }
-
-      function setJoystickFromPointer(event) {
-        const rect = joystick.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dx = event.clientX - centerX;
-        const dy = event.clientY - centerY;
-        const maxDistance = rect.width * 0.335;
-        const distance = Math.hypot(dx, dy);
-        const scale = distance > maxDistance ? maxDistance / distance : 1;
-        const limitedX = dx * scale;
-        const limitedY = dy * scale;
-
-        let normalizedX = limitedX / maxDistance;
-        let normalizedY = limitedY / maxDistance;
-
-        if (Math.hypot(normalizedX, normalizedY) < DEAD_ZONE) {
-          normalizedX = 0;
-          normalizedY = 0;
-        }
-
-        state.inputX = normalizedX;
-        state.inputY = normalizedY;
-        knob.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
-      }
-
-      function resetJoystick() {
-        state.inputX = 0;
-        state.inputY = 0;
-        state.pointerId = null;
-        knob.style.transform = 'translate(-50%, -50%)';
-      }
-
-      joystick.addEventListener('pointerdown', (event) => {
-        if (state.pointerId !== null) return;
-        state.pointerId = event.pointerId;
-        joystick.setPointerCapture(event.pointerId);
-        setJoystickFromPointer(event);
-      });
-
-      joystick.addEventListener('pointermove', (event) => {
-        if (event.pointerId !== state.pointerId) return;
-        setJoystickFromPointer(event);
-      });
-
-      joystick.addEventListener('pointerup', (event) => {
-        if (event.pointerId !== state.pointerId) return;
-        resetJoystick();
-      });
-
-      joystick.addEventListener('pointercancel', (event) => {
-        if (event.pointerId !== state.pointerId) return;
-        resetJoystick();
-      });
-
-      joystick.addEventListener('lostpointercapture', resetJoystick);
-
-      function update(time) {
-        const deltaSeconds = Math.min((time - state.lastTime) / 1000, 0.05);
-        state.lastTime = time;
-
-        state.x += state.inputX * SPEED * deltaSeconds;
-        state.y += state.inputY * SPEED * deltaSeconds;
-
-        state.x = clamp(state.x, 0, Math.max(0, WORLD_WIDTH - player.offsetWidth));
-        state.y = clamp(state.y, 0, Math.max(0, WORLD_HEIGHT - player.offsetHeight));
-
-        const target = getCameraTarget();
-        const frameFollow = 1 - Math.pow(1 - CAMERA_FOLLOW, deltaSeconds * 60);
-        state.cameraX = lerp(state.cameraX, target.x, frameFollow);
-        state.cameraY = lerp(state.cameraY, target.y, frameFollow);
-
-        render();
-        requestAnimationFrame(update);
-      }
-
-      window.addEventListener('resize', initializeCamera);
-
-      render();
-      initializeCamera();
-      requestAnimationFrame(update);
-    })();
+  (()=>{
+    const battleArea=document.getElementById('battleArea'),world=document.getElementById('world'),player=document.getElementById('player'),joystick=document.getElementById('joystick'),knob=document.getElementById('joystickKnob');
+    const WORLD_SIZE=1800,SPEED=260,DEAD_ZONE=.12,CAMERA_FOLLOW=.14;
+    const state={x:WORLD_SIZE*.5,y:WORLD_SIZE*.5,inputX:0,inputY:0,pointerId:null,cameraX:0,cameraY:0,lastTime:performance.now()};
+    const clamp=(v,min,max)=>Math.max(min,Math.min(max,v)); const lerp=(a,b,t)=>a+(b-a)*t;
+    function getCameraTarget(){const view=battleArea.getBoundingClientRect(),footX=state.x+player.offsetWidth/2,footY=state.y+player.offsetHeight;return{x:clamp(footX-view.width/2,0,Math.max(0,WORLD_SIZE-view.width)),y:clamp(footY-view.height*.58,0,Math.max(0,WORLD_SIZE-view.height))};}
+    function render(){player.style.transform=`translate3d(${state.x}px,${state.y}px,0)`;world.style.transform=`translate3d(${-state.cameraX}px,${-state.cameraY}px,0)`;}
+    function initializeCamera(){const t=getCameraTarget();state.cameraX=t.x;state.cameraY=t.y;render();}
+    function setJoystick(e){const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.335,d=Math.hypot(dx,dy),s=d>max?max/d:1,lx=dx*s,ly=dy*s;let nx=lx/max,ny=ly/max;if(Math.hypot(nx,ny)<DEAD_ZONE){nx=0;ny=0;}state.inputX=nx;state.inputY=ny;knob.style.transform=`translate(calc(-50% + ${lx}px),calc(-50% + ${ly}px))`;}
+    function reset(){state.inputX=0;state.inputY=0;state.pointerId=null;knob.style.transform='translate(-50%,-50%)';}
+    joystick.addEventListener('pointerdown',e=>{if(state.pointerId!==null)return;state.pointerId=e.pointerId;joystick.setPointerCapture(e.pointerId);setJoystick(e);});
+    joystick.addEventListener('pointermove',e=>{if(e.pointerId===state.pointerId)setJoystick(e);});
+    joystick.addEventListener('pointerup',e=>{if(e.pointerId===state.pointerId)reset();});joystick.addEventListener('pointercancel',e=>{if(e.pointerId===state.pointerId)reset();});joystick.addEventListener('lostpointercapture',reset);
+    function update(time){const dt=Math.min((time-state.lastTime)/1000,.05);state.lastTime=time;state.x+=state.inputX*SPEED*dt;state.y+=state.inputY*SPEED*dt;state.x=clamp(state.x,0,WORLD_SIZE-player.offsetWidth);state.y=clamp(state.y,0,WORLD_SIZE-player.offsetHeight);const t=getCameraTarget(),f=1-Math.pow(1-CAMERA_FOLLOW,dt*60);state.cameraX=lerp(state.cameraX,t.x,f);state.cameraY=lerp(state.cameraY,t.y,f);render();requestAnimationFrame(update);}
+    window.addEventListener('resize',initializeCamera);render();initializeCamera();requestAnimationFrame(update);
+  })();
   </script>
-
   <script>
-    (() => {
-      if (!('serviceWorker' in navigator)) return;
-
-      let registrationRef = null;
-
-      async function checkForUpdate() {
-        if (!navigator.onLine) return;
-
-        try {
-          const registration = registrationRef || await navigator.serviceWorker.getRegistration('./');
-          if (registration) {
-            registrationRef = registration;
-            await registration.update();
-          }
-        } catch (error) {
-          console.warn('Service Worker update check failed:', error);
-        }
-      }
-
-      window.addEventListener('load', async () => {
-        try {
-          registrationRef = await navigator.serviceWorker.register('./sw.js', {
-            scope: './',
-            updateViaCache: 'none'
-          });
-          await checkForUpdate();
-        } catch (error) {
-          console.warn('Service Worker registration failed:', error);
-        }
-      });
-
-      window.addEventListener('pageshow', checkForUpdate);
-      window.addEventListener('online', checkForUpdate);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') checkForUpdate();
-      });
-    })();
+  (()=>{if(!('serviceWorker'in navigator))return;let registrationRef=null;async function checkForUpdate(){if(!navigator.onLine)return;try{const registration=registrationRef||await navigator.serviceWorker.getRegistration('./');if(registration){registrationRef=registration;await registration.update();}}catch(error){console.warn('Service Worker update check failed:',error);}}window.addEventListener('load',async()=>{try{registrationRef=await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});await checkForUpdate();}catch(error){console.warn('Service Worker registration failed:',error);}});window.addEventListener('pageshow',checkForUpdate);window.addEventListener('online',checkForUpdate);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate();});})();
   </script>
 </body>
 </html>
