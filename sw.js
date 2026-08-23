@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v2';
+const CACHE_NAME = 'battlenetwork-runtime-v3';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -14,7 +14,12 @@ const STATIC_ASSETS = [
   './assets/attributes/10_invisible.png',
   './assets/attributes/11_object.png',
   './assets/attributes/12_plus.png',
-  './assets/attributes/13_break.png'
+  './assets/attributes/13_break.png',
+  './assets/chips/cannon.png',
+  './assets/chips/sword.png',
+  './assets/chips/WideSwordpng.png',
+  './assets/chips/MiniBomb.png',
+  './assets/chips/Recovery_10.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -70,7 +75,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.includes('/assets/attributes/')) {
+  if (url.pathname.includes('/assets/attributes/') || url.pathname.includes('/assets/chips/')) {
     event.respondWith(cacheFirstAsset(request));
   }
 });
