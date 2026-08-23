@@ -1,7 +1,10 @@
-const CACHE_NAME = 'battlenetwork-runtime-v3';
+const CACHE_NAME = 'battlenetwork-runtime-v4';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
+  './css/style.css',
+  './js/game.js',
+  './js/service-worker-register.js',
   './assets/attributes/01_normal.png',
   './assets/attributes/02_fire.png',
   './assets/attributes/03_water.png',
@@ -75,7 +78,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.includes('/assets/attributes/') || url.pathname.includes('/assets/chips/')) {
+  if (
+    url.pathname.includes('/assets/attributes/') ||
+    url.pathname.includes('/assets/chips/') ||
+    url.pathname.includes('/css/') ||
+    url.pathname.includes('/js/')
+  ) {
     event.respondWith(cacheFirstAsset(request));
   }
 });
