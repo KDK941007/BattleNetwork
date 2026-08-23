@@ -32,6 +32,29 @@
   flex:0 0 auto;
 }
 
+.chipDetailClose{
+  position:relative;
+  display:grid;
+  place-items:center;
+  line-height:1;
+}
+
+.chipDetailClose .closeIcon{
+  width:18px;
+  height:18px;
+  display:block;
+  overflow:visible;
+}
+
+.chipDetailClose .closeIcon path{
+  fill:none;
+  stroke:#eafaff;
+  stroke-width:2.4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+
 .rangeLayout{
   display:grid;
   grid-template-columns:minmax(0,9fr) minmax(0,11fr);
@@ -138,11 +161,42 @@
   margin-top:3px;
 }
 
-/* 基本は自分を中央へ。長射程・投擲だけ範囲全体が見える位置へ寄せる。 */
+/* 自機は文字ではなく、電脳コア＋向きノッチで統一する。 */
 .rangeLayout .rangeViz .rangePlayer{
   left:50%;
   top:50%;
+  width:34px;
+  height:34px;
+  padding:0;
   transform:translate(-50%,-50%);
+  border:2px solid #bcefff;
+  border-radius:50%;
+  background:radial-gradient(circle at 42% 38%,#5dd8ff 0 18%,#167db2 19% 58%,#0a4367 59% 100%);
+  box-shadow:0 0 0 3px rgba(89,229,255,.11),0 0 10px rgba(89,229,255,.28);
+  color:transparent;
+  font-size:0;
+}
+
+.rangeLayout .rangeViz .rangePlayer::before{
+  content:'';
+  position:absolute;
+  inset:7px;
+  border:1px solid rgba(225,251,255,.7);
+  border-radius:50%;
+}
+
+.rangeLayout .rangeViz .rangePlayer::after{
+  content:'';
+  position:absolute;
+  left:calc(100% - 2px);
+  top:50%;
+  width:0;
+  height:0;
+  transform:translateY(-50%);
+  border-top:6px solid transparent;
+  border-bottom:6px solid transparent;
+  border-left:8px solid #9beeff;
+  filter:drop-shadow(0 0 2px rgba(89,229,255,.75));
 }
 
 .rangeLayout .rangeViz.cannon .rangePlayer{
