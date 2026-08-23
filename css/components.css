@@ -1,0 +1,47 @@
+.modalHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.modalClose{
+  position:relative;
+  flex:0 0 auto;
+  width:32px;
+  height:32px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid #438aa4;
+  border-radius:8px;
+  background:#123b4d;
+  box-shadow:inset 0 0 0 1px rgba(154,241,255,.05);
+}
+
+.modalClose::before,
+.modalClose::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:18px;
+  height:2.4px;
+  border-radius:999px;
+  background:#eafaff;
+  transform-origin:center;
+  pointer-events:none;
+  box-shadow:0 0 4px rgba(109,239,255,.28);
+}
+
+.modalClose::before{
+  transform:translate(-50%,-50%) rotate(45deg);
+}
+
+.modalClose::after{
+  transform:translate(-50%,-50%) rotate(-45deg);
+}
+
+.modalClose:active{
+  filter:brightness(1.3);
+}
