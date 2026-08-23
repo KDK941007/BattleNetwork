@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+:root{
+  --bn-ui-font:'DotGothic16','Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Meiryo',monospace;
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea{
+  font-family:var(--bn-ui-font);
+}
+
+body{
+  letter-spacing:.015em;
+  font-feature-settings:'palt' 0;
+}
+
+.customGauge:before,
+.customHead h2,
+.chipNow,
+.chipName,
+.chipCode,
+.slotNo,
+.customActions button,
+.settingsHead b,
+.settingsItem,
+.chipDetailHead h3,
+.detailPower,
+.editTopBar,
+.selectionLabel,
+.q{
+  letter-spacing:.04em;
+}
