@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v7';
+const CACHE_NAME = 'battlenetwork-runtime-v8';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -70,12 +70,21 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) {
+  const isExternalFont =
+    url.hostname === 'fonts.googleapis.com' ||
+    url.hostname === 'fonts.gstatic.com';
+
+  if (url.origin !== self.location.origin && !isExternalFont) {
     return;
   }
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(request));
+    return;
+  }
+
+  if (isExternalFont) {
+    event.respondWith(cacheFirstAsset(request));
     return;
   }
 
