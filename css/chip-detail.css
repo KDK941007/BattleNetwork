@@ -1,0 +1,43 @@
+.chipDetailBody{
+  align-items:stretch;
+  container-type:normal;
+}
+
+.detailVisual{
+  height:100%;
+}
+
+.detailText{
+  display:block;
+  min-width:0;
+  height:100%;
+}
+
+.detailText .detailRow{
+  width:100%;
+  min-width:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.detailText .detailValue{
+  flex:1 1 auto;
+}
+
+.detailPower{
+  width:auto;
+  margin-top:auto;
+  flex:0 0 auto;
+}
+
+@media(max-height:430px){
+  .detailText .detailRow{
+    width:100%;
+  }
+
+  .detailPower{
+    width:auto;
+  }
+}
