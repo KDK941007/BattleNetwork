@@ -32,6 +32,110 @@
   flex:0 0 auto;
 }
 
+.rangeLayout{
+  display:grid;
+  grid-template-columns:minmax(0,9fr) minmax(0,11fr);
+  gap:10px;
+  align-items:stretch;
+}
+
+.rangeLayout .rangeViz{
+  width:100%;
+  height:auto;
+  min-height:0;
+  aspect-ratio:1.05 / 1;
+}
+
+.rangeInfo{
+  min-width:0;
+  padding:9px 10px;
+  display:flex;
+  flex-direction:column;
+  border:1px solid #39758d;
+  border-radius:9px;
+  background:linear-gradient(180deg,#092936,#071e29);
+}
+
+.rangeInfoTitle{
+  margin-bottom:7px;
+  color:#dff9ff;
+  font-size:12px;
+  font-weight:900;
+}
+
+.rangeSpecs{
+  display:grid;
+  gap:5px;
+}
+
+.rangeSpec{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr);
+  gap:7px;
+  align-items:center;
+  min-height:23px;
+  padding:3px 6px;
+  border:1px solid rgba(57,117,141,.7);
+  border-radius:6px;
+  background:#082532;
+}
+
+.rangeSpecLabel{
+  color:#85dff5;
+  font-size:10px;
+  font-weight:800;
+}
+
+.rangeSpecValue{
+  min-width:0;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:700;
+}
+
+.rangeSpecValue::before{
+  content:'--';
+}
+
+.rangeLayout:has(.rangeViz.cannon) .rangeTypeValue::before{content:'射撃'}
+.rangeLayout:has(.rangeViz.cannon) .rangeDirectionValue::before{content:'前方'}
+.rangeLayout:has(.rangeViz.cannon) .rangeDistanceValue::before{content:'長距離'}
+.rangeLayout:has(.rangeViz.cannon) .rangeShapeValue::before{content:'直線'}
+
+.rangeLayout:has(.rangeViz.sword) .rangeTypeValue::before{content:'近接'}
+.rangeLayout:has(.rangeViz.sword) .rangeDirectionValue::before{content:'前方'}
+.rangeLayout:has(.rangeViz.sword) .rangeDistanceValue::before{content:'近距離'}
+.rangeLayout:has(.rangeViz.sword) .rangeShapeValue::before{content:'狭い'}
+
+.rangeLayout:has(.rangeViz.wide) .rangeTypeValue::before{content:'近接'}
+.rangeLayout:has(.rangeViz.wide) .rangeDirectionValue::before{content:'前方'}
+.rangeLayout:has(.rangeViz.wide) .rangeDistanceValue::before{content:'近距離'}
+.rangeLayout:has(.rangeViz.wide) .rangeShapeValue::before{content:'横に広い'}
+
+.rangeLayout:has(.rangeViz.bomb) .rangeTypeValue::before{content:'投擲'}
+.rangeLayout:has(.rangeViz.bomb) .rangeDirectionValue::before{content:'前方'}
+.rangeLayout:has(.rangeViz.bomb) .rangeDistanceValue::before{content:'投擲距離'}
+.rangeLayout:has(.rangeViz.bomb) .rangeShapeValue::before{content:'着弾地点周囲'}
+
+.rangeLayout:has(.rangeViz.recover) .rangeTypeValue::before{content:'回復'}
+.rangeLayout:has(.rangeViz.recover) .rangeDirectionValue::before{content:'自分中心'}
+.rangeLayout:has(.rangeViz.recover) .rangeDistanceValue::before{content:'自分'}
+.rangeLayout:has(.rangeViz.recover) .rangeShapeValue::before{content:'自分自身'}
+
+.rangeInfo .detailRangeCaption{
+  margin-top:auto;
+  padding:8px 0 0;
+  border:0;
+  border-top:1px solid #285d70;
+  border-radius:0;
+  background:transparent;
+}
+
+.rangeInfo .detailRangeCaption .detailValue{
+  display:block;
+  margin-top:3px;
+}
+
 @media(max-height:430px){
   .detailText .detailRow{
     width:100%;
@@ -39,5 +143,19 @@
 
   .detailPower{
     width:auto;
+  }
+
+  .rangeLayout{
+    gap:8px;
+  }
+
+  .rangeInfo{
+    padding:7px 8px;
+  }
+
+  .rangeSpec{
+    grid-template-columns:46px minmax(0,1fr);
+    min-height:21px;
+    padding:2px 5px;
   }
 }
