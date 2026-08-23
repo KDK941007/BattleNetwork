@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1+Code:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&display=swap');
 
 :root{
-  --bn-ui-font:'DotGothic16','Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Meiryo',monospace;
+  --bn-ui-font:'Orbitron','M PLUS 1 Code','Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Meiryo',sans-serif;
 }
 
 html,
@@ -14,14 +14,13 @@ textarea{
 }
 
 body{
-  letter-spacing:.015em;
+  letter-spacing:.025em;
   font-feature-settings:'palt' 0;
 }
 
 .customGauge:before,
 .customHead h2,
 .chipNow,
-.chipName,
 .chipCode,
 .slotNo,
 .customActions button,
@@ -30,7 +29,18 @@ body{
 .chipDetailHead h3,
 .detailPower,
 .editTopBar,
-.selectionLabel,
+.selectionLabel{
+  font-weight:700;
+  letter-spacing:.055em;
+}
+
+.chipName,
+.chipValue,
+.instruction,
+.detailLabel,
+.detailValue,
+.detailRangeCaption,
 .q{
-  letter-spacing:.04em;
+  font-weight:500;
+  letter-spacing:.025em;
 }
