@@ -22,6 +22,9 @@
 
 同日、プレイヤーの足元ワールド座標 `s.x / s.y` を論理グリッドへ接続し、移動中の所属マス `row / col` と現在地形をゲームループ内で追跡する処理を実装した。
 
+さらに、キャノン・ソード・ワイドソードのRangeマスタをマス単位へ移行し、`js/combat/range-geometry.js` で360度自由方向のRange形状をworld座標上に生成する共通基盤を追加した。
+`js/combat/range-preview-renderer.js` と `css/range-preview.css` により、同じRange形状を現在の斜め投影へ変換してプレビュー表示する方式へ切り替えた。新プレビューはリポジトリ反映済みで実機確認待ち。
+
 新規チップ追加は一旦止め、既存5種類を使用してバトル側の基礎システムを作り込む方針は継続する。
 
 ## 実装済み
@@ -48,6 +51,26 @@
 - プレイヤーの足元座標 `s.x / s.y` を `getTileAtWorld()` へ渡し、毎フレーム所属マスを更新する。
 - ゲーム状態に `tileRow / tileCol / currentTile` を保持し、将来の床効果判定から利用できる基盤を追加。
 - プレイヤーDOMの `data-tile-row / data-tile-col / data-terrain` に現在値を反映し、デバッグ確認可能にした。画面表示には影響しない。
+
+### 攻撃Range共通基盤
+
+- `js/combat/range-geometry.js` を追加。
+- `LINE / RECT` は、発動位置・360度自由方向・長さ・幅からworld座標上の四角形を生成する。
+- `CIRCLE` は指定中心と半径からworld座標上の円形ポリゴンを生成できる基盤を追加。
+- `containsPoint(shape, x, y)` を実装し、将来の敵HitBox判定からプレビューと同一Rangeを利用できる構成にした。
+- `getTilesByCenter(shape)` を実装し、地形変更時にマス中心点ルールで対象マスを取得できる構成にした。
+- A押下時にはその時点の向きを正規化して固定し、`lastAttackRange` として同一Range形状を保持する。
+- `BattleNetworkCombatRange` から直近攻撃Range・点判定・対象マス取得を参照可能。
+
+### 攻撃範囲プレビュー
+
+- `js/combat/range-preview-renderer.js` を追加。
+- `css/range-preview.css` を追加。
+- world座標上のRange形状を現在の斜め投影へ変換し、SVGポリゴンとして表示する。
+- キャノン・ソード・ワイドソードは旧CSS長方形の回転表示ではなく、新Range形状そのものをプレビューする方式へ移行済み。
+- 表示と将来のHit判定で `BattleNetworkRangeGeometry` を共通利用する構成。
+- 新プレビューはリポジトリ反映済み。実機で「5×0.25 / 1×1 / 1×3」がフィールドのマス感と一致して見えるか確認待ち。
+- ミニボムは正式 `radius_tiles` 未確定のため旧互換プレビューを継続する。
 
 ### CUSTOM
 
@@ -113,15 +136,20 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - ミニボム: 前方へ投擲し着弾地点で円形爆発。
 - リカバリー: 回復エフェクトを表示。
 - 現在セットされている次チップの攻撃範囲プレビューを表示。
-- 現在のRange距離は既存world unitsを使用しており、論理マス方式への移行は未実装。
+- キャノンは `LINE(5×0.25)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)` のマス単位Rangeへ移行済み。
+- 実行時は `BattleNetworkField.toWorldDistance()` でworld unitsへ変換する。
+- ミニボム投擲距離は `BOMB_THROW.THROW_DISTANCE_TILES` に移行済み。既存430 world unitsを維持するため約2.3889マスとしている。
+- ミニボム爆発半径は正式値未確定のため、現在は既存115 world unitsの互換値を維持する。
 
 ### チップマスタ基盤
 
 - `MASTER_DATA_DESIGN.md` をチップマスタ・Range/Behavior・セーブデータ設計のSource of Truthとして追加。
 - `js/master/chip-definitions.js` に属性・コード・クラス・主要値種別・Range・Behavior等の共通定義を追加。
+- Range Typeとして `LINE / RECT / CIRCLE / SECTOR / RING / SELF` を定義済み。
+- ミニボム移行完了まで `THROW_AOE` を互換Range Typeとして一時的に残す。
 - `js/master/chip-master.js` に現行5チップの基本情報を移行。
 - `js/master/chip-relations.js` に属性/系統、コード、主要値、Range Parameter、Behavior Parameterの関連を追加。
-- `js/master/chip-service.js` にマスタ参照APIと整合性チェックを追加。
+- `js/master/chip-service.js` にマスタ参照API、整合性チェック、マス単位Rangeからworld unitsへの互換変換を追加。
 - 現行 `game.js` のチップ定義はマスタ互換層から取得する方式へ変更し、チップ基本情報の二重定義を廃止。
 - キャノンの弾速、各チップの行動硬直、ミニボムの爆発遅延もBehavior Parameterから取得可能な構成へ移行。
 - `library_no / capacity_mb / rarity` は原作確認前に推測で設定せず `null` のままとする。
@@ -175,18 +203,16 @@ IndexedDBが利用できない環境ではゲーム本体を停止させず、�
 
 ## 現時点で未実装・未確定
 
+- 新Rangeプレビューの実機確認。
+- ミニボムの正式な `radius_tiles` 値と `CIRCLE` への完全移行。
 - 特殊地形の実ゲーム処理。
-- Rangeのマス単位→world units共通変換のチップ処理接続。
-- 既存5チップのRangeマスタを新Type・新Parameterへ移行。
-- 既存5チップの攻撃範囲・プレビューを新方式へ移行。
-- ミニボムの正式な `radius_tiles` 値。
 - 穴等の侵入不可地形に対する移動HitBox判定。
 - 敵キャラクター。
 - 敵AI。
 - プレイヤーHP。
 - 敵HP。
 - ダメージ計算。
-- 攻撃と敵の正式な当たり判定。
+- 敵HitBoxと `BattleNetworkRangeGeometry.containsPoint()` 等の正式接続。
 - 被弾処理。
 - 敵攻撃と攻撃予兆。
 - 撃破処理。
@@ -208,16 +234,16 @@ IndexedDBが利用できない環境ではゲーム本体を停止させず、�
 
 新規チップ制作は、基礎戦闘が成立した後にまとめて行う。
 
-## 次フェーズ: Rangeの論理マス接続
+## 次フェーズ: Range実機確認とHit判定接続
 
-論理グリッド基盤、床表示、プレイヤー所属マス取得まで実装したため、次はチップRangeをマス単位へ接続する。
+キャノン・ソード・ワイドソードについて、マス単位Range・共通形状生成・正式プレビューまでリポジトリ実装した。
 
 優先対象は以下。
 
-1. Rangeのマス単位→world units変換処理をチップ処理へ接続する。
-2. 既存5チップのRangeマスタを新Type・新Parameterへ移行する。
-3. 既存5チップの攻撃範囲・プレビューを新方式へ移行する。
-4. その後、HP・ダメージ・敵HitBox・正式な攻撃判定へ進む。
+1. 実機でキャノン `5×0.25`、ソード `1×1`、ワイドソード `1×3` の表示とマス感を確認する。
+2. 問題なければ共通Range形状を敵HitBox判定へ接続するための基礎を作る。
+3. プレイヤーHP・敵HP・ダメージ計算へ進む。
+4. ミニボムは正式半径を確認後 `CIRCLE` へ完全移行する。
 
 フォルダ編集/所持チップ機能は、必要なタイミングで `MASTER_DATA_DESIGN.md` に従ってIndexedDBへ接続する。
 
