@@ -10,7 +10,7 @@
       capacityMb:null,
       classId:'STANDARD',
       rarity:null,
-      rangeTypeId:'LINE_FORWARD',
+      rangeTypeId:'LINE',
       behaviorId:'CANNON_SHOT',
       description:'前方へ砲弾を発射する射撃チップ。直線上を長距離まで攻撃する。',
       rangeDescription:'前方・直線／長距離'
@@ -23,7 +23,7 @@
       capacityMb:null,
       classId:'STANDARD',
       rarity:null,
-      rangeTypeId:'FRONT_RECT',
+      rangeTypeId:'RECT',
       behaviorId:'SWORD_SLASH',
       description:'前方の近距離を斬るソード系チップ。正面の敵を素早く攻撃する。',
       rangeDescription:'前方・近距離／狭い'
@@ -36,7 +36,7 @@
       capacityMb:null,
       classId:'STANDARD',
       rarity:null,
-      rangeTypeId:'FRONT_RECT',
+      rangeTypeId:'RECT',
       behaviorId:'SWORD_SLASH',
       description:'前方の近距離を横に広く薙ぎ払うソード系チップ。ソードより広い範囲をカバーする。',
       rangeDescription:'前方・近距離／横に広い'
@@ -75,7 +75,7 @@
       capacityMb:50,
       classId:'MEGA',
       rarity:3,
-      rangeTypeId:'FRONT_RECT',
+      rangeTypeId:'RECT',
       behaviorId:'SWORD_SLASH',
       description:'Megaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
       rangeDescription:'テスト用／前方・近距離'
@@ -88,7 +88,7 @@
       capacityMb:60,
       classId:'GIGA',
       rarity:5,
-      rangeTypeId:'LINE_FORWARD',
+      rangeTypeId:'LINE',
       behaviorId:'CANNON_SHOT',
       description:'Gigaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
       rangeDescription:'テスト用／前方・直線・長距離'
