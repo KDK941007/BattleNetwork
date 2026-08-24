@@ -96,17 +96,16 @@
     const img=artwork.querySelector('img');
     if(!img)return;
 
-    artwork.style.display='grid';
-    artwork.style.placeItems='center';
-    artwork.style.padding='3px';
+    const src=img.currentSrc||img.src;
+    if(!src)return;
 
-    img.style.setProperty('width','auto','important');
-    img.style.setProperty('height','auto','important');
-    img.style.setProperty('max-width','100%','important');
-    img.style.setProperty('max-height','100%','important');
-    img.style.setProperty('object-fit','contain','important');
-    img.style.setProperty('object-position','center','important');
-    img.style.setProperty('display','block','important');
+    artwork.style.setProperty('background-image',`url("${src.replace(/"/g,'\\"')}")`,'important');
+    artwork.style.setProperty('background-size','contain','important');
+    artwork.style.setProperty('background-repeat','no-repeat','important');
+    artwork.style.setProperty('background-position','center','important');
+    artwork.style.setProperty('padding','3px','important');
+
+    img.style.setProperty('display','none','important');
   }
 
   function render(){
