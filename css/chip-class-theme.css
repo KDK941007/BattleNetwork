@@ -1,0 +1,142 @@
+/* BattleNetwork - chip class / special-type visual themes
+   STANDARD intentionally keeps the existing design.
+   MEGA: blue, GIGA: red, DARK: deep purple/black.
+   DARK is applied by the UI theme resolver with priority over class.
+*/
+
+/* ---------- CUSTOM chip cards ---------- */
+.chipCard.chipTheme-mega{
+  border-color:#5f9fff;
+  background:linear-gradient(180deg,#173f79,#0b2856 58%,#081e43);
+  box-shadow:inset 0 0 0 1px rgba(192,220,255,.12),0 0 9px rgba(62,137,255,.18);
+}
+.chipCard.chipTheme-mega .chipArt{border-color:#6aa9ff;background:linear-gradient(135deg,#0b2450,#164b84)}
+.chipCard.chipTheme-mega .chipMeta{background:#071833}
+.chipCard.chipTheme-mega .slotNo{background:#235fc2}
+
+.chipCard.chipTheme-giga{
+  border-color:#ff716b;
+  background:linear-gradient(180deg,#702429,#49151b 58%,#321015);
+  box-shadow:inset 0 0 0 1px rgba(255,215,205,.10),0 0 10px rgba(255,72,67,.18);
+}
+.chipCard.chipTheme-giga .chipArt{border-color:#ff8178;background:linear-gradient(135deg,#42151a,#7b2929)}
+.chipCard.chipTheme-giga .chipMeta{background:#260b10}
+.chipCard.chipTheme-giga .slotNo{background:#ba3030}
+
+.chipCard.chipTheme-dark{
+  border-color:#a85cff;
+  background:
+    linear-gradient(135deg,rgba(184,91,255,.10) 0 10%,transparent 10% 20%,rgba(184,91,255,.06) 20% 30%,transparent 30% 100%),
+    linear-gradient(180deg,#29123c,#170b25 58%,#0d0715);
+  box-shadow:inset 0 0 0 1px rgba(222,186,255,.10),0 0 12px rgba(158,67,255,.30);
+}
+.chipCard.chipTheme-dark .chipArt{border-color:#a960eb;background:linear-gradient(135deg,#13091e,#311348)}
+.chipCard.chipTheme-dark .chipMeta{background:#0d0714}
+.chipCard.chipTheme-dark .slotNo{background:#6f2aa7}
+.chipCard.chipTheme-dark .chipName{text-shadow:0 0 6px rgba(210,151,255,.38)}
+
+/* Selection remains obvious while retaining the class color in the card body. */
+.chipCard.chipTheme-mega.sel,
+.chipCard.chipTheme-giga.sel,
+.chipCard.chipTheme-dark.sel{
+  border-color:#79ff72;
+  box-shadow:0 0 0 1px rgba(121,255,114,.42),0 0 11px rgba(77,255,102,.42),inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* ---------- Detail screen theme tokens ---------- */
+.chipDetail.chipTheme-standard{
+  --chip-theme-accent:#65d6f4;
+  --chip-theme-line:#39758d;
+}
+.chipDetail.chipTheme-mega{
+  --chip-theme-accent:#78b4ff;
+  --chip-theme-line:#457dcc;
+  border-color:#67a7ff;
+  background:linear-gradient(180deg,#102d5b,#071a38 58%,#06152c);
+  box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 16px rgba(69,132,255,.16);
+}
+.chipDetail.chipTheme-giga{
+  --chip-theme-accent:#ff8278;
+  --chip-theme-line:#a84949;
+  border-color:#ff7168;
+  background:linear-gradient(180deg,#542024,#2b1015 58%,#200b10);
+  box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 17px rgba(255,76,69,.16);
+}
+.chipDetail.chipTheme-dark{
+  --chip-theme-accent:#bb72ff;
+  --chip-theme-line:#74409f;
+  border-color:#a65cff;
+  background:
+    linear-gradient(135deg,rgba(170,73,255,.07),transparent 32%,rgba(91,30,134,.06) 60%,transparent),
+    linear-gradient(180deg,#251035,#13091d 58%,#0b0611);
+  box-shadow:0 14px 40px rgba(0,0,0,.65),0 0 22px rgba(154,69,255,.25);
+}
+
+/* Header and fixed chip information keep their positions; only colors change. */
+.chipDetail.chipTheme-mega .chipDetailHead,
+.chipDetail.chipTheme-mega .chipTitleFrame{
+  border-color:#78b4ff !important;
+  background:linear-gradient(180deg,#24558f,#112f61) !important;
+}
+.chipDetail.chipTheme-mega .chipTitleClass{
+  border-color:#8bc2ff;
+  background:linear-gradient(180deg,#2a67b0,#173f7c);
+}
+
+.chipDetail.chipTheme-giga .chipDetailHead,
+.chipDetail.chipTheme-giga .chipTitleFrame{
+  border-color:#ff8278 !important;
+  background:linear-gradient(180deg,#7c3032,#48171d) !important;
+}
+.chipDetail.chipTheme-giga .chipTitleClass{
+  border-color:#ff9c91;
+  background:linear-gradient(180deg,#a43b3b,#692124);
+}
+
+.chipDetail.chipTheme-dark .chipDetailHead,
+.chipDetail.chipTheme-dark .chipTitleFrame{
+  border-color:#b96cff !important;
+  background:
+    linear-gradient(90deg,rgba(185,108,255,.16),transparent 28%,transparent 72%,rgba(185,108,255,.09)),
+    linear-gradient(180deg,#3e1c57,#1d0c2d) !important;
+}
+.chipDetail.chipTheme-dark .chipTitleClass{
+  border-color:#cf94ff;
+  background:linear-gradient(180deg,#65318a,#37194f);
+  box-shadow:inset 0 0 0 1px rgba(238,216,255,.10),0 0 7px rgba(176,94,255,.22);
+}
+
+/* Tint the information panels without changing their dimensions. */
+.chipDetail.chipTheme-mega .detailRow,
+.chipDetail.chipTheme-mega .rangeInfo,
+.chipDetail.chipTheme-mega .rangeLayout .rangeViz,
+.chipDetail.chipTheme-mega .detailInfoToken,
+.chipDetail.chipTheme-mega .detailMbBadge{
+  border-color:#457dcc;
+  background-color:#0a2348;
+}
+.chipDetail.chipTheme-giga .detailRow,
+.chipDetail.chipTheme-giga .rangeInfo,
+.chipDetail.chipTheme-giga .rangeLayout .rangeViz,
+.chipDetail.chipTheme-giga .detailInfoToken,
+.chipDetail.chipTheme-giga .detailMbBadge{
+  border-color:#a84949;
+  background-color:#351217;
+}
+.chipDetail.chipTheme-dark .detailRow,
+.chipDetail.chipTheme-dark .rangeInfo,
+.chipDetail.chipTheme-dark .rangeLayout .rangeViz,
+.chipDetail.chipTheme-dark .detailInfoToken,
+.chipDetail.chipTheme-dark .detailMbBadge{
+  border-color:#74409f;
+  background-color:#170b22;
+}
+
+.chipDetail.chipTheme-mega .detailArt{border-color:#568fd8;box-shadow:0 0 12px rgba(78,148,255,.13)}
+.chipDetail.chipTheme-giga .detailArt{border-color:#b95555;box-shadow:0 0 12px rgba(255,82,75,.13)}
+.chipDetail.chipTheme-dark .detailArt{border-color:#824cb0;box-shadow:0 0 15px rgba(170,83,255,.20)}
+
+/* Section heading accent follows the detail theme automatically. */
+.chipDetail .rangeTitle{
+  --range-accent:var(--chip-theme-accent,#65d6f4);
+}
