@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v17';
+const CACHE_NAME = 'battlenetwork-runtime-v18';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -97,11 +97,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.pathname.includes('/css/') || url.pathname.includes('/js/')) {
+    event.respondWith(networkFirstAsset(request));
+    return;
+  }
+
   if (
     url.pathname.includes('/assets/attributes/') ||
-    url.pathname.includes('/assets/chips/') ||
-    url.pathname.includes('/css/') ||
-    url.pathname.includes('/js/')
+    url.pathname.includes('/assets/chips/')
   ) {
     event.respondWith(cacheFirstAsset(request));
   }
@@ -129,9 +132,27 @@ async function networkFirstNavigation(request) {
   }
 }
 
+async function networkFirstAsset(request) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (_) {
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) {
+      return cached;
+    }
+    return Response.error();
+  }
+}
+
 async function cacheFirstAsset(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
+  const cached = await cache.match(request, { ignoreSearch: true });
 
   if (cached) {
     return cached;
