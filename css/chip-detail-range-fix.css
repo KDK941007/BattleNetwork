@@ -7,24 +7,42 @@
    - Do not scroll the description field itself.
    - If the whole detail becomes taller than the viewport, scroll the whole chip detail.
    - Keep the range diagram and range-info panel the same height.
+   - Keep the "範囲" heading in its own row so the diagram never overlaps it.
 */
 
 /*
  * Stop squeezing the top/range rows just to fit one screen.
- * The minimum row heights guarantee enough room; overflow is handled by
- * scrolling the whole detail panel.
+ * The range heading gets a dedicated 24px row.
+ * Overflow is handled by scrolling the whole detail panel.
  */
 .chipDetail{
-  grid-template-rows:auto minmax(180px,1.45fr) auto minmax(160px,.75fr) !important;
+  grid-template-rows:auto minmax(180px,1.45fr) 24px minmax(160px,.75fr) !important;
   overflow-x:hidden !important;
   overflow-y:auto !important;
   overscroll-behavior-y:contain;
   -webkit-overflow-scrolling:touch;
 }
 
+/* Dedicated heading row. The diagram starts only after this row. */
+.rangeTitle{
+  min-height:24px !important;
+  height:24px !important;
+  margin:0 !important;
+  padding:0 0 5px !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  position:relative !important;
+  z-index:2 !important;
+  line-height:1 !important;
+  overflow:visible !important;
+}
+
 .rangeLayout{
   min-height:160px !important;
   height:100% !important;
+  margin:0 !important;
+  position:relative !important;
+  z-index:1 !important;
   align-items:stretch !important;
   overflow:hidden !important;
 }
@@ -94,7 +112,13 @@
 
 @media(min-height:431px){
   .chipDetail{
-    grid-template-rows:auto minmax(200px,1.35fr) auto minmax(180px,.85fr) !important;
+    grid-template-rows:auto minmax(200px,1.35fr) 26px minmax(180px,.85fr) !important;
+  }
+
+  .rangeTitle{
+    min-height:26px !important;
+    height:26px !important;
+    padding-bottom:6px !important;
   }
 
   .rangeLayout,
