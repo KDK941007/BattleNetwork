@@ -1,0 +1,25 @@
+/* BattleNetwork - logical field grid rendering */
+.floor{
+  background:linear-gradient(#173745,#0a202b) !important;
+}
+
+.fieldGridSvg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  overflow:visible;
+  pointer-events:none;
+}
+
+.fieldGridLine{
+  stroke:rgba(83,194,222,.22);
+  stroke-width:2;
+  shape-rendering:geometricPrecision;
+}
+
+.fieldGridLine.edge{
+  stroke:rgba(111,220,244,.36);
+  stroke-width:3;
+}
