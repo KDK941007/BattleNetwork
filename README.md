@@ -19,6 +19,8 @@ BattleNetwork/
 │  ├─ data/
 │  │  ├─ database.js
 │  │  └─ save-data.js
+│  ├─ ui/
+│  │  └─ chip-detail-ui.js
 │  ├─ game.js
 │  └─ service-worker-register.js
 ├─ assets/
@@ -34,11 +36,12 @@ BattleNetwork/
 - `index.html` - 画面構造とスクリプト読み込み順を管理
 - `css/style.css` - 基本レイアウト・デザインを管理
 - `css/font.css` - フォント設定を管理
-- `css/chip-detail.css` - チップ詳細固有のレイアウトを管理
+- `css/chip-detail.css` - チップ詳細固有の固定レイアウト・内部スクロールを管理
 - `css/components.css` - 複数画面で共通利用するUI部品を管理
 - `js/master/` - チップ等の全ユーザー共通固定データと参照サービス
 - `js/data/database.js` - IndexedDB `BattleNetworkDB` のスキーマ・基本アクセス
 - `js/data/save-data.js` - 所持チップ・フォルダ・進行状況等のセーブデータアクセス層
+- `js/ui/chip-detail-ui.js` - チップ詳細の基本情報・主要値・属性/系統をマスタから描画
 - `js/game.js` - ゲーム、CUSTOM、コントローラー設定などの処理を管理
 - `js/service-worker-register.js` - Service Worker の登録処理を管理
 - `sw.js` - オフラインキャッシュを管理。スコープ維持のためルートに配置
