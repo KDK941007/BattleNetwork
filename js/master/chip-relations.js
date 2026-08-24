@@ -16,14 +16,14 @@
     {chipId:'CHIP_0001',codeId:'A'},
     {chipId:'CHIP_0001',codeId:'B'},
     {chipId:'CHIP_0001',codeId:'C'},
-    {chipId:'CHIP_0001',codeId:'ASTERISK'},
+    {chipId:'CHIP_0001',codeId:'*'},
     {chipId:'CHIP_0002',codeId:'S'},
     {chipId:'CHIP_0002',codeId:'E'},
     {chipId:'CHIP_0003',codeId:'S'},
     {chipId:'CHIP_0003',codeId:'E'},
     {chipId:'CHIP_0004',codeId:'B'},
     {chipId:'CHIP_0004',codeId:'L'},
-    {chipId:'CHIP_0004',codeId:'ASTERISK'},
+    {chipId:'CHIP_0004',codeId:'*'},
     {chipId:'CHIP_0005',codeId:'A'},
     {chipId:'CHIP_0005',codeId:'L'}
   ];
