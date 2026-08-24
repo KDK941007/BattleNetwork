@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v32';
+const CACHE_NAME = 'battlenetwork-runtime-v33';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
