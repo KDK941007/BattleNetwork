@@ -4,6 +4,7 @@
 
   const modal=document.getElementById('chipDetailModal');
   const detailName=document.getElementById('detailName');
+  const chipTitleName=document.getElementById('detailChipName');
   const libraryNo=document.getElementById('detailLibraryNo');
   const classValue=document.getElementById('detailClass');
   const capacity=document.getElementById('detailCapacity');
@@ -12,7 +13,7 @@
   const attributes=document.getElementById('detailAttributes');
   const artwork=document.getElementById('detailArt');
 
-  if(!master||!modal||!detailName||!values||!attributes)return;
+  if(!master||!modal||!detailName||!chipTitleName||!libraryNo||!classValue||!capacity||!rarity||!values||!attributes)return;
 
   const chipsByName=new Map((data.CHIP_MASTER||[]).map(chip=>[chip.chipName,chip]));
 
@@ -23,9 +24,11 @@
     return token;
   }
 
-  function renderBasicInfo(chip){
+  function renderHeaderInfo(chip){
     const chipClass=master.getChipClass(chip.chipId);
-    libraryNo.textContent=Number.isFinite(chip.libraryNo)?String(chip.libraryNo).padStart(3,'0'):'--';
+    const no=Number.isFinite(chip.libraryNo)?String(chip.libraryNo).padStart(4,'0'):'----';
+    libraryNo.textContent=`No.${no}`;
+    chipTitleName.textContent=chip.chipName||'--';
     classValue.textContent=chipClass?.classInitial||'--';
     capacity.textContent=Number.isFinite(chip.capacityMb)?String(chip.capacityMb):'--';
     rarity.textContent=Number.isFinite(chip.rarity)&&chip.rarity>0?'★'.repeat(chip.rarity):'--';
@@ -112,7 +115,7 @@
     if(!modal.classList.contains('open'))return;
     const chip=chipsByName.get(detailName.textContent.trim());
     if(!chip)return;
-    renderBasicInfo(chip);
+    renderHeaderInfo(chip);
     renderValues(chip);
     renderAttributes(chip);
     fitArtwork();
