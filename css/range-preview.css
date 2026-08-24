@@ -35,3 +35,25 @@
   stroke-width:4;
   stroke-dasharray:10 7;
 }
+
+.bombRangeCompare{
+  position:absolute;
+  top:14px;
+  left:14px;
+  z-index:18;
+  display:none;
+  padding:6px 10px;
+  border:1px solid rgba(255,188,88,.85);
+  border-radius:7px;
+  background:rgba(4,20,34,.88);
+  color:#fff1c9;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  pointer-events:none;
+  box-shadow:0 0 10px rgba(0,0,0,.34);
+}
+
+.bombRangeCompare.show{display:block}
