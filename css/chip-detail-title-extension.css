@@ -1,13 +1,9 @@
 /* BattleNetwork - chip detail title frame extension
-   Keep the original title bar visible and extend the same visual treatment
-   behind the close button without changing the chip info column positions.
+   Use one continuous title bar across the whole header, including behind
+   the close button, without moving CLASS or rarity columns.
 */
 
-/*
- * The full header receives the outer title treatment.
- * We intentionally keep the existing flex gap and child widths unchanged,
- * so CLASS and rarity stay at exactly the same positions as before.
- */
+/* The full header is the single visible title bar. */
 .chipDetailHead{
   position:relative;
   border:1px solid #77e8ff;
@@ -23,34 +19,31 @@
 }
 
 /*
- * Restore the original title bar instead of making it transparent.
- * Only its right edge is softened so the bar visually continues toward X.
+ * Remove the old pre-extension frame completely.
+ * Keep its size and grid intact so CLASS / rarity positions do not move.
  */
 .chipTitleFrame{
-  background:
-    linear-gradient(90deg,rgba(55,218,255,.18),transparent 22%,transparent 78%,rgba(255,221,88,.08)),
-    linear-gradient(180deg,#104557,#082834) !important;
-  border-color:#77e8ff !important;
-  border-right-color:rgba(119,232,255,.28) !important;
-  border-radius:8px !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(190,248,255,.13),
-    inset 0 -8px 18px rgba(0,0,0,.12) !important;
+  background:transparent !important;
+  border-color:transparent !important;
+  box-shadow:none !important;
 }
 
-/* Restore the inner cyber frame that was hidden by the previous attempt. */
 .chipTitleFrame::before{
-  display:block !important;
+  display:none !important;
 }
 
-/* Keep the small cyber accent on the title side. */
+/* Keep only the small cyber accent on the title side. */
 .chipTitleFrame::after{
   z-index:1;
 }
 
-/* The close button stays on top of the extended title background. */
+/*
+ * Move only the close button visually to the left.
+ * transform does not consume layout width, so the title grid stays unchanged.
+ */
 .chipDetailHead .modalClose{
   position:relative;
   z-index:2;
   flex:0 0 auto;
+  transform:translateX(-5px);
 }
