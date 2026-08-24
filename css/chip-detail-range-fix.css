@@ -16,7 +16,7 @@
  * Overflow is handled by scrolling the whole detail panel.
  */
 .chipDetail{
-  grid-template-rows:auto minmax(180px,1.45fr) 30px minmax(160px,.75fr) !important;
+  grid-template-rows:auto minmax(180px,1.45fr) 30px minmax(180px,.75fr) !important;
   overflow-x:hidden !important;
   overflow-y:auto !important;
   overscroll-behavior-y:contain;
@@ -73,7 +73,7 @@
 }
 
 .rangeLayout{
-  min-height:160px !important;
+  min-height:180px !important;
   height:100% !important;
   margin:0 !important;
   position:relative !important;
@@ -85,22 +85,40 @@
 /* The left diagram and right information panel always share the same row height. */
 .rangeLayout .rangeViz,
 .rangeLayout .rangeInfo{
-  min-height:160px !important;
+  min-height:180px !important;
   height:100% !important;
   align-self:stretch !important;
 }
 
+/* Range information uses nearly the same readable scale as the chip description. */
 .rangeInfoTitle{
-  margin-bottom:2px !important;
+  margin-bottom:4px !important;
+  font-size:11px !important;
+  line-height:14px !important;
+  font-weight:900 !important;
 }
 
 .rangeSpecs{
-  gap:2px !important;
+  gap:3px !important;
 }
 
 .rangeSpec{
-  min-height:17px !important;
-  padding:1px 4px !important;
+  min-height:22px !important;
+  padding:2px 6px !important;
+  grid-template-columns:42px minmax(0,1fr) !important;
+  gap:5px !important;
+}
+
+.rangeSpecLabel{
+  font-size:9px !important;
+  line-height:1.2 !important;
+  font-weight:800 !important;
+}
+
+.rangeSpecValue{
+  font-size:10px !important;
+  line-height:1.2 !important;
+  font-weight:800 !important;
 }
 
 /*
@@ -111,12 +129,12 @@
 .rangeInfo .detailRangeCaption{
   flex:1 1 auto !important;
   min-height:0 !important;
-  margin-top:3px !important;
-  padding:4px 0 0 !important;
+  margin-top:4px !important;
+  padding:5px 0 0 !important;
   display:grid !important;
   grid-template-columns:minmax(0,1fr) !important;
   grid-template-rows:auto minmax(5em,1fr) !important;
-  gap:2px !important;
+  gap:3px !important;
   align-content:start !important;
   overflow:hidden !important;
   border-top:1px solid #285d70 !important;
@@ -125,7 +143,9 @@
 .rangeInfo .detailRangeCaption .detailLabel{
   margin:0 !important;
   padding:0 !important;
+  font-size:9px !important;
   line-height:1.25 !important;
+  font-weight:800 !important;
   white-space:nowrap !important;
 }
 
@@ -142,12 +162,14 @@
   overflow:hidden !important;
   white-space:normal !important;
   overflow-wrap:anywhere !important;
+  font-size:10px !important;
   line-height:1.25 !important;
+  font-weight:500 !important;
 }
 
 @media(min-height:431px){
   .chipDetail{
-    grid-template-rows:auto minmax(200px,1.35fr) 32px minmax(180px,.85fr) !important;
+    grid-template-rows:auto minmax(200px,1.35fr) 32px minmax(200px,.85fr) !important;
   }
 
   .rangeTitle{
@@ -161,11 +183,30 @@
   .rangeLayout,
   .rangeLayout .rangeViz,
   .rangeLayout .rangeInfo{
-    min-height:180px !important;
+    min-height:200px !important;
+  }
+
+  .rangeInfoTitle{
+    font-size:12px !important;
+    line-height:15px !important;
   }
 
   .rangeSpec{
-    min-height:18px !important;
+    min-height:24px !important;
+    padding:2px 7px !important;
+    grid-template-columns:46px minmax(0,1fr) !important;
+  }
+
+  .rangeSpecLabel{
+    font-size:10px !important;
+  }
+
+  .rangeSpecValue{
+    font-size:11px !important;
+  }
+
+  .rangeInfo .detailRangeCaption .detailLabel{
+    font-size:10px !important;
   }
 
   .rangeInfo .detailRangeCaption .detailValue,
@@ -173,5 +214,6 @@
     height:5em !important;
     min-height:5em !important;
     max-height:5em !important;
+    font-size:11px !important;
   }
 }
