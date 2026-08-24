@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v14';
+const CACHE_NAME = 'battlenetwork-runtime-v15';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -6,6 +6,12 @@ const STATIC_ASSETS = [
   './css/font.css',
   './css/chip-detail.css',
   './css/components.css',
+  './js/master/chip-definitions.js',
+  './js/master/chip-master.js',
+  './js/master/chip-relations.js',
+  './js/master/chip-service.js',
+  './js/data/database.js',
+  './js/data/save-data.js',
   './js/game.js',
   './js/service-worker-register.js',
   './assets/attributes/01_normal.png',
