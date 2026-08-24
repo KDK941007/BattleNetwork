@@ -9,7 +9,7 @@
 <title>BattleNetwork Prototype</title>
 <link rel="stylesheet" href="./css/style.css">
 <link rel="stylesheet" href="./css/font.css">
-<link rel="stylesheet" href="./css/chip-detail.css?v=21">
+<link rel="stylesheet" href="./css/chip-detail.css?v=27">
 <link rel="stylesheet" href="./css/chip-detail-range-fix.css?v=26">
 <link rel="stylesheet" href="./css/components.css">
 </head>
@@ -37,20 +37,23 @@
     <div class="modal" id="customModal"><div class="customPanel"><div class="customHead"><h2>CUSTOM</h2><span id="folderInfo"></span></div><div class="handViewport"><div class="hand" id="hand"></div></div><div class="instruction">タップで選択／再タップでキャンセル。長押しでチップ詳細を表示。</div><div class="customActions"><button class="sendBtn" id="send">決定</button><button class="soulBtn" disabled>ソウルユニゾン</button></div></div></div>
     <div class="modal chipDetailModal" id="chipDetailModal">
       <div class="chipDetail">
-        <div class="chipDetailHead modalHead"><h3 id="detailName">チップ詳細</h3><button class="modalClose" id="detailClose" type="button" aria-label="詳細を閉じる"></button></div>
+        <div class="chipDetailHead modalHead">
+          <div class="chipTitleFrame" aria-label="チップ基本情報">
+            <span class="chipTitleNo" id="detailLibraryNo">No.----</span>
+            <span class="chipTitleName" id="detailChipName">チップ詳細</span>
+            <span class="chipTitleClass" id="detailClass">--</span>
+            <span class="chipTitleRarity" id="detailRarity">--</span>
+          </div>
+          <span id="detailName" hidden aria-hidden="true"></span>
+          <button class="modalClose" id="detailClose" type="button" aria-label="詳細を閉じる"></button>
+        </div>
         <div class="chipDetailBody">
           <div class="detailVisual">
             <div class="detailArt" id="detailArt"></div>
-            <div class="detailBasicInfo" aria-label="チップ基本情報">
-              <div class="detailBasicItem"><span class="detailBasicLabel">No.</span><span class="detailBasicValue" id="detailLibraryNo">--</span></div>
-              <div class="detailBasicItem"><span class="detailBasicLabel">CLASS</span><span class="detailBasicValue" id="detailClass">--</span></div>
-              <div class="detailBasicItem"><span class="detailBasicLabel">MB</span><span class="detailBasicValue" id="detailCapacity">--</span></div>
-              <div class="detailBasicItem"><span class="detailBasicLabel">RARITY</span><span class="detailBasicValue detailRarity" id="detailRarity">--</span></div>
-            </div>
           </div>
           <div class="detailText">
             <div class="detailRow">
-              <span class="detailLabel">チップの内容</span>
+              <div class="detailContentHead"><span class="detailLabel">チップの内容</span><span class="detailMbBadge">MB <span id="detailCapacity">--</span></span></div>
               <span class="detailValue detailDescription" id="detailDesc"></span>
               <div class="detailDataBlock">
                 <span class="detailLabel">主要値</span>
@@ -79,7 +82,7 @@
 <script src="./js/master/chip-service.js"></script>
 <script src="./js/data/database.js"></script>
 <script src="./js/data/save-data.js"></script>
-<script src="./js/ui/chip-detail-ui.js?v=20"></script>
+<script src="./js/ui/chip-detail-ui.js?v=27"></script>
 <script src="./js/game.js"></script>
 <script src="./js/service-worker-register.js"></script>
 </body>
