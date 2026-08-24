@@ -24,21 +24,31 @@
 }
 
 /*
- * Remove the old pre-extension frame completely.
- * Keep the same overall width; only the internal column order changes.
+ * Keep the title contents on exactly one row.
+ * HTML order is also No. -> CLASS -> name -> rarity so CSS Grid does not need
+ * to reorder auto-placed items and cannot create an accidental second row.
  */
 .chipTitleFrame{
   grid-template-columns:72px 30px minmax(0,1fr) 72px !important;
+  grid-template-rows:1fr !important;
+  align-items:center !important;
   background:transparent !important;
   border-color:transparent !important;
   box-shadow:none !important;
 }
 
-/* Keep the DOM IDs unchanged while placing them in the requested columns. */
-.chipTitleNo{grid-column:1}
-.chipTitleClass{grid-column:2}
-.chipTitleName{grid-column:3}
-.chipTitleRarity{grid-column:4}
+.chipTitleNo,
+.chipTitleClass,
+.chipTitleName,
+.chipTitleRarity{
+  grid-row:1 !important;
+  align-self:center !important;
+}
+
+.chipTitleNo{grid-column:1 !important}
+.chipTitleClass{grid-column:2 !important}
+.chipTitleName{grid-column:3 !important}
+.chipTitleRarity{grid-column:4 !important}
 
 .chipTitleFrame::before{
   display:none !important;
