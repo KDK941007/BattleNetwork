@@ -117,7 +117,7 @@
 
 .detailTokenScroller{
   min-width:0;
-  height:30px;
+  height:28px;
   display:flex;
   align-items:center;
   gap:5px;
@@ -132,15 +132,17 @@
 .detailInfoToken{
   flex:0 0 auto;
   min-width:max-content;
-  height:26px;
-  padding:3px 7px;
+  max-height:24px;
+  height:24px;
+  padding:2px 6px;
   display:inline-flex;
   align-items:center;
-  gap:5px;
+  gap:4px;
   border:1px solid #39758d;
   border-radius:6px;
   background:linear-gradient(180deg,#0b3445,#082532);
   white-space:nowrap;
+  overflow:hidden;
 }
 
 .detailInfoTokenEmpty{
@@ -165,12 +167,27 @@
   color:#ffe879;
 }
 
-.detailAttributeIcon{
-  flex:0 0 auto;
-  width:19px;
-  height:19px;
-  display:block;
-  object-fit:contain;
+#detailAttributes .detailAttributeToken{
+  min-height:0;
+  max-height:24px;
+  height:24px;
+}
+
+#detailAttributes .detailAttributeIcon{
+  flex:0 0 15px !important;
+  width:15px !important;
+  min-width:15px !important;
+  max-width:15px !important;
+  height:15px !important;
+  min-height:15px !important;
+  max-height:15px !important;
+  display:block !important;
+  object-fit:contain !important;
+}
+
+#detailAttributes .detailTokenValue{
+  font-size:9px;
+  line-height:1;
 }
 
 .rangeLayout{
@@ -410,12 +427,13 @@
   }
 
   .detailTokenScroller{
-    height:27px;
+    height:25px;
   }
 
   .detailInfoToken{
-    height:23px;
-    padding:2px 6px;
+    height:21px;
+    max-height:21px;
+    padding:2px 5px;
   }
 
   .detailTokenLabel{
@@ -426,9 +444,19 @@
     font-size:9px;
   }
 
-  .detailAttributeIcon{
-    width:17px;
-    height:17px;
+  #detailAttributes .detailAttributeToken{
+    height:21px;
+    max-height:21px;
+  }
+
+  #detailAttributes .detailAttributeIcon{
+    flex-basis:13px !important;
+    width:13px !important;
+    min-width:13px !important;
+    max-width:13px !important;
+    height:13px !important;
+    min-height:13px !important;
+    max-height:13px !important;
   }
 
   .rangeLayout{
