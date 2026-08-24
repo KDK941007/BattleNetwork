@@ -3,7 +3,7 @@
   max-height:none;
   overflow:hidden;
   display:grid;
-  grid-template-rows:auto minmax(0,1fr) auto minmax(0,1.08fr);
+  grid-template-rows:auto minmax(0,1.45fr) auto minmax(0,.75fr);
   gap:5px;
 }
 
@@ -448,7 +448,7 @@
 
 @media(min-height:431px){
   .chipDetail{
-    grid-template-rows:auto minmax(0,1fr) auto minmax(0,1.12fr);
+    grid-template-rows:auto minmax(0,1.35fr) auto minmax(0,.85fr);
     gap:7px;
   }
 
