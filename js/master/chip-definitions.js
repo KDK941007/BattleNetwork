@@ -41,18 +41,26 @@
   ];
 
   const RANGE_TYPE_MASTER=[
-    {rangeTypeId:'LINE_FORWARD',rangeName:'前方直線',displayCategory:'射撃',displayDirection:'前方',sortOrder:1},
-    {rangeTypeId:'FRONT_RECT',rangeName:'前方矩形',displayCategory:'近接',displayDirection:'前方',sortOrder:2},
-    {rangeTypeId:'THROW_AOE',rangeName:'投擲範囲',displayCategory:'投擲',displayDirection:'前方',sortOrder:3},
-    {rangeTypeId:'SELF',rangeName:'自分自身',displayCategory:'回復',displayDirection:'自分中心',sortOrder:4}
+    {rangeTypeId:'LINE',rangeName:'直線',displayCategory:'射撃',displayDirection:'自由方向',sortOrder:1},
+    {rangeTypeId:'RECT',rangeName:'矩形',displayCategory:'近接',displayDirection:'自由方向',sortOrder:2},
+    {rangeTypeId:'CIRCLE',rangeName:'円形',displayCategory:'範囲',displayDirection:'発生地点基準',sortOrder:3},
+    {rangeTypeId:'SECTOR',rangeName:'扇形',displayCategory:'範囲',displayDirection:'自由方向',sortOrder:4},
+    {rangeTypeId:'RING',rangeName:'円環',displayCategory:'範囲',displayDirection:'発生地点基準',sortOrder:5},
+    {rangeTypeId:'SELF',rangeName:'自分自身',displayCategory:'回復',displayDirection:'自分中心',sortOrder:6},
+    {rangeTypeId:'THROW_AOE',rangeName:'投擲範囲（互換）',displayCategory:'投擲',displayDirection:'前方',sortOrder:90,legacyFlg:true}
   ];
 
   const RANGE_PARAM_MASTER=[
-    {rangeTypeId:'LINE_FORWARD',paramId:'DISTANCE',paramName:'射程',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
-    {rangeTypeId:'FRONT_RECT',paramId:'DISTANCE',paramName:'射程',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
-    {rangeTypeId:'FRONT_RECT',paramId:'WIDTH',paramName:'横幅',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:2},
-    {rangeTypeId:'THROW_AOE',paramId:'THROW_DISTANCE',paramName:'投擲距離',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
-    {rangeTypeId:'THROW_AOE',paramId:'RADIUS',paramName:'爆発半径',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:2}
+    {rangeTypeId:'LINE',paramId:'LENGTH_TILES',paramName:'射程マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
+    {rangeTypeId:'LINE',paramId:'WIDTH_TILES',paramName:'幅マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'幅',displayOrder:2},
+    {rangeTypeId:'RECT',paramId:'LENGTH_TILES',paramName:'長さマス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
+    {rangeTypeId:'RECT',paramId:'WIDTH_TILES',paramName:'幅マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:2},
+    {rangeTypeId:'CIRCLE',paramId:'RADIUS_TILES',paramName:'半径マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'半径',displayOrder:1},
+    {rangeTypeId:'SECTOR',paramId:'RADIUS_TILES',paramName:'半径マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
+    {rangeTypeId:'SECTOR',paramId:'ANGLE_DEG',paramName:'開き角度',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'角度',displayOrder:2},
+    {rangeTypeId:'RING',paramId:'INNER_RADIUS_TILES',paramName:'内側半径マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'内側半径',displayOrder:1},
+    {rangeTypeId:'RING',paramId:'OUTER_RADIUS_TILES',paramName:'外側半径マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'外側半径',displayOrder:2},
+    {rangeTypeId:'THROW_AOE',paramId:'RADIUS',paramName:'爆発半径（互換world units）',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:1}
   ];
 
   const BEHAVIOR_MASTER=[
@@ -68,6 +76,7 @@
     {behaviorId:'SWORD_SLASH',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.30,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'EXPLOSION_DELAY',paramName:'爆発遅延',dataType:'number',defaultValue:.28,requiredFlg:true},
+    {behaviorId:'BOMB_THROW',paramId:'THROW_DISTANCE_TILES',paramName:'投擲距離マス数',dataType:'number',defaultValue:2.388888888888889,requiredFlg:true},
     {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true}
   ];
 
