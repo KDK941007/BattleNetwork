@@ -90,6 +90,15 @@
     return Object.fromEntries(definitions.map(def=>[def.paramId,overrides.has(def.paramId)?overrides.get(def.paramId):def.defaultValue]));
   }
 
+  function tileDistanceToWorld(value){
+    if(value==null)return undefined;
+    const numeric=Number(value);
+    if(!Number.isFinite(numeric))return undefined;
+    const field=window.BattleNetworkField;
+    if(!field?.toWorldDistance)throw new Error('BattleNetwork master: logical field distance converter is not loaded.');
+    return field.toWorldDistance(numeric);
+  }
+
   function validateMasterData(){
     const errors=[];
     const chips=data.CHIP_MASTER||[];
@@ -106,16 +115,30 @@
       if(!attrs.length)errors.push(`属性・系統未設定: ${chip.chipId}`);
       if(attrs.filter(row=>row.primaryFlg).length!==1)errors.push(`primary属性は1件必須: ${chip.chipId}`);
 
-      (data.RANGE_PARAM_MASTER||[])
-        .filter(row=>row.rangeTypeId===chip.rangeTypeId&&row.requiredFlg)
+      const rangeDefinitions=(data.RANGE_PARAM_MASTER||[]).filter(row=>row.rangeTypeId===chip.rangeTypeId);
+      const rangeParamIds=new Set(rangeDefinitions.map(row=>row.paramId));
+      rangeDefinitions
+        .filter(row=>row.requiredFlg)
         .forEach(def=>{
           if(getRangeParams(chip.chipId)[def.paramId]==null)errors.push(`Range必須値未設定: ${chip.chipId}/${def.paramId}`);
         });
+      (data.CHIP_RANGE_PARAM_RELATION||[])
+        .filter(row=>row.chipId===chip.chipId)
+        .forEach(row=>{
+          if(!rangeParamIds.has(row.paramId))errors.push(`Range未定義param: ${chip.chipId}/${row.paramId}`);
+        });
 
-      (data.BEHAVIOR_PARAM_MASTER||[])
-        .filter(row=>row.behaviorId===chip.behaviorId&&row.requiredFlg)
+      const behaviorDefinitions=(data.BEHAVIOR_PARAM_MASTER||[]).filter(row=>row.behaviorId===chip.behaviorId);
+      const behaviorParamIds=new Set(behaviorDefinitions.map(row=>row.paramId));
+      behaviorDefinitions
+        .filter(row=>row.requiredFlg)
         .forEach(def=>{
           if(getBehaviorParams(chip.chipId)[def.paramId]==null)errors.push(`Behavior必須値未設定: ${chip.chipId}/${def.paramId}`);
+        });
+      (data.CHIP_BEHAVIOR_PARAM_RELATION||[])
+        .filter(row=>row.chipId===chip.chipId)
+        .forEach(row=>{
+          if(!behaviorParamIds.has(row.paramId))errors.push(`Behavior未定義param: ${chip.chipId}/${row.paramId}`);
         });
     });
 
@@ -154,6 +177,19 @@
       const range=getRangeParams(chip.chipId);
       const behavior=getBehaviorParams(chip.chipId);
 
+      const lengthTiles=range.LENGTH_TILES;
+      const widthTiles=range.WIDTH_TILES;
+      const radiusTiles=range.RADIUS_TILES;
+      const throwDistanceTiles=behavior.THROW_DISTANCE_TILES;
+
+      const rangeWorld=lengthTiles!=null
+        ?tileDistanceToWorld(lengthTiles)
+        :throwDistanceTiles!=null
+          ?tileDistanceToWorld(throwDistanceTiles)
+          :range.DISTANCE??range.THROW_DISTANCE;
+      const widthWorld=widthTiles!=null?tileDistanceToWorld(widthTiles):range.WIDTH;
+      const radiusWorld=radiusTiles!=null?tileDistanceToWorld(radiusTiles):range.RADIUS;
+
       CHIP[legacyKey]={
         chipId:chip.chipId,
         name:chip.chipName,
@@ -161,9 +197,14 @@
         attr:(primary?.attributeId||'NORMAL').toLowerCase(),
         power:damage?.value,
         heal:recovery?.value,
-        range:range.DISTANCE??range.THROW_DISTANCE,
-        width:range.WIDTH,
-        radius:range.RADIUS,
+        rangeTypeId:chip.rangeTypeId,
+        rangeTiles:lengthTiles,
+        widthTiles,
+        radiusTiles,
+        throwDistanceTiles,
+        range:rangeWorld,
+        width:widthWorld,
+        radius:radiusWorld,
         lock:behavior.ACTION_LOCK,
         projectileSpeed:behavior.PROJECTILE_SPEED,
         explosionDelay:behavior.EXPLOSION_DELAY,
