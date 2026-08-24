@@ -10,6 +10,7 @@
   const rarity=document.getElementById('detailRarity');
   const values=document.getElementById('detailValues');
   const attributes=document.getElementById('detailAttributes');
+  const artwork=document.getElementById('detailArt');
 
   if(!master||!modal||!detailName||!values||!attributes)return;
 
@@ -90,6 +91,24 @@
     });
   }
 
+  function fitArtwork(){
+    if(!artwork)return;
+    const img=artwork.querySelector('img');
+    if(!img)return;
+
+    artwork.style.display='grid';
+    artwork.style.placeItems='center';
+    artwork.style.padding='3px';
+
+    img.style.setProperty('width','auto','important');
+    img.style.setProperty('height','auto','important');
+    img.style.setProperty('max-width','100%','important');
+    img.style.setProperty('max-height','100%','important');
+    img.style.setProperty('object-fit','contain','important');
+    img.style.setProperty('object-position','center','important');
+    img.style.setProperty('display','block','important');
+  }
+
   function render(){
     if(!modal.classList.contains('open'))return;
     const chip=chipsByName.get(detailName.textContent.trim());
@@ -97,6 +116,7 @@
     renderBasicInfo(chip);
     renderValues(chip);
     renderAttributes(chip);
+    fitArtwork();
     values.scrollLeft=0;
     attributes.scrollLeft=0;
   }
@@ -110,4 +130,11 @@
     if(modal.classList.contains('open'))queueMicrotask(render);
   });
   nameObserver.observe(detailName,{childList:true,subtree:true,characterData:true});
+
+  if(artwork){
+    const artworkObserver=new MutationObserver(()=>{
+      if(modal.classList.contains('open'))queueMicrotask(fitArtwork);
+    });
+    artworkObserver.observe(artwork,{childList:true,subtree:true});
+  }
 })();
