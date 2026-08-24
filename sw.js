@@ -1,10 +1,11 @@
-const CACHE_NAME = 'battlenetwork-runtime-v41';
+const CACHE_NAME = 'battlenetwork-runtime-v42';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
   './css/style.css',
   './css/font.css',
   './css/field-grid.css',
+  './css/range-preview.css',
   './css/chip-detail.css',
   './css/chip-detail-title-extension.css',
   './css/chip-detail-range-fix.css',
@@ -21,6 +22,8 @@ const STATIC_ASSETS = [
   './js/ui/chip-theme-ui.js',
   './js/field/field-grid.js',
   './js/field/field-grid-renderer.js',
+  './js/combat/range-geometry.js',
+  './js/combat/range-preview-renderer.js',
   './js/ui/test-chip-ui.js',
   './js/game.js',
   './js/service-worker-register.js',
