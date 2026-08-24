@@ -32,9 +32,9 @@
   display:none !important;
 }
 
-/* Keep only the small cyber accent on the title side. */
+/* The old short cyan accent above Library No. is no longer used. */
 .chipTitleFrame::after{
-  z-index:1;
+  display:none !important;
 }
 
 /*
