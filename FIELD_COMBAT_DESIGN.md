@@ -1,6 +1,6 @@
 # BattleNetwork フィールド・攻撃範囲設計
 
-最終更新: 2026-08-24
+最終更新: 2026-08-25
 Status: Design Confirmed / Implementation Pending
 
 このドキュメントは、戦闘フィールドの論理マス、プレイヤーとマスの関係、バトルチップの攻撃範囲判定に関する Source of Truth とする。
@@ -165,6 +165,9 @@ worldDistance = tileDistance × TILE_SIZE
 
 `TILE_SIZE = 180`。
 
+距離系パラメータは整数に限定せず、小数マスを許可する。
+例: `0.25マス = 45 world units`。
+
 例:
 
 ```text
@@ -184,6 +187,8 @@ worldDistance = tileDistance × TILE_SIZE
 ```text
 direction = normalized(playerFacing)
 ```
+
+攻撃の基本原点は、A押下時点のプレイヤー足元座標とする。
 
 例えば射程5マスなら、攻撃終点は概念上以下となる。
 
@@ -221,31 +226,145 @@ A押下時点の向きをその攻撃の基準方向として固定する。
 
 この中心点ルールは地形変更に対する基本方針とし、特殊チップで別ルールが必要になった場合のみ個別定義する。
 
-## 11. Range形状
+## 11. Range形状と責務
 
-Rangeの具体的な形状タイプは次の設計工程で確定する。
+Rangeは「どの形の範囲に効果が届くか」だけを表す。
+投擲、弾速、貫通、発生地点など「どうやってその範囲へ効果を届けるか」はBehavior側の責務とする。
 
-候補例:
+正式な基本Range Typeは以下。
 
-- 前方直線
-- 前方長方形
-- 円形
-- 扇形
-- 投擲＋着弾地点円形
-- 自分中心
-- ドーナツ型等
+| Range Type | 意味 | 主なパラメータ |
+| --- | --- | --- |
+| `LINE` | 前方へ伸びる直線・射線 | `length_tiles`, `width_tiles` |
+| `RECT` | 前方へ伸びる長方形 | `length_tiles`, `width_tiles` |
+| `CIRCLE` | 指定中心からの円形 | `radius_tiles` |
+| `SECTOR` | 指定中心・方向からの扇形 | `radius_tiles`, `angle_deg` |
+| `RING` | 指定中心からの円環 | `inner_radius_tiles`, `outer_radius_tiles` |
+| `SELF` | 使用者自身 | パラメータなし |
 
-`M_RANGE_TYPE` が形状を表し、チップごとの射程・幅・半径等はRange Parameterとして保持する方針は維持する。
+既存5チップで当面使用するのは `LINE / RECT / CIRCLE / SELF`。
+`SECTOR / RING` は将来拡張用として定義可能な基本形状とする。
 
-具体的なType名、必須Parameter、既存5チップの割当は次工程で決定する。
+### 11.1 LINE
 
-## 12. 実装順序
+- 前方の射線・細い直線攻撃用。
+- `length_tiles`: 射程。
+- `width_tiles`: 射線幅。
+- 最初の敵で止まる、貫通する、壁で止まる等はBehaviorで定義する。
 
-本設計は確定済みだが、2026-08-24時点では未実装。
+例: キャノン
+
+```text
+Range = LINE
+length_tiles = 5
+width_tiles = 0.25
+```
+
+### 11.2 RECT
+
+- 前方の長方形を一括範囲として扱う。
+- `length_tiles`: 前方方向の長さ。
+- `width_tiles`: 攻撃方向に対して左右均等に広がる幅。
+- 幅は論理マスを直接選択する意味ではなく、連続空間上の距離として扱う。
+
+例:
+
+```text
+ソード
+Range = RECT
+length_tiles = 1
+width_tiles = 1
+
+ワイドソード
+Range = RECT
+length_tiles = 1
+width_tiles = 3
+```
+
+### 11.3 CIRCLE
+
+- 指定された発生中心を基準とした円形範囲。
+- `radius_tiles`: 半径。
+- Range自体は発生中心を決めない。
+- 自分中心、着弾地点、敵位置等の「どこを中心に発生させるか」はBehavior側で決める。
+
+ミニボムは以下の責務分離とする。
+
+```text
+Behavior = BOMB_THROW
+throwDistance = マス単位の投擲距離
+
+Range = CIRCLE
+radius_tiles = 爆発半径
+```
+
+### 11.4 SECTOR
+
+- 将来の扇状攻撃用。
+- `radius_tiles`: 射程。
+- `angle_deg`: 扇形の開き角度。
+
+### 11.5 RING
+
+- 将来のドーナツ型攻撃用。
+- `inner_radius_tiles`: 内側半径。
+- `outer_radius_tiles`: 外側半径。
+
+### 11.6 SELF
+
+- 使用者自身のみを対象とする。
+- Range Parameterは不要。
+- リカバリー10等に使用する。
+
+## 12. RangeとBehaviorの分離
+
+責務を以下で固定する。
+
+```text
+Range
+= どこに効果が届くか / 形状
+
+Behavior
+= どうやって効果を発生させるか / 届けるか
+```
+
+例:
+
+```text
+キャノン
+Range: LINE 5マス
+Behavior: CANNON_SHOT
+→ 弾速、非貫通等はBehavior
+
+ミニボム
+Range: CIRCLE
+Behavior: BOMB_THROW
+→ 投擲距離、爆発遅延等はBehavior
+```
+
+同じ `CIRCLE` を「自分中心」「着弾地点」「敵位置」など複数Behaviorから再利用できる設計とする。
+
+## 13. 既存5チップのRange割当
+
+現時点の正式方針は以下。
+
+| チップ | Range Type | Range Parameter |
+| --- | --- | --- |
+| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.25` |
+| ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
+| ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
+| ミニボム | `CIRCLE` | `radius_tiles` は実機調整で確定 |
+| リカバリー10 | `SELF` | なし |
+
+ミニボムの投擲距離はRange Parameterではなく `BOMB_THROW` のBehavior Parameterとする。
+
+## 14. 実装順序
+
+本設計は確定済みだが、2026-08-25時点では未実装。
 
 次の順で段階実装する。
 
-1. Range形状タイプとRange Parameterを確定する。
+1. Range形状タイプとRange Parameterを確定する。**完了**
 2. 20×20論理グリッド基盤を追加する。
 3. 見た目の床グリッドを論理グリッドと一致させる。
 4. プレイヤー所属マス取得を実装する。
