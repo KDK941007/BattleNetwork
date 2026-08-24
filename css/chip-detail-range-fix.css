@@ -1,7 +1,19 @@
-/* BattleNetwork - chip detail range description visibility fix
+/* BattleNetwork - chip detail range description fixed-height layout
    Loaded after chip-detail.css.
-   Keep the outer range panel size fixed while reserving enough room for description text.
+   - Keep the range description readable without scrolling.
+   - Reserve about four text lines, similar to the chip description area.
+   - Keep the range diagram and range-info panel the same height.
 */
+
+.rangeLayout{
+  align-items:stretch !important;
+}
+
+.rangeLayout .rangeViz,
+.rangeLayout .rangeInfo{
+  height:100% !important;
+  min-height:0 !important;
+}
 
 .rangeInfoTitle{
   margin-bottom:2px !important;
@@ -16,16 +28,20 @@
   padding:1px 4px !important;
 }
 
+/*
+ * 「説明」は、チップの内容と同様に見出し＋本文の縦配置。
+ * 本文部分は約4行分を常時確保し、スクロールさせない。
+ */
 .rangeInfo .detailRangeCaption{
-  flex:1 1 auto !important;
-  min-height:30px !important;
+  flex:0 0 auto !important;
+  min-height:0 !important;
   margin-top:3px !important;
   padding:4px 0 0 !important;
   display:grid !important;
-  grid-template-columns:34px minmax(0,1fr) !important;
-  gap:4px !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  grid-template-rows:auto auto !important;
+  gap:2px !important;
   align-content:start !important;
-  align-items:start !important;
   overflow:hidden !important;
   border-top:1px solid #285d70 !important;
 }
@@ -40,23 +56,29 @@
 .rangeInfo .detailRangeCaption .detailValue,
 #detailRangeText{
   display:block !important;
+  width:100% !important;
   min-width:0 !important;
-  min-height:0 !important;
+  height:5em !important; /* line-height 1.25 × 4行 */
+  min-height:5em !important;
+  max-height:5em !important;
   margin:0 !important;
   padding:0 !important;
-  overflow:visible !important;
+  overflow:hidden !important;
   white-space:normal !important;
   overflow-wrap:anywhere !important;
   line-height:1.25 !important;
 }
 
 @media(min-height:431px){
-  .rangeInfo .detailRangeCaption{
-    min-height:34px !important;
-    grid-template-columns:38px minmax(0,1fr) !important;
-  }
-
   .rangeSpec{
     min-height:18px !important;
+  }
+
+  /* 大きめの横画面でも4行分を固定。 */
+  .rangeInfo .detailRangeCaption .detailValue,
+  #detailRangeText{
+    height:5em !important;
+    min-height:5em !important;
+    max-height:5em !important;
   }
 }
