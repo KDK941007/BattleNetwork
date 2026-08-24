@@ -1,0 +1,26 @@
+/* BattleNetwork - chip detail theme refinement
+   Keep small-box fills identical to STANDARD while retaining class-colored
+   borders from chip-class-theme.css.
+
+   Applies to:
+   - MB badge
+   - major-value / attribute tokens
+   - range information spec boxes
+*/
+
+/* Chip-content small boxes: use the original STANDARD fill. */
+.chipDetail.chipTheme-mega .detailInfoToken,
+.chipDetail.chipTheme-mega .detailMbBadge,
+.chipDetail.chipTheme-giga .detailInfoToken,
+.chipDetail.chipTheme-giga .detailMbBadge,
+.chipDetail.chipTheme-dark .detailInfoToken,
+.chipDetail.chipTheme-dark .detailMbBadge{
+  background:linear-gradient(180deg,#0b3445,#082532) !important;
+}
+
+/* Range-info four small boxes: use the original STANDARD fill. */
+.chipDetail.chipTheme-mega .rangeSpec,
+.chipDetail.chipTheme-giga .rangeSpec,
+.chipDetail.chipTheme-dark .rangeSpec{
+  background:#082532 !important;
+}
