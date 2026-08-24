@@ -14,6 +14,7 @@
 
     openPromise=new Promise((resolve,reject)=>{
       if(!('indexedDB' in window)){
+        openPromise=null;
         reject(new Error('IndexedDB is not supported in this browser.'));
         return;
       }
@@ -38,7 +39,10 @@
 
       request.onsuccess=()=>{
         const db=request.result;
-        db.onversionchange=()=>db.close();
+        db.onversionchange=()=>{
+          db.close();
+          openPromise=null;
+        };
         resolve(db);
       };
 
