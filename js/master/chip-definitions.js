@@ -18,7 +18,7 @@
   ];
 
   const CHIP_CODE_MASTER=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ','*'].map((codeValue,index)=>({
-    codeId:codeValue==='*'?'ASTERISK':codeValue,
+    codeId:codeValue,
     codeValue,
     sortOrder:index+1
   }));
