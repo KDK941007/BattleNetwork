@@ -6,6 +6,7 @@
   const attributeById=byId(data.CHIP_ATTRIBUTE_MASTER,'attributeId');
   const codeById=byId(data.CHIP_CODE_MASTER,'codeId');
   const classById=byId(data.CHIP_CLASS_MASTER,'classId');
+  const specialTypeById=byId(data.CHIP_SPECIAL_TYPE_MASTER,'specialTypeId');
   const valueTypeById=byId(data.VALUE_TYPE_MASTER,'valueTypeId');
   const rangeTypeById=byId(data.RANGE_TYPE_MASTER,'rangeTypeId');
   const behaviorById=byId(data.BEHAVIOR_MASTER,'behaviorId');
@@ -25,6 +26,26 @@
   function getChipClass(chipId){
     const chip=getChip(chipId);
     return chip?classById.get(chip.classId)||null:null;
+  }
+
+  function getChipSpecialTypes(chipId){
+    return (data.CHIP_SPECIAL_TYPE_RELATION||[])
+      .filter(row=>row.chipId===chipId)
+      .map(row=>({...row,specialType:specialTypeById.get(row.specialTypeId)||null}))
+      .filter(row=>row.specialType);
+  }
+
+  /*
+   * UI theme priority:
+   * DARK is a special type and always overrides the base class color.
+   * Otherwise use STANDARD / MEGA / GIGA.
+   */
+  function getChipTheme(chipId){
+    if(getChipSpecialTypes(chipId).some(row=>row.specialTypeId==='DARK'))return 'dark';
+    const chipClass=getChipClass(chipId);
+    if(chipClass?.classId==='MEGA')return 'mega';
+    if(chipClass?.classId==='GIGA')return 'giga';
+    return 'standard';
   }
 
   function getChipAttributes(chipId){
@@ -105,6 +126,11 @@
       if(!codeById.has(row.codeId))errors.push(`code_id未定義: ${row.chipId}/${row.codeId}`);
     });
 
+    (data.CHIP_SPECIAL_TYPE_RELATION||[]).forEach(row=>{
+      if(!chipById.has(row.chipId))errors.push(`特殊種別関連chip_id未定義: ${row.chipId}`);
+      if(!specialTypeById.has(row.specialTypeId))errors.push(`special_type_id未定義: ${row.chipId}/${row.specialTypeId}`);
+    });
+
     return errors;
   }
 
@@ -156,6 +182,8 @@
   window.BattleNetworkMaster={
     getChip,
     getChipClass,
+    getChipSpecialTypes,
+    getChipTheme,
     getChipAttributes,
     getPrimaryAttribute,
     getChipCodes,
