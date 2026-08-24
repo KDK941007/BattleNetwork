@@ -1,0 +1,42 @@
+/* BattleNetwork - chip detail artwork frame fix
+   Load this AFTER css/chip-detail.css.
+   Purpose:
+   - Keep the left column width unchanged.
+   - Keep No. / CLASS / MB / RARITY full-width layout unchanged.
+   - Shrink only the artwork frame to a square-like shape.
+   - Center the artwork frame within the left column.
+   - Preserve the entire chip illustration with contain behavior.
+*/
+
+.detailArt{
+  width:auto !important;
+  height:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  aspect-ratio:1 / 1 !important;
+  justify-self:center !important;
+  align-self:stretch !important;
+  overflow:hidden !important;
+}
+
+/* The detail UI script currently renders the artwork as a background image.
+   Keep the whole source image visible inside the square frame. */
+#detailArt{
+  background-size:contain !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+}
+
+/* Fallback in case the original <img> is shown. */
+#detailArt > img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
+
+/* Do not narrow the basic information grid. */
+.detailBasicInfo{
+  width:100% !important;
+  justify-self:stretch !important;
+}
