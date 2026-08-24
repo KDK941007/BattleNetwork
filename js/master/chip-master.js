@@ -66,6 +66,45 @@
       behaviorId:'RECOVER_HP',
       description:'自分のHPを10回復する回復チップ。',
       rangeDescription:'自分自身'
+    },
+    {
+      chipId:'TEST_9001',
+      libraryNo:9001,
+      chipName:'テストメガ',
+      imagePath:'./assets/chips/sword.png',
+      capacityMb:50,
+      classId:'MEGA',
+      rarity:3,
+      rangeTypeId:'FRONT_RECT',
+      behaviorId:'SWORD_SLASH',
+      description:'Megaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
+      rangeDescription:'テスト用／前方・近距離'
+    },
+    {
+      chipId:'TEST_9002',
+      libraryNo:9002,
+      chipName:'テストギガ',
+      imagePath:'./assets/chips/cannon.png',
+      capacityMb:60,
+      classId:'GIGA',
+      rarity:5,
+      rangeTypeId:'LINE_FORWARD',
+      behaviorId:'CANNON_SHOT',
+      description:'Gigaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
+      rangeDescription:'テスト用／前方・直線・長距離'
+    },
+    {
+      chipId:'TEST_9003',
+      libraryNo:9003,
+      chipName:'テストダーク',
+      imagePath:'./assets/chips/MiniBomb.png',
+      capacityMb:70,
+      classId:'STANDARD',
+      rarity:4,
+      rangeTypeId:'THROW_AOE',
+      behaviorId:'BOMB_THROW',
+      description:'Dark特殊種別の色・特別感・詳細画面を確認するための動作確認用チップ。',
+      rangeDescription:'テスト用／前方へ投擲・着弾地点周囲'
     }
   ];
 
