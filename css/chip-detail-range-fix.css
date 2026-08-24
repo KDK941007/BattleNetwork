@@ -1,18 +1,40 @@
-/* BattleNetwork - chip detail range description fixed-height layout
+/* BattleNetwork - chip detail range fixed 4-line description layout
    Loaded after chip-detail.css.
-   - Keep the range description readable without scrolling.
-   - Reserve about four text lines, similar to the chip description area.
+
+   Design rules:
+   - Do not force every chip detail into one screen.
+   - Keep about four lines reserved for range description text.
+   - Do not scroll the description field itself.
+   - If the whole detail becomes taller than the viewport, scroll the whole chip detail.
    - Keep the range diagram and range-info panel the same height.
 */
 
-.rangeLayout{
-  align-items:stretch !important;
+/*
+ * Stop squeezing the top/range rows just to fit one screen.
+ * The minimum row heights guarantee enough room; overflow is handled by
+ * scrolling the whole detail panel.
+ */
+.chipDetail{
+  grid-template-rows:auto minmax(180px,1.45fr) auto minmax(160px,.75fr) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
 }
 
+.rangeLayout{
+  min-height:160px !important;
+  height:100% !important;
+  align-items:stretch !important;
+  overflow:hidden !important;
+}
+
+/* The left diagram and right information panel always share the same row height. */
 .rangeLayout .rangeViz,
 .rangeLayout .rangeInfo{
+  min-height:160px !important;
   height:100% !important;
-  min-height:0 !important;
+  align-self:stretch !important;
 }
 
 .rangeInfoTitle{
@@ -29,17 +51,18 @@
 }
 
 /*
- * 「説明」は、チップの内容と同様に見出し＋本文の縦配置。
- * 本文部分は約4行分を常時確保し、スクロールさせない。
+ * Range description layout:
+ * label on the first line, then a fixed four-line text area below it.
+ * No inner scrolling.
  */
 .rangeInfo .detailRangeCaption{
-  flex:0 0 auto !important;
+  flex:1 1 auto !important;
   min-height:0 !important;
   margin-top:3px !important;
   padding:4px 0 0 !important;
   display:grid !important;
   grid-template-columns:minmax(0,1fr) !important;
-  grid-template-rows:auto auto !important;
+  grid-template-rows:auto minmax(5em,1fr) !important;
   gap:2px !important;
   align-content:start !important;
   overflow:hidden !important;
@@ -58,7 +81,7 @@
   display:block !important;
   width:100% !important;
   min-width:0 !important;
-  height:5em !important; /* line-height 1.25 × 4行 */
+  height:5em !important; /* line-height 1.25 × 4 lines */
   min-height:5em !important;
   max-height:5em !important;
   margin:0 !important;
@@ -70,11 +93,20 @@
 }
 
 @media(min-height:431px){
+  .chipDetail{
+    grid-template-rows:auto minmax(200px,1.35fr) auto minmax(180px,.85fr) !important;
+  }
+
+  .rangeLayout,
+  .rangeLayout .rangeViz,
+  .rangeLayout .rangeInfo{
+    min-height:180px !important;
+  }
+
   .rangeSpec{
     min-height:18px !important;
   }
 
-  /* 大きめの横画面でも4行分を固定。 */
   .rangeInfo .detailRangeCaption .detailValue,
   #detailRangeText{
     height:5em !important;
