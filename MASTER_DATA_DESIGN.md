@@ -1,6 +1,6 @@
 # BattleNetwork マスタ・セーブデータ設計
 
-最終更新: 2026-08-24
+最終更新: 2026-08-25
 
 このドキュメントは、バトルチップの固定定義とユーザーごとに変化するセーブデータの Source of Truth とする。
 チップ追加・フォルダ機能・レギュラーチップ・ガチャ/報酬・セーブ機能を実装する際は、本設計を基準にする。
@@ -158,19 +158,25 @@ UIでは `主要値` エリアに横並び表示し、外枠サイズは固定�
 
 フィールド・攻撃範囲の基本ルールは `FIELD_COMBAT_DESIGN.md` をSource of Truthとする。
 プレイヤーの攻撃方向は360度自由方向を維持し、Rangeは方向をマス方向へスナップするためには使用しない。
+Rangeは純粋に効果範囲の形状を表し、投擲・弾速・貫通・発生地点等はBehaviorへ分離する。
 
 ### M_RANGE_TYPE
 
 `range_type_id / range_name / display_category / display_direction / sort_order` を持つ。
 
-現行候補:
+正式な基本Range Type:
 
-- `LINE_FORWARD`
-- `FRONT_RECT`
-- `THROW_AOE`
+- `LINE`
+- `RECT`
+- `CIRCLE`
+- `SECTOR`
+- `RING`
 - `SELF`
 
-具体的なRange Type体系は、論理グリッド移行前の次設計工程で再確認・確定する。
+既存5チップで当面使用するのは `LINE / RECT / CIRCLE / SELF`。
+`SECTOR / RING` は将来拡張用として保持する。
+
+旧 `LINE_FORWARD / FRONT_RECT / THROW_AOE` は論理グリッド移行時に上記Typeへ段階移行する。移行完了までは既存ゲーム互換用として残してよいが、新規設計では使用しない。
 
 ### M_RANGE_PARAM
 
@@ -189,6 +195,23 @@ Range Typeごとに使用可能なパラメータを定義する。
 
 PKは `(range_type_id, param_id)`。
 
+正式なRange Parameter:
+
+| Range Type | param_id | 内容 |
+| --- | --- | --- |
+| `LINE` | `length_tiles` | 前方射程。マス単位 |
+| `LINE` | `width_tiles` | 射線幅。マス単位 |
+| `RECT` | `length_tiles` | 前方方向の長さ。マス単位 |
+| `RECT` | `width_tiles` | 左右均等に広がる幅。マス単位 |
+| `CIRCLE` | `radius_tiles` | 円半径。マス単位 |
+| `SECTOR` | `radius_tiles` | 扇形半径。マス単位 |
+| `SECTOR` | `angle_deg` | 扇形の開き角度。度 |
+| `RING` | `inner_radius_tiles` | 円環内側半径。マス単位 |
+| `RING` | `outer_radius_tiles` | 円環外側半径。マス単位 |
+| `SELF` | - | パラメータなし |
+
+距離系パラメータは整数に限定せず小数マスを許可する。
+
 ### R_CHIP_RANGE_PARAM
 
 チップごとのRangeパラメータ値を保持する。
@@ -203,7 +226,7 @@ PKは `(chip_id, param_id)`。
 
 ### Range数値の単位
 
-射程、幅、半径、投擲距離等の「距離」を表すRange Parameterは、正式移行後は**論理マス数を設計単位**とする。
+射程、幅、半径等の「距離」を表すRange Parameterは、正式移行後は**論理マス数を設計単位**とする。
 
 ```text
 worldDistance = tileDistance × TILE_SIZE
@@ -217,7 +240,17 @@ TILE_SIZE = 180 world units
 
 `SELF` のように距離パラメータ不要なRangeは関連レコード0件でよい。
 
-2026-08-24時点の既存5チップ実装・互換層にはworld unitsのRange値が残っている。論理グリッド実装と同時に段階移行し、既存値をマス数として誤解釈しない。
+2026-08-25時点の既存5チップ実装・互換層にはworld unitsのRange値が残っている。論理グリッド実装と同時に段階移行し、既存値をマス数として誤解釈しない。
+
+### 既存5チップの正式Range割当
+
+| チップ | Range Type | Range Parameter |
+| --- | --- | --- |
+| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.25` |
+| ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
+| ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
+| ミニボム | `CIRCLE` | `radius_tiles` は実機調整で確定 |
+| リカバリー10 | `SELF` | なし |
 
 ## 8. Behavior
 
@@ -269,10 +302,13 @@ PKは `(chip_id, param_id)`。
 
 責務は次の通り。
 
-- Range: どこに届くか。
+- Range: どこに届くか、どの形に届くか。
 - Value: どれだけの効果か。
-- Behavior: 何をするか。
-- Behavior Parameter: どう動くか。例: 行動硬直、弾速、爆発までの時間。
+- Behavior: 何をするか、どこをRangeの発生中心にするか、どう届けるか。
+- Behavior Parameter: どう動くか。例: 行動硬直、弾速、爆発までの時間、投擲距離。
+
+フィールド上の距離を表すBehavior Parameterも、正式な論理グリッド移行後はマス数を設計単位とする。
+例えばミニボムの投擲距離はRangeに持たせず、`BOMB_THROW` のBehavior Parameterとしてマス単位で保持する。
 
 ## 9. チップ詳細UI
 
