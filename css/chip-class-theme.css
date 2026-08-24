@@ -82,6 +82,11 @@
   border-color:#8bc2ff;
   background:linear-gradient(180deg,#2a67b0,#173f7c);
 }
+.chipDetail.chipTheme-mega .modalClose{
+  border-color:#8bc2ff !important;
+  background:linear-gradient(180deg,#245a95,#153d72) !important;
+  box-shadow:inset 0 0 0 1px rgba(218,236,255,.10),0 0 8px rgba(73,141,255,.18) !important;
+}
 
 .chipDetail.chipTheme-giga .chipDetailHead,
 .chipDetail.chipTheme-giga .chipTitleFrame{
@@ -91,6 +96,11 @@
 .chipDetail.chipTheme-giga .chipTitleClass{
   border-color:#ff9c91;
   background:linear-gradient(180deg,#a43b3b,#692124);
+}
+.chipDetail.chipTheme-giga .modalClose{
+  border-color:#ff948a !important;
+  background:linear-gradient(180deg,#8d3538,#572026) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,226,219,.09),0 0 8px rgba(255,89,80,.20) !important;
 }
 
 .chipDetail.chipTheme-dark .chipDetailHead,
@@ -105,38 +115,133 @@
   background:linear-gradient(180deg,#65318a,#37194f);
   box-shadow:inset 0 0 0 1px rgba(238,216,255,.10),0 0 7px rgba(176,94,255,.22);
 }
+.chipDetail.chipTheme-dark .modalClose{
+  border-color:#c985ff !important;
+  background:linear-gradient(180deg,#5b2b7d,#321643) !important;
+  box-shadow:inset 0 0 0 1px rgba(239,217,255,.09),0 0 9px rgba(173,83,255,.24) !important;
+}
 
-/* Tint the information panels without changing their dimensions. */
-.chipDetail.chipTheme-mega .detailRow,
-.chipDetail.chipTheme-mega .rangeInfo,
-.chipDetail.chipTheme-mega .rangeLayout .rangeViz,
+/* Keep the X white, but let its glow follow the chip theme. */
+.chipDetail.chipTheme-mega .modalClose::before,
+.chipDetail.chipTheme-mega .modalClose::after{box-shadow:0 0 5px rgba(116,180,255,.55)}
+.chipDetail.chipTheme-giga .modalClose::before,
+.chipDetail.chipTheme-giga .modalClose::after{box-shadow:0 0 5px rgba(255,130,120,.55)}
+.chipDetail.chipTheme-dark .modalClose::before,
+.chipDetail.chipTheme-dark .modalClose::after{box-shadow:0 0 6px rgba(199,130,255,.62)}
+
+/*
+ * Information panels and tokens.
+ * Use background (not background-color) because the base UI uses gradients.
+ * The range diagram itself intentionally remains the standard color.
+ */
+.chipDetail.chipTheme-mega .detailRow{
+  border-color:#457dcc;
+}
+.chipDetail.chipTheme-mega .rangeInfo{
+  border-color:#5f96df !important;
+  background:linear-gradient(180deg,#102d5b,#0a2348) !important;
+}
+.chipDetail.chipTheme-mega .rangeSpec,
 .chipDetail.chipTheme-mega .detailInfoToken,
 .chipDetail.chipTheme-mega .detailMbBadge{
-  border-color:#457dcc;
-  background-color:#0a2348;
+  border-color:#5f96df !important;
+  background:linear-gradient(180deg,#173a70,#0a2348) !important;
 }
-.chipDetail.chipTheme-giga .detailRow,
-.chipDetail.chipTheme-giga .rangeInfo,
-.chipDetail.chipTheme-giga .rangeLayout .rangeViz,
-.chipDetail.chipTheme-giga .detailInfoToken,
-.chipDetail.chipTheme-giga .detailMbBadge{
-  border-color:#a84949;
-  background-color:#351217;
-}
-.chipDetail.chipTheme-dark .detailRow,
-.chipDetail.chipTheme-dark .rangeInfo,
-.chipDetail.chipTheme-dark .rangeLayout .rangeViz,
-.chipDetail.chipTheme-dark .detailInfoToken,
-.chipDetail.chipTheme-dark .detailMbBadge{
-  border-color:#74409f;
-  background-color:#170b22;
+.chipDetail.chipTheme-mega .detailDataBlock,
+.chipDetail.chipTheme-mega .rangeInfo .detailRangeCaption{
+  border-top-color:#457dcc !important;
 }
 
+.chipDetail.chipTheme-giga .detailRow{
+  border-color:#a84949;
+}
+.chipDetail.chipTheme-giga .rangeInfo{
+  border-color:#c75b58 !important;
+  background:linear-gradient(180deg,#4a191f,#351217) !important;
+}
+.chipDetail.chipTheme-giga .rangeSpec,
+.chipDetail.chipTheme-giga .detailInfoToken,
+.chipDetail.chipTheme-giga .detailMbBadge{
+  border-color:#c75b58 !important;
+  background:linear-gradient(180deg,#5a2025,#351217) !important;
+}
+.chipDetail.chipTheme-giga .detailDataBlock,
+.chipDetail.chipTheme-giga .rangeInfo .detailRangeCaption{
+  border-top-color:#a84949 !important;
+}
+
+.chipDetail.chipTheme-dark .detailRow{
+  border-color:#74409f;
+}
+.chipDetail.chipTheme-dark .rangeInfo{
+  border-color:#9455c5 !important;
+  background:linear-gradient(180deg,#281238,#170b22) !important;
+}
+.chipDetail.chipTheme-dark .rangeSpec,
+.chipDetail.chipTheme-dark .detailInfoToken,
+.chipDetail.chipTheme-dark .detailMbBadge{
+  border-color:#9455c5 !important;
+  background:linear-gradient(180deg,#321747,#170b22) !important;
+}
+.chipDetail.chipTheme-dark .detailDataBlock,
+.chipDetail.chipTheme-dark .rangeInfo .detailRangeCaption{
+  border-top-color:#74409f !important;
+}
+
+/* Chip illustration can keep a subtle class border; range visualization is untouched. */
 .chipDetail.chipTheme-mega .detailArt{border-color:#568fd8;box-shadow:0 0 12px rgba(78,148,255,.13)}
 .chipDetail.chipTheme-giga .detailArt{border-color:#b95555;box-shadow:0 0 12px rgba(255,82,75,.13)}
 .chipDetail.chipTheme-dark .detailArt{border-color:#824cb0;box-shadow:0 0 15px rgba(170,83,255,.20)}
 
-/* Section heading accent follows the detail theme automatically. */
+/* ---------- Range section title bar ---------- */
 .chipDetail .rangeTitle{
   --range-accent:var(--chip-theme-accent,#65d6f4);
+}
+
+.chipDetail.chipTheme-mega .rangeTitle{
+  border-color:#5f96df !important;
+  border-left-color:#78b4ff !important;
+  background:linear-gradient(90deg,rgba(73,141,255,.20),#102b53 36%,#091d3a) !important;
+  box-shadow:inset 0 0 0 1px rgba(196,222,255,.05),0 0 8px rgba(73,141,255,.12) !important;
+  text-shadow:0 0 5px rgba(120,180,255,.32) !important;
+}
+.chipDetail.chipTheme-mega .rangeTitle::before{
+  border-color:#78b4ff !important;
+  background:rgba(120,180,255,.18) !important;
+  box-shadow:0 0 6px rgba(120,180,255,.48) !important;
+}
+.chipDetail.chipTheme-mega .rangeTitle::after{
+  background:linear-gradient(90deg,#78b4ff,rgba(120,180,255,.20),transparent) !important;
+}
+
+.chipDetail.chipTheme-giga .rangeTitle{
+  border-color:#c75b58 !important;
+  border-left-color:#ff8278 !important;
+  background:linear-gradient(90deg,rgba(255,88,80,.19),#45181d 36%,#2c1014) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,216,210,.04),0 0 8px rgba(255,84,76,.12) !important;
+  text-shadow:0 0 5px rgba(255,130,120,.32) !important;
+}
+.chipDetail.chipTheme-giga .rangeTitle::before{
+  border-color:#ff8278 !important;
+  background:rgba(255,130,120,.18) !important;
+  box-shadow:0 0 6px rgba(255,120,110,.48) !important;
+}
+.chipDetail.chipTheme-giga .rangeTitle::after{
+  background:linear-gradient(90deg,#ff8278,rgba(255,130,120,.20),transparent) !important;
+}
+
+.chipDetail.chipTheme-dark .rangeTitle{
+  border-color:#9455c5 !important;
+  border-left-color:#bb72ff !important;
+  background:linear-gradient(90deg,rgba(177,87,255,.19),#251033 36%,#14091d) !important;
+  box-shadow:inset 0 0 0 1px rgba(231,204,255,.04),0 0 9px rgba(166,74,255,.16) !important;
+  text-shadow:0 0 6px rgba(193,118,255,.38) !important;
+}
+.chipDetail.chipTheme-dark .rangeTitle::before{
+  border-color:#bb72ff !important;
+  background:rgba(187,114,255,.18) !important;
+  box-shadow:0 0 7px rgba(187,114,255,.52) !important;
+}
+.chipDetail.chipTheme-dark .rangeTitle::after{
+  background:linear-gradient(90deg,#bb72ff,rgba(187,114,255,.22),transparent) !important;
 }
