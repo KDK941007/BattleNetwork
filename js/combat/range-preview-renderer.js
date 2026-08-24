@@ -8,47 +8,88 @@
   const polygon=document.createElementNS(SVG_NS,'polygon');
   svg.setAttribute('class','battleRangeOverlay');
   svg.setAttribute('aria-hidden','true');
+  svg.setAttribute('preserveAspectRatio','none');
   polygon.setAttribute('class','battleRangeShape');
   svg.appendChild(polygon);
   scene.appendChild(svg);
 
-  function project(point){
-    const width=scene.clientWidth;
-    const height=scene.clientHeight;
-    const px=width/(field.WORLD_SIZE*2);
-    const py=height/(field.WORLD_SIZE*2);
-    return {
-      x:(point.x-point.y)*px+width/2,
-      y:(point.x+point.y)*py
-    };
+  let width=0;
+  let height=0;
+  let px=0;
+  let py=0;
+  let visible=false;
+  let hideGeneration=0;
+  let lastPoints='';
+  let lastRangeType='';
+
+  function refreshProjection(){
+    const nextWidth=scene.clientWidth;
+    const nextHeight=scene.clientHeight;
+    if(!nextWidth||!nextHeight)return false;
+    if(nextWidth===width&&nextHeight===height)return true;
+
+    width=nextWidth;
+    height=nextHeight;
+    px=width/(field.WORLD_SIZE*2);
+    py=height/(field.WORLD_SIZE*2);
+    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    lastPoints='';
+    return true;
+  }
+
+  function projectToText(point){
+    const x=(point.x-point.y)*px+width/2;
+    const y=(point.x+point.y)*py;
+    return `${x},${y}`;
+  }
+
+  function applyHidden(){
+    if(!visible)return;
+    svg.classList.remove('show');
+    visible=false;
   }
 
   function hide(){
-    svg.classList.remove('show');
-    polygon.removeAttribute('points');
-    polygon.dataset.rangeType='';
+    const generation=++hideGeneration;
+    queueMicrotask(()=>{
+      if(generation!==hideGeneration)return;
+      applyHidden();
+    });
   }
 
   function render(shape){
+    ++hideGeneration;
     if(!shape||!Array.isArray(shape.points)||shape.points.length<3){
-      hide();
+      applyHidden();
       return;
     }
-    const width=scene.clientWidth;
-    const height=scene.clientHeight;
     if(!width||!height){
-      hide();
-      return;
+      if(!refreshProjection()){
+        applyHidden();
+        return;
+      }
     }
-    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
-    svg.setAttribute('preserveAspectRatio','none');
-    polygon.setAttribute('points',shape.points.map(point=>{
-      const p=project(point);
-      return `${p.x},${p.y}`;
-    }).join(' '));
-    polygon.dataset.rangeType=(shape.rangeTypeId||'').toLowerCase();
-    svg.classList.add('show');
+
+    const points=shape.points.map(projectToText).join(' ');
+    if(points!==lastPoints){
+      polygon.setAttribute('points',points);
+      lastPoints=points;
+    }
+
+    const rangeType=(shape.rangeTypeId||'').toLowerCase();
+    if(rangeType!==lastRangeType){
+      polygon.dataset.rangeType=rangeType;
+      lastRangeType=rangeType;
+    }
+
+    if(!visible){
+      svg.classList.add('show');
+      visible=true;
+    }
   }
 
-  window.BattleNetworkRangePreview=Object.freeze({render,hide});
+  refreshProjection();
+  window.addEventListener('resize',refreshProjection,{passive:true});
+
+  window.BattleNetworkRangePreview=Object.freeze({render,hide,refreshProjection});
 })();
