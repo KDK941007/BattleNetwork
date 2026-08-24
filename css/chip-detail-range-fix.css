@@ -1,0 +1,62 @@
+/* BattleNetwork - chip detail range description visibility fix
+   Loaded after chip-detail.css.
+   Keep the outer range panel size fixed while reserving enough room for description text.
+*/
+
+.rangeInfoTitle{
+  margin-bottom:2px !important;
+}
+
+.rangeSpecs{
+  gap:2px !important;
+}
+
+.rangeSpec{
+  min-height:17px !important;
+  padding:1px 4px !important;
+}
+
+.rangeInfo .detailRangeCaption{
+  flex:1 1 auto !important;
+  min-height:30px !important;
+  margin-top:3px !important;
+  padding:4px 0 0 !important;
+  display:grid !important;
+  grid-template-columns:34px minmax(0,1fr) !important;
+  gap:4px !important;
+  align-content:start !important;
+  align-items:start !important;
+  overflow:hidden !important;
+  border-top:1px solid #285d70 !important;
+}
+
+.rangeInfo .detailRangeCaption .detailLabel{
+  margin:0 !important;
+  padding:0 !important;
+  line-height:1.25 !important;
+  white-space:nowrap !important;
+}
+
+.rangeInfo .detailRangeCaption .detailValue,
+#detailRangeText{
+  display:block !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:visible !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.25 !important;
+}
+
+@media(min-height:431px){
+  .rangeInfo .detailRangeCaption{
+    min-height:34px !important;
+    grid-template-columns:38px minmax(0,1fr) !important;
+  }
+
+  .rangeSpec{
+    min-height:18px !important;
+  }
+}
