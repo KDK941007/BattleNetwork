@@ -1,10 +1,11 @@
-const CACHE_NAME = 'battlenetwork-runtime-v27';
+const CACHE_NAME = 'battlenetwork-runtime-v29';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
   './css/style.css',
   './css/font.css',
   './css/chip-detail.css',
+  './css/chip-detail-title-extension.css',
   './css/chip-detail-range-fix.css',
   './css/components.css',
   './js/master/chip-definitions.js',
