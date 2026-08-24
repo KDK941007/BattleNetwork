@@ -1,0 +1,73 @@
+(()=>{
+  const root=window.BattleNetworkData=window.BattleNetworkData||{};
+
+  const CHIP_MASTER=[
+    {
+      chipId:'CHIP_0001',
+      libraryNo:null,
+      chipName:'キャノン',
+      imagePath:'./assets/chips/cannon.png',
+      capacityMb:null,
+      classId:'STANDARD',
+      rarity:null,
+      rangeTypeId:'LINE_FORWARD',
+      behaviorId:'CANNON_SHOT',
+      description:'前方へ砲弾を発射する射撃チップ。直線上を長距離まで攻撃する。',
+      rangeDescription:'前方・直線／長距離'
+    },
+    {
+      chipId:'CHIP_0002',
+      libraryNo:null,
+      chipName:'ソード',
+      imagePath:'./assets/chips/sword.png',
+      capacityMb:null,
+      classId:'STANDARD',
+      rarity:null,
+      rangeTypeId:'FRONT_RECT',
+      behaviorId:'SWORD_SLASH',
+      description:'前方の近距離を斬るソード系チップ。正面の敵を素早く攻撃する。',
+      rangeDescription:'前方・近距離／狭い'
+    },
+    {
+      chipId:'CHIP_0003',
+      libraryNo:null,
+      chipName:'ワイドソード',
+      imagePath:'./assets/chips/WideSwordpng.png',
+      capacityMb:null,
+      classId:'STANDARD',
+      rarity:null,
+      rangeTypeId:'FRONT_RECT',
+      behaviorId:'SWORD_SLASH',
+      description:'前方の近距離を横に広く薙ぎ払うソード系チップ。ソードより広い範囲をカバーする。',
+      rangeDescription:'前方・近距離／横に広い'
+    },
+    {
+      chipId:'CHIP_0004',
+      libraryNo:null,
+      chipName:'ミニボム',
+      imagePath:'./assets/chips/MiniBomb.png',
+      capacityMb:null,
+      classId:'STANDARD',
+      rarity:null,
+      rangeTypeId:'THROW_AOE',
+      behaviorId:'BOMB_THROW',
+      description:'前方へボムを投げ、着弾地点の周囲を爆発で攻撃する。',
+      rangeDescription:'前方へ投擲／着弾地点を中心に範囲攻撃'
+    },
+    {
+      chipId:'CHIP_0005',
+      libraryNo:null,
+      chipName:'リカバリー10',
+      imagePath:'./assets/chips/Recovery_10.png',
+      capacityMb:null,
+      classId:'STANDARD',
+      rarity:null,
+      rangeTypeId:'SELF',
+      behaviorId:'RECOVER_HP',
+      description:'自分のHPを10回復する回復チップ。',
+      rangeDescription:'自分自身'
+    }
+  ];
+
+  root.CHIP_MASTER=CHIP_MASTER;
+})();
