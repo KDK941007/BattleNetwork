@@ -12,31 +12,64 @@
 
 /*
  * Stop squeezing the top/range rows just to fit one screen.
- * The range heading gets a dedicated 24px row.
+ * The range heading gets a dedicated decorated row.
  * Overflow is handled by scrolling the whole detail panel.
  */
 .chipDetail{
-  grid-template-rows:auto minmax(180px,1.45fr) 24px minmax(160px,.75fr) !important;
+  grid-template-rows:auto minmax(180px,1.45fr) 30px minmax(160px,.75fr) !important;
   overflow-x:hidden !important;
   overflow-y:auto !important;
   overscroll-behavior-y:contain;
   -webkit-overflow-scrolling:touch;
 }
 
-/* Dedicated heading row. The diagram starts only after this row. */
+/* Cyber-style section heading. The range diagram starts only after this row. */
 .rangeTitle{
-  min-height:24px !important;
-  height:24px !important;
+  min-height:30px !important;
+  height:30px !important;
   margin:0 !important;
-  padding:0 0 5px !important;
+  padding:0 9px 0 8px !important;
   display:flex !important;
-  align-items:flex-end !important;
+  align-items:center !important;
+  gap:7px !important;
   position:relative !important;
   z-index:2 !important;
+  overflow:hidden !important;
+  border:1px solid rgba(74,164,190,.62) !important;
+  border-left:3px solid var(--range-accent,#65d6f4) !important;
+  border-radius:6px !important;
+  background:
+    linear-gradient(90deg,rgba(69,198,229,.13),rgba(8,37,50,.72) 34%,rgba(6,27,38,.45)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(160,237,255,.04),
+    0 0 8px rgba(53,194,228,.07) !important;
+  color:#effcff !important;
   font-size:12px !important;
   line-height:16px !important;
-  font-weight:800 !important;
-  overflow:visible !important;
+  font-weight:900 !important;
+  letter-spacing:.08em !important;
+  text-shadow:0 0 5px rgba(109,239,255,.20) !important;
+}
+
+.rangeTitle::before{
+  content:'';
+  flex:0 0 auto;
+  width:7px;
+  height:7px;
+  border:1px solid var(--range-accent,#65d6f4);
+  background:rgba(101,214,244,.16);
+  box-shadow:0 0 6px color-mix(in srgb,var(--range-accent,#65d6f4) 55%,transparent);
+  transform:rotate(45deg);
+}
+
+.rangeTitle::after{
+  content:'';
+  flex:1 1 auto;
+  min-width:20px;
+  height:1px;
+  margin-left:2px;
+  background:linear-gradient(90deg,var(--range-accent,#65d6f4),rgba(101,214,244,.12),transparent);
+  opacity:.72;
 }
 
 .rangeLayout{
@@ -114,15 +147,15 @@
 
 @media(min-height:431px){
   .chipDetail{
-    grid-template-rows:auto minmax(200px,1.35fr) 26px minmax(180px,.85fr) !important;
+    grid-template-rows:auto minmax(200px,1.35fr) 32px minmax(180px,.85fr) !important;
   }
 
   .rangeTitle{
-    min-height:26px !important;
-    height:26px !important;
-    padding-bottom:6px !important;
-    font-size:12px !important;
-    line-height:16px !important;
+    min-height:32px !important;
+    height:32px !important;
+    padding:0 10px 0 9px !important;
+    font-size:13px !important;
+    line-height:17px !important;
   }
 
   .rangeLayout,
