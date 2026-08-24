@@ -2,6 +2,12 @@
    STANDARD intentionally keeps the existing design.
    MEGA: blue, GIGA: red, DARK: deep purple/black.
    DARK is applied by the UI theme resolver with priority over class.
+
+   Important:
+   - Geometry/layout is shared by every chip type.
+   - Theme rules change colors only.
+   - chipTitleFrame stays transparent for every theme; the full chipDetailHead
+     is the one continuous title bar, exactly like STANDARD.
 */
 
 /* ---------- CUSTOM chip cards ---------- */
@@ -72,9 +78,12 @@
   box-shadow:0 14px 40px rgba(0,0,0,.65),0 0 22px rgba(154,69,255,.25);
 }
 
-/* Header and fixed chip information keep their positions; only colors change. */
-.chipDetail.chipTheme-mega .chipDetailHead,
-.chipDetail.chipTheme-mega .chipTitleFrame{
+/*
+ * The full-width header is shared by all themes.
+ * Do not paint chipTitleFrame here: doing so creates a shorter second bar
+ * before the close button and makes themed chips look structurally different.
+ */
+.chipDetail.chipTheme-mega .chipDetailHead{
   border-color:#78b4ff !important;
   background:linear-gradient(180deg,#24558f,#112f61) !important;
 }
@@ -88,8 +97,7 @@
   box-shadow:inset 0 0 0 1px rgba(218,236,255,.10),0 0 8px rgba(73,141,255,.18) !important;
 }
 
-.chipDetail.chipTheme-giga .chipDetailHead,
-.chipDetail.chipTheme-giga .chipTitleFrame{
+.chipDetail.chipTheme-giga .chipDetailHead{
   border-color:#ff8278 !important;
   background:linear-gradient(180deg,#7c3032,#48171d) !important;
 }
@@ -103,8 +111,7 @@
   box-shadow:inset 0 0 0 1px rgba(255,226,219,.09),0 0 8px rgba(255,89,80,.20) !important;
 }
 
-.chipDetail.chipTheme-dark .chipDetailHead,
-.chipDetail.chipTheme-dark .chipTitleFrame{
+.chipDetail.chipTheme-dark .chipDetailHead{
   border-color:#b96cff !important;
   background:
     linear-gradient(90deg,rgba(185,108,255,.16),transparent 28%,transparent 72%,rgba(185,108,255,.09)),
@@ -121,6 +128,15 @@
   box-shadow:inset 0 0 0 1px rgba(239,217,255,.09),0 0 9px rgba(173,83,255,.24) !important;
 }
 
+/* Enforce the exact STANDARD title geometry for themed chips. */
+.chipDetail.chipTheme-mega .chipTitleFrame,
+.chipDetail.chipTheme-giga .chipTitleFrame,
+.chipDetail.chipTheme-dark .chipTitleFrame{
+  background:transparent !important;
+  border-color:transparent !important;
+  box-shadow:none !important;
+}
+
 /* Keep the X white, but let its glow follow the chip theme. */
 .chipDetail.chipTheme-mega .modalClose::before,
 .chipDetail.chipTheme-mega .modalClose::after{box-shadow:0 0 5px rgba(116,180,255,.55)}
@@ -131,15 +147,15 @@
 
 /*
  * Information panels and tokens.
- * Use background (not background-color) because the base UI uses gradients.
- * The range diagram itself intentionally remains the standard color.
+ * The outer rangeInfo uses exactly the same base fill as the chip-content
+ * panel (.detailRow). The four rangeSpec boxes keep their class colors.
  */
 .chipDetail.chipTheme-mega .detailRow{
   border-color:#457dcc;
 }
 .chipDetail.chipTheme-mega .rangeInfo{
-  border-color:#5f96df !important;
-  background:linear-gradient(180deg,#102d5b,#0a2348) !important;
+  border-color:#457dcc !important;
+  background:#082532 !important;
 }
 .chipDetail.chipTheme-mega .rangeSpec,
 .chipDetail.chipTheme-mega .detailInfoToken,
@@ -156,8 +172,8 @@
   border-color:#a84949;
 }
 .chipDetail.chipTheme-giga .rangeInfo{
-  border-color:#c75b58 !important;
-  background:linear-gradient(180deg,#4a191f,#351217) !important;
+  border-color:#a84949 !important;
+  background:#082532 !important;
 }
 .chipDetail.chipTheme-giga .rangeSpec,
 .chipDetail.chipTheme-giga .detailInfoToken,
@@ -174,8 +190,8 @@
   border-color:#74409f;
 }
 .chipDetail.chipTheme-dark .rangeInfo{
-  border-color:#9455c5 !important;
-  background:linear-gradient(180deg,#281238,#170b22) !important;
+  border-color:#74409f !important;
+  background:#082532 !important;
 }
 .chipDetail.chipTheme-dark .rangeSpec,
 .chipDetail.chipTheme-dark .detailInfoToken,
