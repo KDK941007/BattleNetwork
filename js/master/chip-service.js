@@ -16,7 +16,10 @@
     SWORD:{chipId:'CHIP_0002',type:'sword',viz:'sword'},
     WIDE:{chipId:'CHIP_0003',type:'wide',viz:'wide'},
     BOMB:{chipId:'CHIP_0004',type:'bomb',viz:'bomb'},
-    RECOVER:{chipId:'CHIP_0005',type:'recover',viz:'recover'}
+    RECOVER:{chipId:'CHIP_0005',type:'recover',viz:'recover'},
+    TEST_MEGA:{chipId:'TEST_9001',type:'sword',viz:'sword'},
+    TEST_GIGA:{chipId:'TEST_9002',type:'cannon',viz:'cannon'},
+    TEST_DARK:{chipId:'TEST_9003',type:'bomb',viz:'bomb'}
   };
 
   function getChip(chipId){
@@ -35,11 +38,6 @@
       .filter(row=>row.specialType);
   }
 
-  /*
-   * UI theme priority:
-   * DARK is a special type and always overrides the base class color.
-   * Otherwise use STANDARD / MEGA / GIGA.
-   */
   function getChipTheme(chipId){
     if(getChipSpecialTypes(chipId).some(row=>row.specialTypeId==='DARK'))return 'dark';
     const chipClass=getChipClass(chipId);
