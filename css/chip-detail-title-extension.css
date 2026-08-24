@@ -1,6 +1,11 @@
 /* BattleNetwork - chip detail title frame extension
    Use one continuous title bar across the whole header, including behind
-   the close button, without moving CLASS or rarity columns.
+   the close button.
+
+   Visual order is fixed as:
+   Library No. -> CLASS -> chip name -> rarity.
+   The chip name alone uses the flexible column, so CLASS / rarity positions
+   never move with the chip-name length.
 */
 
 /* The full header is the single visible title bar. */
@@ -20,13 +25,20 @@
 
 /*
  * Remove the old pre-extension frame completely.
- * Keep its size and grid intact so CLASS / rarity positions do not move.
+ * Keep the same overall width; only the internal column order changes.
  */
 .chipTitleFrame{
+  grid-template-columns:72px 30px minmax(0,1fr) 72px !important;
   background:transparent !important;
   border-color:transparent !important;
   box-shadow:none !important;
 }
+
+/* Keep the DOM IDs unchanged while placing them in the requested columns. */
+.chipTitleNo{grid-column:1}
+.chipTitleClass{grid-column:2}
+.chipTitleName{grid-column:3}
+.chipTitleRarity{grid-column:4}
 
 .chipTitleFrame::before{
   display:none !important;
