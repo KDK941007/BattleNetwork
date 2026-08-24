@@ -1,33 +1,46 @@
 /* BattleNetwork - chip detail title frame extension
-   Extend only the decorative title frame behind the close button.
-   The existing chipTitleFrame keeps its original width, so CLASS and rarity
-   positions do not move when the visual frame is extended.
+   Keep the original title bar visible and extend the same visual treatment
+   behind the close button without changing the chip info column positions.
 */
 
+/*
+ * The full header receives the outer title treatment.
+ * We intentionally keep the existing flex gap and child widths unchanged,
+ * so CLASS and rarity stay at exactly the same positions as before.
+ */
 .chipDetailHead{
   position:relative;
+  border:1px solid #77e8ff;
   border-radius:9px;
   background:
     linear-gradient(90deg,rgba(55,218,255,.18),transparent 22%,transparent 78%,rgba(255,221,88,.08)),
     linear-gradient(180deg,#104557,#082834);
   box-shadow:
-    inset 0 0 0 1px #77e8ff,
-    inset 0 0 0 3px rgba(117,222,246,.14),
+    inset 0 0 0 2px rgba(117,222,246,.14),
     inset 0 -8px 18px rgba(0,0,0,.12),
     0 0 10px rgba(71,218,255,.16);
-  overflow:hidden;
+  overflow:visible;
 }
 
-/* Keep the original title layout width exactly as-is. */
+/*
+ * Restore the original title bar instead of making it transparent.
+ * Only its right edge is softened so the bar visually continues toward X.
+ */
 .chipTitleFrame{
-  background:transparent !important;
-  border:1px solid transparent !important;
-  box-shadow:none !important;
+  background:
+    linear-gradient(90deg,rgba(55,218,255,.18),transparent 22%,transparent 78%,rgba(255,221,88,.08)),
+    linear-gradient(180deg,#104557,#082834) !important;
+  border-color:#77e8ff !important;
+  border-right-color:rgba(119,232,255,.28) !important;
+  border-radius:8px !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(190,248,255,.13),
+    inset 0 -8px 18px rgba(0,0,0,.12) !important;
 }
 
-/* The inner frame now belongs to the full header instead of stopping before X. */
+/* Restore the inner cyber frame that was hidden by the previous attempt. */
 .chipTitleFrame::before{
-  display:none !important;
+  display:block !important;
 }
 
 /* Keep the small cyber accent on the title side. */
@@ -35,9 +48,9 @@
   z-index:1;
 }
 
-/* Close button remains above the extended title decoration. */
+/* The close button stays on top of the extended title background. */
 .chipDetailHead .modalClose{
   position:relative;
   z-index:2;
-  margin:2px;
+  flex:0 0 auto;
 }
