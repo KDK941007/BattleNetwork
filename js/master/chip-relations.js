@@ -57,12 +57,12 @@
     {chipId:'CHIP_0002',paramId:'WIDTH_TILES',paramValue:1},
     {chipId:'CHIP_0003',paramId:'LENGTH_TILES',paramValue:1},
     {chipId:'CHIP_0003',paramId:'WIDTH_TILES',paramValue:3},
-    {chipId:'CHIP_0004',paramId:'RADIUS',paramValue:115},
+    {chipId:'CHIP_0004',paramId:'RADIUS_TILES',paramValue:.75},
     {chipId:'TEST_9001',paramId:'LENGTH_TILES',paramValue:1},
     {chipId:'TEST_9001',paramId:'WIDTH_TILES',paramValue:1},
     {chipId:'TEST_9002',paramId:'LENGTH_TILES',paramValue:5},
     {chipId:'TEST_9002',paramId:'WIDTH_TILES',paramValue:.25},
-    {chipId:'TEST_9003',paramId:'RADIUS',paramValue:115}
+    {chipId:'TEST_9003',paramId:'RADIUS_TILES',paramValue:.75}
   ];
 
   const CHIP_BEHAVIOR_PARAM_RELATION=[
