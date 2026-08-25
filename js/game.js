@@ -4,8 +4,8 @@ const FIELD=window.BattleNetworkField,RANGE=window.BattleNetworkRangeGeometry,RA
 if(!FIELD)throw new Error('BattleNetwork: logical field grid is not loaded.');
 if(!RANGE||!RANGE_PREVIEW||!BOMB_PREVIEW)throw new Error('BattleNetwork: combat range system is not loaded.');
 const WORLD=FIELD.WORLD_SIZE,PX=.72,PY=.36,SW=WORLD*PX*2,SH=WORLD*PY*2,SPEED=260,DEAD=.12,FOLLOW=.14,CAMERA_ZOOM=.62,DASH_DIST=180,DASH_TIME=.13,DASH_CD=.65,BUSTER_RANGE=750,BUSTER_SPEED=1050,CHARGE=.85,FIRE=.67,CUSTOM_TIME=10,LONG_PRESS_MS=520;
-const PLAYER_VISUAL=Object.freeze({width:54,height:68});
-const PLAYER_HITBOX=Object.freeze({width:FIELD.TILE_SIZE*.66,height:FIELD.TILE_SIZE*.66,offsetX:0,offsetY:0});
+const PLAYER_VISUAL=Object.freeze({width:108,height:136});
+const PLAYER_HITBOX=Object.freeze({width:FIELD.TILE_SIZE*1.32,height:FIELD.TILE_SIZE*1.32,offsetX:0,offsetY:0});
 const {CHIP,ATTR_IMAGE,ATTR_LABEL}=window.BattleNetworkMaster.createGameCompatibilityData();
 const folder=[['CANNON','A'],['SWORD','S'],['WIDE','S'],['BOMB','B'],['RECOVER','A'],['CANNON','B'],['SWORD','E'],['WIDE','E'],['BOMB','L'],['RECOVER','L'],['CANNON','C'],['SWORD','S'],['WIDE','S'],['BOMB','*'],['RECOVER','A'],['CANNON','*'],['SWORD','E'],['WIDE','E'],['BOMB','B'],['RECOVER','L'],['CANNON','A'],['SWORD','S'],['WIDE','S'],['BOMB','L'],['RECOVER','A'],['CANNON','B'],['SWORD','E'],['WIDE','E'],['BOMB','*'],['RECOVER','L']];
 let uid=0;const cards=folder.map(([type,code])=>({id:uid++,type,code}));
