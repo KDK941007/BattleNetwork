@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v55';
+const CACHE_NAME = 'battlenetwork-runtime-v56';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -26,6 +26,7 @@ const STATIC_ASSETS = [
   './js/combat/range-preview-renderer.js',
   './js/combat/bomb-preview-renderer.js',
   './js/combat/enemy-foundation.js',
+  './js/combat/projectile-shadow-renderer.js',
   './js/combat/combat-hit-test.js',
   './js/ui/test-chip-ui.js',
   './js/game.js',
