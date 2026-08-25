@@ -1,0 +1,25 @@
+name: Apply v82 player HUD
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v82.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v82
+        run: python tools/apply_v82.py
+      - name: Commit v82
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m 'Add player HP and kokoro HUD v82'
+          git rm tools/apply_v82.py .github/workflows/apply-v82.yml
+          git commit -m 'Remove one-time v82 patch files'
+          git push origin main
