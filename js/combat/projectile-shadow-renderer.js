@@ -23,11 +23,20 @@
     if(tracked.has(bullet))return true;
     const resolvedKind=kind||getKind(bullet),config=bulletConfig[resolvedKind];
     if(!config)return false;
+
     bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
     bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
+
+    // B攻撃は連打時の描画負荷を優先し、床影DOMを持たせない。
+    // キャノンのみ従来の床影を維持する。
+    if(resolvedKind==='normal'||resolvedKind==='charged'){
+      tracked.set(bullet,{shadow:null,config});
+      return true;
+    }
+
     const shadow=document.createElement('div');
     shadow.className=`projectileFloorShadow ${resolvedKind}`;
-    shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;`;
+    shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;will-change:transform;`;
     scene.appendChild(shadow);
     tracked.set(bullet,{shadow,config});
     return true;
@@ -35,17 +44,58 @@
 
   function update(bullet,floorX,floorY){
     const entry=tracked.get(bullet);
-    if(!entry||!Number.isFinite(floorX)||!Number.isFinite(floorY))return;
+    if(!entry||!entry.shadow||!Number.isFinite(floorX)||!Number.isFinite(floorY))return;
     const cfg=entry.config;
-    entry.shadow.style.transform=`translate(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px)`;
+    entry.shadow.style.transform=`translate3d(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px,0)`;
   }
 
   function detach(bullet){
     const entry=tracked.get(bullet);
     if(!entry)return;
-    entry.shadow.remove();
+    entry.shadow?.remove();
     tracked.delete(bullet);
   }
+
+  // iPhone Safariで連続タップ時に再描画負荷が高くなりやすい発光・filterを
+  // B攻撃だけ軽量表現へ置き換える。戦闘仕様・当たり判定には影響しない。
+  const performanceStyle=document.createElement('style');
+  performanceStyle.textContent=`
+    .bullet.normal,.bullet.charged{
+      box-shadow:none!important;
+      filter:none!important;
+      will-change:transform;
+      contain:layout paint style;
+    }
+    .bullet.normal{
+      border:2px solid rgba(205,248,255,.9);
+      background:#66ddff!important;
+    }
+    .bullet.charged{
+      border:2px solid rgba(255,220,210,.92);
+      background:#ff514e!important;
+    }
+    #B.pressed{
+      filter:none!important;
+      outline:2px solid rgba(194,247,255,.9);
+      outline-offset:1px;
+    }
+    .arrow.charging:before{
+      display:none!important;
+    }
+    .arrow.ready:before{
+      box-shadow:none!important;
+      filter:none!important;
+      border:3px solid rgba(255,220,210,.95);
+    }
+    .enemyPrototype{
+      filter:none!important;
+      box-shadow:0 0 0 3px rgba(255,255,255,.18) inset!important;
+    }
+    .enemyPrototypeHp{
+      text-shadow:none!important;
+    }
+  `;
+  document.head.appendChild(performanceStyle);
 
   window.BattleNetworkProjectileShadow=Object.freeze({attach,update,detach});
   scene.querySelectorAll('.bullet').forEach(bullet=>attach(bullet));
