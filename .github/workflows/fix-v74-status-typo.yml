@@ -1,0 +1,36 @@
+name: Fix v74 status typo
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-v74-status-typo.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Fix status typo
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('DEVELOPMENT_STATUS.md')
+          text=p.read_text()
+          old='v7実機確認済み。'
+          if old not in text:
+              raise SystemExit('status typo not found')
+          p.write_text(text.replace(old,'v73は実機確認済み。',1))
+          PY
+      - name: Commit and remove workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEVELOPMENT_STATUS.md
+          git commit -m 'Fix v73 verification status text'
+          git rm .github/workflows/fix-v74-status-typo.yml
+          git commit -m 'Remove one-time v74 typo workflow'
+          git push origin main
