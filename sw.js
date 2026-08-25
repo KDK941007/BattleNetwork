@@ -1,9 +1,10 @@
-const CACHE_NAME = 'battlenetwork-runtime-v81';
+const CACHE_NAME = 'battlenetwork-runtime-v82';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
   './css/style.css',
   './css/font.css',
+  './css/player-hud.css',
   './css/field-grid.css',
   './css/range-preview.css',
   './css/chip-detail.css',
@@ -29,6 +30,7 @@ const STATIC_ASSETS = [
   './js/combat/bomb-preview-renderer.js',
   './js/combat/enemy-foundation.js',
   './js/combat/player-health.js',
+  './js/ui/player-hud.js',
   './js/combat/projectile-shadow-renderer.js',
   './js/combat/buster-projectile-layer.js',
   './js/combat/b-attack-system.js',

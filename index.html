@@ -9,6 +9,7 @@
 <title>BattleNetwork Prototype</title>
 <link rel="stylesheet" href="./css/style.css?v=80">
 <link rel="stylesheet" href="./css/font.css">
+<link rel="stylesheet" href="./css/player-hud.css?v=82">
 <link rel="stylesheet" href="./css/field-grid.css?v=39">
 <link rel="stylesheet" href="./css/range-preview.css?v=59">
 <link rel="stylesheet" href="./css/chip-detail.css?v=27">
@@ -49,6 +50,10 @@
   </footer>
   <button class="customGauge" id="customGauge" type="button" aria-label="CUSTOM" style="padding:0;-webkit-appearance:none;appearance:none"><span class="customFill" id="customFill"></span><span class="customLabel" id="customLabel"></span></button>
   <section class="battle" id="battle">
+    <div class="playerStatusHud" id="playerStatusHud" aria-label="プレイヤーステータス">
+      <div class="playerHpWindow unconfigured" id="playerHpWindow"><span class="playerHpValue" id="playerHpValue">---</span></div>
+      <div class="kokoroWindow" id="kokoroWindow" data-state="NORMAL" aria-label="ココロウィンドウ"><div class="kokoroPortrait" aria-hidden="true"></div><div class="kokoroStateMark" aria-hidden="true"></div></div>
+    </div>
     <div class="scene" id="scene"><div class="floor"></div><div class="rangePreview cannonPreview" id="cannonPreview"></div><div class="rangePreview meleePreview" id="meleePreview"></div><div class="rangePreview bombPath" id="bombPath"></div><div class="bombTarget" id="bombTarget"></div><div class="player" id="player"></div><div class="arrow" id="arrow"></div></div>
     <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
     <button class="act" id="Y">Y</button><button class="act" id="X">X</button><button class="act" id="B">B</button><button class="act" id="A">A</button>
@@ -94,7 +99,8 @@
 <script src="./js/combat/range-preview-renderer.js?v=51"></script>
 <script src="./js/combat/bomb-preview-renderer.js?v=51"></script>
 <script src="./js/combat/enemy-foundation.js?v=76"></script>
-<script src="./js/combat/player-health.js?v=81"></script>
+<script src="./js/combat/player-health.js?v=82"></script>
+<script src="./js/ui/player-hud.js?v=82"></script>
 <script src="./js/combat/projectile-shadow-renderer.js?v=77"></script>
 <script src="./js/combat/buster-projectile-layer.js?v=78"></script>
 <script src="./js/combat/b-attack-system.js?v=73"></script>
