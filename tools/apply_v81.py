@@ -26,7 +26,11 @@ v80="v80でMAX時の点滅表現を復活させた。ただし負荷原因だっ
 v81="v81でプレイヤーHPの最小ランタイム基盤として `js/combat/player-health.js` を追加した。`maxHp / hp / isConfigured / isDefeated` のスナップショットを保持し、`configureHealth()` で最大HP・現在HPを設定、`applyDamage()` でダメージ減算と0到達判定、`clearHealth()` で未設定状態へ戻せる。既存設計では初期最大HPの具体値が未決定のため推測値は設定せず、ロード直後はHP未設定のままとする。敵攻撃との接続、プレイヤーHP表示、撃破処理、リカバリー10の実回復、IndexedDB保存形式は後続フェーズとし、今回の変更では既存戦闘挙動・表示に影響を与えない。v81はリポジトリ確認対象で、実機確認を要する見た目変更はなし。"
 if v80 not in text: raise SystemExit('status v80 marker missing')
 text=text.replace(v80,v80+'\n'+v81,1)
-old='## 次フェーズ: v79実機確認 → プレイヤーHP\n\nv73のダメージ接続は実機確認済み。v76までCPU側の毎フレーム処理を軽量化しても連打時の重さが残ったため、v77では通常 / チャージバスターの床影DOM・移動発光・B押下filter・チャージ中発光・敵hit glow・HP多重shadowを外して描画負荷を切り分ける。まず実機で連打時の負荷を再確認し、問題なければプレイヤーHPへ進む。'
+old='- プレイヤーHP。'
+new='- プレイヤーHPの具体値・表示UI・敵攻撃からの被ダメージ接続。'
+if old not in text: raise SystemExit('status player hp pending marker missing')
+text=text.replace(old,new,1)
+old='## 次フェーズ: プレイヤーHP\n\nv78の専用Projectile Layer分離によりロックバスター連打時の重さは実機で改善確認済み。CUSTOMゲージMAX時の負荷もv79で重い `filter:brightness()` 点滅を除去して改善し、v80で `opacity` の軽量点滅を復活させた状態でも実機動作に問題なし。負荷対応はいったん完了扱いとし、次はプレイヤーHP基盤へ進む。'
 new='## 次フェーズ: プレイヤーHP具体値・表示UI・被ダメージ接続\n\nv80までのロックバスター／CUSTOMゲージ負荷対策は実機確認済み。v81でプレイヤーHPのランタイム基盤を追加したため、次は初期最大HPの具体値、画面上のHP表示方法、敵攻撃からの被ダメージ接続を順に詰める。リカバリー10の実回復はプレイヤーHP仕様確定後に接続する。'
 if old not in text: raise SystemExit('status next phase marker missing')
 text=text.replace(old,new,1)
