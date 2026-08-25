@@ -1,7 +1,8 @@
 (()=>{
   const scene=document.getElementById('scene');
+  const layer=document.getElementById('combatPreviewLayer');
   const field=window.BattleNetworkField;
-  if(!scene||!field)return;
+  if(!scene||!layer||!field)return;
 
   const SVG_NS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(SVG_NS,'svg');
@@ -11,7 +12,7 @@
   svg.setAttribute('preserveAspectRatio','none');
   path.setAttribute('class','bombTrajectoryPath');
   svg.appendChild(path);
-  scene.appendChild(svg);
+  layer.appendChild(svg);
 
   let width=0,height=0,px=0,py=0,visible=false,lastPath='',lastTransform='';
 
