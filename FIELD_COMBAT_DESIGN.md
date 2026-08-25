@@ -389,6 +389,7 @@ Behavior
 Range: LINE 5マス / 幅0.75マス
 Behavior: CANNON_SHOT
 → 弾速、非貫通等はBehavior
+→ キャノンは最初に交差した敵HitBoxで停止し、その敵1体だけへダメージを与える。後方の敵へは貫通しない。
 
 ミニボム
 Range: CIRCLE 0.75マス

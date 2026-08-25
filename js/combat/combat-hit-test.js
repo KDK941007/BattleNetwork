@@ -41,16 +41,25 @@
     return far>=0?Math.max(0,near):null;
   }
 
-  function scheduleCannon(attack){
+  function getFirstCannonHit(input){
+    const attack=input?.shape?input:{shape:input};
     const shape=attack.shape;
-    const speed=behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',900);
-    if(!shape||!(speed>0))return;
-    const hits=testRange(shape);
-    hits.forEach(enemy=>{
+    if(!shape||shape.rangeTypeId!=='LINE')return null;
+    let first=null;
+    testRange(shape).forEach(enemy=>{
       const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);
       if(distance===null||distance>shape.lengthWorld)return;
-      setTimeout(()=>damageAndFlash(enemy,attack.damage),distance/speed*1000);
+      if(!first||distance<first.distance)first={enemy,distance};
     });
+    return first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;
+  }
+
+  function scheduleCannon(attack){
+    const speed=behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',900);
+    if(!(speed>0))return;
+    const first=getFirstCannonHit(attack);
+    if(!first)return;
+    setTimeout(()=>damageAndFlash(first.enemy,attack.damage),first.distance/speed*1000);
   }
 
   function scheduleBomb(attack){
@@ -78,6 +87,6 @@
     requestAnimationFrame(observeAttackRange);
   }
 
-  window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior});
+  window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior,getFirstCannonHit});
   requestAnimationFrame(observeAttackRange);
 })();
