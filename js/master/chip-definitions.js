@@ -76,7 +76,7 @@
     {behaviorId:'SWORD_SLASH',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.30,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'EXPLOSION_DELAY',paramName:'爆発遅延',dataType:'number',defaultValue:.28,requiredFlg:true},
-    {behaviorId:'BOMB_THROW',paramId:'THROW_DISTANCE_TILES',paramName:'投擲距離マス数',dataType:'number',defaultValue:2.388888888888889,requiredFlg:true},
+    {behaviorId:'BOMB_THROW',paramId:'THROW_DISTANCE_TILES',paramName:'投擲距離マス数',dataType:'number',defaultValue:3,requiredFlg:true},
     {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true}
   ];
 
