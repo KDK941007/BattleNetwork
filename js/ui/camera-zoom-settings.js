@@ -8,7 +8,7 @@
   if(!battle||!scene||!editTopBar||!field||!playerApi)return;
 
   const STORAGE_KEY='battleNetworkCameraZoomV1';
-  const MIN_ZOOM=.40;
+  const MIN_ZOOM=.20;
   const MAX_ZOOM=.62;
   const DEFAULT_ZOOM=.58;
   const PX=.72,PY=.36,SW=field.WORLD_SIZE*PX*2,SH=field.WORLD_SIZE*PY*2,FOLLOW=.14;
@@ -25,7 +25,7 @@
 
   const control=document.createElement('label');
   control.id='cameraZoomControl';
-  control.innerHTML='<span class="cameraZoomLabel">カメラ倍率</span><input id="cameraZoomSlider" type="range" min="40" max="62" step="1"><span id="cameraZoomValue"></span>';
+  control.innerHTML='<span class="cameraZoomLabel">カメラ倍率</span><input id="cameraZoomSlider" type="range" min="20" max="62" step="1"><span id="cameraZoomValue"></span>';
   editTopBar.insertBefore(control,resetButton||null);
 
   const slider=control.querySelector('#cameraZoomSlider');
