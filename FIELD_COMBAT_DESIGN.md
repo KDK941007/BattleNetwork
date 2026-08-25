@@ -108,13 +108,13 @@ row = floor(worldY / TILE_SIZE)
 
 プレイヤーの表示サイズとHitBoxサイズは分離して管理する。
 
-v61時点のプロトタイプ既定値は以下。
+v62時点のプロトタイプ既定値は以下。
 
 ```text
-visual.width  = 54px
-visual.height = 68px
-hitBox.width  = 0.66マス = 118.8 world units
-hitBox.height = 0.66マス = 118.8 world units
+visual.width  = 108px
+visual.height = 136px
+hitBox.width  = 1.32マス = 237.6 world units
+hitBox.height = 1.32マス = 237.6 world units
 hitBox.offsetX = 0
 hitBox.offsetY = 0
 ```
@@ -252,13 +252,13 @@ A押下時点の向きをその攻撃の基準方向として固定する。
 
 ゲーム側からは `BattleNetworkCombatRange` を通じ、直近攻撃Rangeと点判定を参照可能とする。
 
-敵も表示とHitBoxを分離する。v61時点のテスト敵既定値は以下。
+敵も表示とHitBoxを分離する。v62時点のテスト敵既定値は以下。
 
 ```text
-visual.width  = 58px
-visual.height = 70px
-hitBox.width  = 0.66マス = 118.8 world units
-hitBox.height = 0.66マス = 118.8 world units
+visual.width  = 116px
+visual.height = 140px
+hitBox.width  = 1.32マス = 237.6 world units
+hitBox.height = 1.32マス = 237.6 world units
 ```
 
 敵ごとに `visual.*` と `hitBox.*` を個別設定可能とし、本番素材時に表示サイズからHitBoxを自動決定しない。
