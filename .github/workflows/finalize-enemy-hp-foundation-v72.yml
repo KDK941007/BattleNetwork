@@ -1,0 +1,65 @@
+name: Finalize enemy HP foundation v72
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Update v72 references and status
+        shell: python
+        run: |
+          from pathlib import Path
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          old = './js/combat/enemy-foundation.js?v=62'
+          new = './js/combat/enemy-foundation.js?v=72'
+          if old not in text:
+              raise SystemExit('enemy-foundation v62 reference not found')
+          index.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          sw = Path('sw.js')
+          text = sw.read_text(encoding='utf-8')
+          old = "const CACHE_NAME = 'battlenetwork-runtime-v71';"
+          new = "const CACHE_NAME = 'battlenetwork-runtime-v72';"
+          if old not in text:
+              raise SystemExit('runtime v71 cache name not found')
+          sw.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          status = Path('DEVELOPMENT_STATUS.md')
+          text = status.read_text(encoding='utf-8')
+          v71 = "v71でチップ詳細Range図のP配置を固定左寄せから中央優先へ変更した。7×5グリッドの中央マスを第一候補とし、Range全体が収まる場合は中央配置、見切れる場合のみRange形状・射程・投擲距離・半径に応じて中央に最も近い収容可能マスへPを自動補正する。ソード・ワイドソード・リカバリーは中央配置、キャノン等の長射程は必要に応じて左へ寄せる。攻撃範囲のマス境界一致と正式Range値は変更していない。v71は実機確認済み。"
+          v72 = "v72で敵HPの最小基盤を `js/combat/enemy-foundation.js` に追加した。敵ごとに `maxHp / hp / isDefeated` を保持でき、`configureHealth()` で既存敵へHPを設定、`applyDamage()` でダメージ減算と0到達判定を行える。テスト敵の最大HPは未決定のため推測値を設定せず、未設定時はHP判定を行わない。撃破削除・HP表示・ダメージ接続は後続フェーズとする。v72はリポジトリ確認済み、実機確認対象の見た目変更はなし。"
+          if v71 not in text:
+              raise SystemExit('v71 status anchor not found')
+          text = text.replace(v71, v71 + '\n' + v72, 1)
+          text = text.replace('- 敵HP。', '- 敵HPの具体値・表示UI・ダメージ接続。', 1)
+          old_next = "v71でPを中央優先・見切れ時のみ自動補正する表示へ更新したため、まずv71の配置を実機確認し、問題なければ敵HP・ダメージ処理の最小基盤へ進む。"
+          new_next = "v71の詳細Range図は実機確認済み。v72で敵HPの最小基盤まで追加した。次はテスト敵の最大HPと通常／チャージバスターの攻撃力を正式決定し、チップ／バスターの実ダメージ接続へ進む。"
+          if old_next in text:
+              text = text.replace(old_next, new_next, 1)
+          status.write_text(text, encoding='utf-8')
+
+      - name: Commit v72 finalization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m "Finalize enemy HP foundation v72"
+          git push origin main
+      - name: Remove one-time workflow
+        run: |
+          git pull --rebase origin main
+          git rm .github/workflows/finalize-enemy-hp-foundation-v72.yml
+          git commit -m "Remove one-time enemy HP v72 workflow"
+          git push origin main
