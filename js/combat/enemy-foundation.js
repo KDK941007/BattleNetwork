@@ -1,6 +1,8 @@
 (()=>{
   const FIELD=window.BattleNetworkField;
+  const RANGE=window.BattleNetworkRangeGeometry;
   if(!FIELD)throw new Error('BattleNetworkEnemy: logical field grid is not loaded.');
+  if(!RANGE)throw new Error('BattleNetworkEnemy: range geometry is not loaded.');
 
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
   const enemies=[];
@@ -46,7 +48,7 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:12px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),el};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),el,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);render(enemy);
     return enemy.id;
   }
@@ -58,8 +60,26 @@
     const enemy=getById(id);if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
     const b=getBounds(enemy);return x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;
   }
+  function intersectsRange(id,shape){
+    const enemy=getById(id);return !!enemy&&RANGE.intersectsBounds(shape,getBounds(enemy));
+  }
+  function getHitEnemies(shape){
+    if(!shape)return Object.freeze([]);
+    return Object.freeze(enemies.filter(enemy=>RANGE.intersectsBounds(shape,getBounds(enemy))).map(getSnapshot));
+  }
+  function debugFlash(id){
+    const enemy=getById(id);if(!enemy)return;
+    const token=++enemy.flashToken;
+    enemy.el.style.filter='brightness(2.35) saturate(1.7)';
+    enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.8) inset,0 0 30px rgba(255,245,120,.95)';
+    setTimeout(()=>{
+      if(enemy.flashToken!==token)return;
+      enemy.el.style.filter='';
+      enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55)';
+    },180);
+  }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,containsPoint});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,containsPoint,intersectsRange,getHitEnemies,debugFlash});
 
   const testCenter=FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2),Math.floor(FIELD.GRID_COLS/2)+3);
   if(testCenter)spawn({x:testCenter.x,y:testCenter.y});
