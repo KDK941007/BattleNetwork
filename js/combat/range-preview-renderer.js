@@ -1,7 +1,32 @@
 (()=>{
+  const battle=document.getElementById('battle');
   const scene=document.getElementById('scene');
   const field=window.BattleNetworkField;
-  if(!scene||!field)return;
+  if(!battle||!scene||!field)return;
+
+  const layer=document.createElement('div');
+  layer.id='combatPreviewLayer';
+  layer.style.position='absolute';
+  layer.style.left='0';
+  layer.style.top='0';
+  layer.style.width=`${scene.clientWidth}px`;
+  layer.style.height=`${scene.clientHeight}px`;
+  layer.style.transformOrigin='0 0';
+  layer.style.pointerEvents='none';
+  layer.style.willChange='transform';
+  layer.style.zIndex='4';
+  battle.appendChild(layer);
+
+  let lastSceneTransform='';
+  function syncLayerTransform(){
+    const next=scene.style.transform||'';
+    if(next!==lastSceneTransform){
+      layer.style.transform=next;
+      lastSceneTransform=next;
+    }
+    requestAnimationFrame(syncLayerTransform);
+  }
+  requestAnimationFrame(syncLayerTransform);
 
   const SVG_NS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(SVG_NS,'svg');
@@ -15,7 +40,7 @@
   polygon.style.display='none';
   ellipse.style.display='none';
   svg.append(polygon,ellipse);
-  scene.appendChild(svg);
+  layer.appendChild(svg);
 
   let width=0,height=0,px=0,py=0,visible=false,hideGeneration=0,activeShape='';
   let lastRangeType='',lastPolygonGeometry='',lastPolygonTransform='',lastEllipseGeometry='',lastEllipseTransform='';
@@ -25,6 +50,8 @@
     if(!nextWidth||!nextHeight)return false;
     if(nextWidth===width&&nextHeight===height)return true;
     width=nextWidth;height=nextHeight;
+    layer.style.width=`${width}px`;
+    layer.style.height=`${height}px`;
     px=width/(field.WORLD_SIZE*2);py=height/(field.WORLD_SIZE*2);
     svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
     lastPolygonGeometry='';lastPolygonTransform='';lastEllipseGeometry='';lastEllipseTransform='';
