@@ -1,5 +1,6 @@
 /* BattleNetwork - projected combat range preview */
-.battleRangeOverlay{
+.battleRangeOverlay,
+.bombTrajectoryOverlay{
   position:absolute;
   inset:0;
   width:100%;
@@ -10,7 +11,8 @@
   pointer-events:none;
 }
 
-.battleRangeOverlay.show{display:block}
+.battleRangeOverlay.show,
+.bombTrajectoryOverlay.show{display:block}
 
 .battleRangeShape{
   vector-effect:non-scaling-stroke;
@@ -36,24 +38,16 @@
   stroke-dasharray:10 7;
 }
 
-.bombRangeCompare{
-  position:absolute;
-  top:14px;
-  left:14px;
-  z-index:18;
-  display:none;
-  padding:6px 10px;
-  border:1px solid rgba(255,188,88,.85);
-  border-radius:7px;
-  background:rgba(4,20,34,.88);
-  color:#fff1c9;
-  font-size:12px;
-  font-weight:700;
-  line-height:1;
-  letter-spacing:.02em;
-  white-space:nowrap;
-  pointer-events:none;
-  box-shadow:0 0 10px rgba(0,0,0,.34);
+.bombTrajectoryOverlay{
+  z-index:5;
 }
 
-.bombRangeCompare.show{display:block}
+.bombTrajectoryPath{
+  fill:none;
+  stroke:rgba(255,196,92,.96);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-dasharray:12 8;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 5px rgba(255,155,45,.42));
+}
