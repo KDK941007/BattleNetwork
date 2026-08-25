@@ -40,16 +40,18 @@
     };
   }
 
-  function createCircle(center,radiusTiles,segments=48){
+  function createCircle(center,radiusTiles,segments=0){
     const radiusWorld=field.toWorldDistance(radiusTiles);
-    const count=Math.max(12,Math.trunc(segments)||48);
+    const count=Math.max(0,Math.trunc(segments)||0);
     const points=[];
-    for(let index=0;index<count;index++){
-      const angle=Math.PI*2*index/count;
-      points.push({
-        x:center.x+Math.cos(angle)*radiusWorld,
-        y:center.y+Math.sin(angle)*radiusWorld
-      });
+    if(count>=12){
+      for(let index=0;index<count;index++){
+        const angle=Math.PI*2*index/count;
+        points.push({
+          x:center.x+Math.cos(angle)*radiusWorld,
+          y:center.y+Math.sin(angle)*radiusWorld
+        });
+      }
     }
     return {
       rangeTypeId:'CIRCLE',
