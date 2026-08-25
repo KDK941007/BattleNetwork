@@ -1,0 +1,21 @@
+name: Apply v90 Recovery10 HP
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v90.yml'
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v90
+        run: python3 tools/apply_v90.py
+      - name: Commit v90
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Connect Recovery10 to player HP (v90)"
+          git push
