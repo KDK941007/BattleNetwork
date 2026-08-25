@@ -1,0 +1,41 @@
+name: Finalize v77 rendering
+on:
+  push:
+    paths:
+      - '.github/workflows/finalize-v77-rendering.yml'
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Finalize v77
+        shell: bash
+        run: |
+          sed -i 's#./js/combat/projectile-shadow-renderer.js?v=76#./js/combat/projectile-shadow-renderer.js?v=77#' index.html
+          sed -i "s/battlenetwork-runtime-v76/battlenetwork-runtime-v77/" sw.js
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('DEVELOPMENT_STATUS.md')
+          text=p.read_text()
+          needle='v76で実機確認によりロックバスター連打時の負荷が残ることを確認。弾影の独立 `requestAnimationFrame` とtransform文字列解析を完全に廃止し、`game.js` の既存弾更新ループから弾本体と影を同時更新する方式へ統合した。またバスター弾の毎フレーム命中判定で `getEnemies()` による凍結スナップショット配列・Bounds生成を行わず、敵内部データを直接参照する `findEnemyIdAtPoint()` を追加した。弾1発ごとの `Set` も不要となるため削除。攻撃力・連射間隔・弾速・HitBox・見た目は変更していない。v76はロックバスター連打時の実機負荷確認待ち。'
+          addition=needle+'\nv77でv76後も実機上のロックバスター連打負荷が大きく残ることを確認し、描画負荷の切り分けを優先した。通常／チャージバスターは床影DOMを一旦持たない構成へ変更し、移動 `box-shadow`、Bボタン押下時の `filter`、チャージ中の発光、敵命中時の `filter + glow`、残HP数字の多重 `text-shadow` をCSS上で無効化した。チャージ完了表示は黒縁・境界線ベースの軽量表現を維持し、キャノン床影は変更していない。攻撃力・連射間隔・弾速・HitBox・HP値は変更していない。v77はロックバスター連打時の実機負荷確認待ち。'
+          if needle not in text:
+              raise SystemExit('v76 paragraph not found')
+          text=text.replace(needle,addition,1)
+          text=text.replace('## 次フェーズ: v76実機確認 → プレイヤーHP','## 次フェーズ: v77実機確認 → プレイヤーHP',1)
+          p.write_text(text)
+          PY
+      - name: Commit and remove workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m 'Finalize buster rendering performance v77'
+          git rm .github/workflows/finalize-v77-rendering.yml
+          git commit -m 'Remove one-time v77 rendering finalizer'
+          git push origin main
