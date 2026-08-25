@@ -19,10 +19,8 @@
   const chipsByName=new Map((data.CHIP_MASTER||[]).map(chip=>[chip.chipName,chip]));
   const GRID_COLS=7;
   const GRID_ROWS=5;
-  const PLAYER_TILE_COL=1;
-  const PLAYER_TILE_ROW=2;
-  const ORIGIN_X=PLAYER_TILE_COL+.5;
-  const ORIGIN_Y=PLAYER_TILE_ROW+.5;
+  const CENTER_PLAYER_TILE_COL=Math.floor(GRID_COLS/2);
+  const CENTER_PLAYER_TILE_ROW=Math.floor(GRID_ROWS/2);
 
   function createEmptyToken(text='--'){
     const token=document.createElement('span');
@@ -128,11 +126,72 @@
     element.style.height=percentY(height);
   }
 
-  function createGridPlayer(){
+  function chooseTile(preferred,min,max,count){
+    const lower=Math.max(0,Math.ceil(min));
+    const upper=Math.min(count-1,Math.floor(max));
+    if(lower>upper)return Math.min(count-1,Math.max(0,preferred));
+    return Math.min(upper,Math.max(lower,preferred));
+  }
+
+  function getDiagramPlacement(chip,range,behavior){
+    let playerCol=CENTER_PLAYER_TILE_COL;
+    let playerRow=CENTER_PLAYER_TILE_ROW;
+
+    if(chip.rangeTypeId==='LINE'||chip.rangeTypeId==='RECT'){
+      const length=Number(range.LENGTH_TILES);
+      const width=Number(range.WIDTH_TILES);
+
+      if(Number.isFinite(length)){
+        playerCol=chooseTile(
+          CENTER_PLAYER_TILE_COL,
+          0,
+          GRID_COLS-1-length,
+          GRID_COLS
+        );
+      }
+
+      if(Number.isFinite(width)){
+        playerRow=chooseTile(
+          CENTER_PLAYER_TILE_ROW,
+          width/2-.5,
+          GRID_ROWS-.5-width/2,
+          GRID_ROWS
+        );
+      }
+    }else if(chip.rangeTypeId==='CIRCLE'){
+      const radius=Number(range.RADIUS_TILES);
+      const throwDistance=Number(behavior.THROW_DISTANCE_TILES);
+      const distance=Number.isFinite(throwDistance)?throwDistance:0;
+
+      if(Number.isFinite(radius)){
+        playerCol=chooseTile(
+          CENTER_PLAYER_TILE_COL,
+          radius-distance-.5,
+          GRID_COLS-.5-distance-radius,
+          GRID_COLS
+        );
+        playerRow=chooseTile(
+          CENTER_PLAYER_TILE_ROW,
+          radius-.5,
+          GRID_ROWS-.5-radius,
+          GRID_ROWS
+        );
+      }
+    }
+
+    return {
+      playerCol,
+      playerRow,
+      originX:playerCol+.5,
+      originY:playerRow+.5
+    };
+  }
+
+  function createGridPlayer(originX,originY){
     const player=document.createElement('span');
     player.className='rangeGridPlayer';
-    player.style.left=percentX(ORIGIN_X);
-    player.style.top=percentY(ORIGIN_Y);
+    player.style.left=percentX(originX);
+    player.style.top=percentY(originY);
     player.textContent='P';
     return player;
   }
@@ -153,15 +212,15 @@
     board.append(forward,unit,value);
   }
 
-  function createBombArc(targetX){
+  function createBombArc(originX,originY,targetX){
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.classList.add('rangeGridArc');
     svg.setAttribute('viewBox',`0 0 ${GRID_COLS*100} ${GRID_ROWS*100}`);
     svg.setAttribute('preserveAspectRatio','none');
 
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    const startX=ORIGIN_X*100;
-    const startY=ORIGIN_Y*100;
+    const startX=originX*100;
+    const startY=originY*100;
     const endX=targetX*100;
     const lift=Math.max(70,(endX-startX)*.34);
     path.setAttribute('d',`M ${startX} ${startY} Q ${(startX+endX)/2} ${startY-lift} ${endX} ${startY}`);
@@ -174,10 +233,12 @@
 
     const range=master.getRangeParams(chip.chipId);
     const behavior=master.getBehaviorParams(chip.chipId);
+    const placement=getDiagramPlacement(chip,range,behavior);
+    const {playerCol,playerRow,originX,originY}=placement;
     const board=document.createElement('div');
     board.className='rangeGridBoard';
     board.dataset.rangeType=chip.rangeTypeId||'';
-    board.appendChild(createGridPlayer());
+    board.appendChild(createGridPlayer(originX,originY));
 
     let legend='';
 
@@ -187,23 +248,23 @@
       if(Number.isFinite(length)&&Number.isFinite(width)){
         const attack=document.createElement('span');
         attack.className=`rangeGridAttack ${chip.rangeTypeId==='LINE'?'rangeGridLine':'rangeGridRect'}`;
-        const attackLeft=PLAYER_TILE_COL+1;
-        setTileRect(attack,attackLeft,ORIGIN_Y-width/2,length,width);
+        const attackLeft=playerCol+1;
+        setTileRect(attack,attackLeft,originY-width/2,length,width);
         board.appendChild(attack);
         legend=`射程 ${length}マス / 幅 ${width}マス`;
       }
     }else if(chip.rangeTypeId==='CIRCLE'){
       const radius=Number(range.RADIUS_TILES);
       const throwDistance=Number(behavior.THROW_DISTANCE_TILES);
-      const centerX=ORIGIN_X+(Number.isFinite(throwDistance)?throwDistance:0);
+      const centerX=originX+(Number.isFinite(throwDistance)?throwDistance:0);
       if(Number.isFinite(radius)){
         const target=document.createElement('span');
         target.className='rangeGridCircle';
-        setTileRect(target,centerX-radius,ORIGIN_Y-radius,radius*2,radius*2);
+        setTileRect(target,centerX-radius,originY-radius,radius*2,radius*2);
         board.appendChild(target);
       }
       if(Number.isFinite(throwDistance)&&throwDistance>0){
-        board.appendChild(createBombArc(centerX));
+        board.appendChild(createBombArc(originX,originY,centerX));
         legend=`${throwDistance}マス先 / 半径 ${radius}マス`;
       }else{
         legend=`半径 ${radius}マス`;
@@ -211,7 +272,7 @@
     }else if(chip.rangeTypeId==='SELF'){
       const self=document.createElement('span');
       self.className='rangeGridSelf';
-      setTileRect(self,PLAYER_TILE_COL,PLAYER_TILE_ROW,1,1);
+      setTileRect(self,playerCol,playerRow,1,1);
       board.appendChild(self);
       legend='対象：自分自身';
     }else{
