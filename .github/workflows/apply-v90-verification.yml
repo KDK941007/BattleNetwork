@@ -1,0 +1,30 @@
+name: Apply v90 verification status
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v90-verification.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply v90 verification
+        run: python tools/apply_v90_verified_status.py
+      - name: Commit v90 verification
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add DEVELOPMENT_STATUS.md
+          git commit -m "Record v90 device verification"
+          git rm tools/apply_v90_verified_status.py .github/workflows/apply-v90-verification.yml
+          git commit -m "Remove one-time v90 verification files"
+          git push origin main
