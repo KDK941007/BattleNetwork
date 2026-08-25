@@ -6,6 +6,7 @@
   const SVG_NS='http://www.w3.org/2000/svg';
   const svg=document.createElementNS(SVG_NS,'svg');
   const path=document.createElementNS(SVG_NS,'path');
+  const MIN_RENDER_INTERVAL_MS=32;
   svg.setAttribute('class','bombTrajectoryOverlay');
   svg.setAttribute('aria-hidden','true');
   svg.setAttribute('preserveAspectRatio','none');
@@ -19,6 +20,7 @@
   let py=0;
   let visible=false;
   let lastPath='';
+  let lastRenderAt=-Infinity;
 
   function refreshProjection(){
     const nextWidth=scene.clientWidth;
@@ -32,6 +34,7 @@
     py=height/(field.WORLD_SIZE*2);
     svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
     lastPath='';
+    lastRenderAt=-Infinity;
     return true;
   }
 
@@ -46,6 +49,7 @@
     if(!visible)return;
     svg.classList.remove('show');
     visible=false;
+    lastRenderAt=-Infinity;
   }
 
   function render(origin,target){
@@ -53,6 +57,10 @@
     if(!width||!height){
       if(!refreshProjection())return hide();
     }
+
+    const now=performance.now();
+    if(visible&&now-lastRenderAt<MIN_RENDER_INTERVAL_MS)return;
+    lastRenderAt=now;
 
     const start=project(origin);
     const end=project(target);
