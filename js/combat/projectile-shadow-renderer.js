@@ -4,7 +4,7 @@
 
   const tracked=new Map();
   const bulletConfig={
-    cannon:{shadowWidth:38,shadowHeight:13,opacity:.46},
+    cannon:{shadowWidth:76,shadowHeight:26,opacity:.48},
     normal:{shadowWidth:28,shadowHeight:10,opacity:.4},
     charged:{shadowWidth:50,shadowHeight:16,opacity:.5}
   };
