@@ -46,11 +46,19 @@
     enemy.el.style.height=v.height+'px';
     enemy.el.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
   }
+  function createHealthLabel(position){
+    const hpEl=document.createElement('div');
+    hpEl.className=`enemyPrototypeHp enemyPrototypeHp-${position}`;
+    const vertical=position==='top'?'top:-45px;':'bottom:-43px;';
+    hpEl.style.cssText=`position:absolute;left:50%;${vertical}transform:translateX(-50%);min-width:92px;color:#fff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:34px;font-weight:800;line-height:1;letter-spacing:.015em;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;-webkit-text-stroke:2.5px #050505;text-shadow:-2px -2px 0 #050505,2px -2px 0 #050505,-2px 2px 0 #050505,2px 2px 0 #050505,0 3px 0 #050505;pointer-events:none;z-index:2;`;
+    return hpEl;
+  }
   function renderHealth(enemy){
-    if(!enemy.hpEl)return;
-    if(!hasHealth(enemy)){enemy.hpEl.style.display='none';return}
-    enemy.hpEl.style.display='block';
-    enemy.hpEl.textContent=`HP ${Math.ceil(enemy.hp)} / ${Math.ceil(enemy.maxHp)}`;
+    const labels=[enemy.hpTopEl,enemy.hpBottomEl].filter(Boolean);
+    if(!labels.length)return;
+    if(!hasHealth(enemy)){labels.forEach(label=>label.style.display='none');return}
+    const text=String(Math.ceil(enemy.hp));
+    labels.forEach(label=>{label.style.display='block';label.textContent=text});
   }
   function spawn(config={}){
     const x=Number(config.x),y=Number(config.y);
@@ -62,12 +70,11 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const hpEl=document.createElement('div');
-    hpEl.className='enemyPrototypeHp';
-    hpEl.style.cssText='position:absolute;left:50%;top:-29px;transform:translateX(-50%);min-width:92px;padding:3px 8px;border:2px solid rgba(255,255,255,.78);border-radius:12px;background:rgba(16,8,18,.88);color:#fff7d0;font:900 13px/1.2 system-ui,sans-serif;text-align:center;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.45);';
-    el.appendChild(hpEl);
+    const hpTopEl=createHealthLabel('top');
+    const hpBottomEl=createHealthLabel('bottom');
+    el.append(hpTopEl,hpBottomEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,flashToken:0};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpTopEl,hpBottomEl,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);renderHealth(enemy);render(enemy);
     return enemy.id;
   }
