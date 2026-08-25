@@ -97,9 +97,21 @@
     const applied=before-enemy.hp;
     return Object.freeze({applied:true,reason:null,amount:applied,before,after:enemy.hp,defeatedNow:before>0&&enemy.hp<=0,enemy:getSnapshot(enemy)});
   }
+  function containsPointRaw(enemy,x,y){
+    if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
+    const centerX=enemy.x+enemy.hitBox.offsetX,centerY=enemy.y+enemy.hitBox.offsetY;
+    const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
+    return x>=centerX-halfW&&x<=centerX+halfW&&y>=centerY-halfH&&y<=centerY+halfH;
+  }
   function containsPoint(id,x,y){
-    const enemy=getById(id);if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
-    const b=getBounds(enemy);return x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;
+    return containsPointRaw(getById(id),x,y);
+  }
+  function findEnemyIdAtPoint(x,y){
+    if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+    for(const enemy of enemies){
+      if(containsPointRaw(enemy,x,y))return enemy.id;
+    }
+    return null;
   }
   function intersectsRange(id,shape){
     const enemy=getById(id);return !!enemy&&RANGE.intersectsBounds(shape,getBounds(enemy));
@@ -120,7 +132,7 @@
     },180);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,intersectsRange,getHitEnemies,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
 
   const testCenter=FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2),Math.floor(FIELD.GRID_COLS/2)+3);
   if(testCenter)spawn({x:testCenter.x,y:testCenter.y,health:{maxHp:200}});
