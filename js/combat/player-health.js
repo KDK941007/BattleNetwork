@@ -1,5 +1,6 @@
 (()=>{
   let state={maxHp:null,hp:null};
+  const listeners=new Set();
 
   function snapshot(){
     const configured=Number.isFinite(state.maxHp)&&state.maxHp>0&&Number.isFinite(state.hp);
@@ -9,6 +10,21 @@
       isConfigured:configured,
       isDefeated:configured&&state.hp<=0
     });
+  }
+
+  function emit(){
+    const current=snapshot();
+    listeners.forEach(listener=>{
+      try{listener(current)}catch(error){console.error('BattleNetworkPlayerHealth listener failed.',error)}
+    });
+    return current;
+  }
+
+  function subscribe(listener){
+    if(typeof listener!=='function')return()=>{};
+    listeners.add(listener);
+    listener(snapshot());
+    return()=>listeners.delete(listener);
   }
 
   function configureHealth(health={}){
@@ -23,12 +39,13 @@
     }
 
     state={maxHp,hp:Math.max(0,Math.min(maxHp,rawHp))};
-    return Object.freeze({ok:true,reason:null,...snapshot()});
+    const current=emit();
+    return Object.freeze({ok:true,reason:null,...current});
   }
 
   function clearHealth(){
     state={maxHp:null,hp:null};
-    return snapshot();
+    return emit();
   }
 
   function applyDamage(amount){
@@ -48,7 +65,7 @@
     const afterHp=Math.max(0,before.hp-damage);
     const appliedDamage=before.hp-afterHp;
     state.hp=afterHp;
-    const after=snapshot();
+    const after=emit();
     return Object.freeze({
       ok:true,
       reason:null,
@@ -63,6 +80,7 @@
 
   window.BattleNetworkPlayerHealth=Object.freeze({
     getSnapshot:snapshot,
+    subscribe,
     configureHealth,
     clearHealth,
     applyDamage
