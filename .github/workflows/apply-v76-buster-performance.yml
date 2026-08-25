@@ -1,0 +1,182 @@
+name: Apply v76 buster performance
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v76-buster-performance.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v76 performance changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # enemy-foundation.js: add allocation-free projectile point hit lookup.
+          p=Path('js/combat/enemy-foundation.js')
+          text=p.read_text()
+          old="""  function containsPoint(id,x,y){
+            const enemy=getById(id);if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
+            const b=getBounds(enemy);return x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;
+          }
+"""
+          new="""  function containsPointRaw(enemy,x,y){
+            if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
+            const centerX=enemy.x+enemy.hitBox.offsetX,centerY=enemy.y+enemy.hitBox.offsetY;
+            const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
+            return x>=centerX-halfW&&x<=centerX+halfW&&y>=centerY-halfH&&y<=centerY+halfH;
+          }
+          function containsPoint(id,x,y){
+            return containsPointRaw(getById(id),x,y);
+          }
+          function findEnemyIdAtPoint(x,y){
+            if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+            for(const enemy of enemies){
+              if(containsPointRaw(enemy,x,y))return enemy.id;
+            }
+            return null;
+          }
+"""
+          if old not in text: raise SystemExit('enemy containsPoint block not found')
+          text=text.replace(old,new,1)
+          old_export="window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,intersectsRange,getHitEnemies,debugFlash});"
+          new_export="window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});"
+          if old_export not in text: raise SystemExit('enemy export block not found')
+          text=text.replace(old_export,new_export,1)
+          p.write_text(text)
+
+          # projectile-shadow-renderer.js: no observer, no own RAF, no transform parsing.
+          Path('js/combat/projectile-shadow-renderer.js').write_text(r'''(()=>{
+            const scene=document.getElementById('scene');
+            if(!scene)throw new Error('BattleNetworkProjectileShadow: scene is not available.');
+
+            const tracked=new Map();
+            const LEGACY_TRANSLATE_X=9;
+            const LEGACY_TRANSLATE_Y=34;
+            const FLOOR_CLEARANCE=20;
+            const bulletConfig={
+              cannon:{bulletWidth:132,bulletHeight:66,shadowWidth:114,shadowHeight:39,opacity:.48},
+              normal:{bulletWidth:30,bulletHeight:15,shadowWidth:28,shadowHeight:10,opacity:.4},
+              charged:{bulletWidth:52,bulletHeight:26,shadowWidth:50,shadowHeight:16,opacity:.5}
+            };
+
+            function getKind(bullet){
+              if(bullet.classList.contains('cannon'))return 'cannon';
+              if(bullet.classList.contains('charged'))return 'charged';
+              if(bullet.classList.contains('normal'))return 'normal';
+              return null;
+            }
+
+            function attach(bullet,kind=null){
+              if(tracked.has(bullet))return true;
+              const resolvedKind=kind||getKind(bullet),config=bulletConfig[resolvedKind];
+              if(!config)return false;
+
+              bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
+              bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
+
+              const shadow=document.createElement('div');
+              shadow.className=`projectileFloorShadow ${resolvedKind}`;
+              shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;`;
+              scene.appendChild(shadow);
+              tracked.set(bullet,{shadow,config});
+              return true;
+            }
+
+            function update(bullet,floorX,floorY){
+              const entry=tracked.get(bullet);
+              if(!entry||!Number.isFinite(floorX)||!Number.isFinite(floorY))return;
+              const cfg=entry.config;
+              entry.shadow.style.transform=`translate(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px)`;
+            }
+
+            function detach(bullet){
+              const entry=tracked.get(bullet);
+              if(!entry)return;
+              entry.shadow.remove();
+              tracked.delete(bullet);
+            }
+
+            window.BattleNetworkProjectileShadow=Object.freeze({attach,update,detach});
+            scene.querySelectorAll('.bullet').forEach(bullet=>attach(bullet));
+          })();
+''')
+
+          # game.js: drive shadow from the existing projectile loop and use direct enemy point lookup.
+          p=Path('js/game.js')
+          text=p.read_text()
+          old="const FIELD=window.BattleNetworkField,RANGE=window.BattleNetworkRangeGeometry,RANGE_PREVIEW=window.BattleNetworkRangePreview,BOMB_PREVIEW=window.BattleNetworkBombPreview,B_ATTACK=window.BattleNetworkBAttack;"
+          new="const FIELD=window.BattleNetworkField,RANGE=window.BattleNetworkRangeGeometry,RANGE_PREVIEW=window.BattleNetworkRangePreview,BOMB_PREVIEW=window.BattleNetworkBombPreview,B_ATTACK=window.BattleNetworkBAttack,P_SHADOW=window.BattleNetworkProjectileShadow,ENEMY=window.BattleNetworkEnemy;"
+          if old not in text: raise SystemExit('game dependency const not found')
+          text=text.replace(old,new,1)
+          old="if(!B_ATTACK)throw new Error('BattleNetwork: B attack system is not loaded.');"
+          new="if(!B_ATTACK)throw new Error('BattleNetwork: B attack system is not loaded.');\nif(!P_SHADOW)throw new Error('BattleNetwork: projectile shadow system is not loaded.');\nif(!ENEMY)throw new Error('BattleNetwork: enemy foundation is not loaded.');"
+          if old not in text: raise SystemExit('game dependency guard not found')
+          text=text.replace(old,new,1)
+
+          old="function spawn(kind,range,speed,direction={x:s.dx,y:s.dy},damage=null,attackId=null){range=Number(range);speed=Number(speed);if(!(range>0)||!(speed>0))return;let d={x:direction.x,y:direction.y},l=Math.hypot(d.x,d.y)||1;d.x/=l;d.y/=l;let numericDamage=Number(damage),b={x:s.x,y:s.y,dx:d.x,dy:d.y,dist:0,range,speed,kind,damage:Number.isFinite(numericDamage)?numericDamage:null,attackId,hitEnemyIds:new Set(),el:document.createElement('div')};b.el.className='bullet '+kind;scene.appendChild(b.el);bullets.push(b)}"
+          new="function spawn(kind,range,speed,direction={x:s.dx,y:s.dy},damage=null,attackId=null){range=Number(range);speed=Number(speed);if(!(range>0)||!(speed>0))return;let d={x:direction.x,y:direction.y},l=Math.hypot(d.x,d.y)||1;d.x/=l;d.y/=l;let numericDamage=Number(damage),b={x:s.x,y:s.y,dx:d.x,dy:d.y,dist:0,range,speed,kind,damage:Number.isFinite(numericDamage)?numericDamage:null,attackId,el:document.createElement('div')};b.el.className='bullet '+kind;scene.appendChild(b.el);P_SHADOW.attach(b.el,kind);bullets.push(b)}"
+          if old not in text: raise SystemExit('game spawn block not found')
+          text=text.replace(old,new,1)
+
+          old="function hitBusterEnemy(b){let enemyApi=window.BattleNetworkEnemy;if(!enemyApi)return false;for(const enemy of enemyApi.getEnemies()){if(b.hitEnemyIds.has(enemy.id))continue;if(!enemyApi.containsPoint(enemy.id,b.x,b.y))continue;b.hitEnemyIds.add(enemy.id);if(Number.isFinite(b.damage)&&b.damage>0)enemyApi.applyDamage(enemy.id,b.damage);enemyApi.debugFlash(enemy.id);return true}return false}"
+          new="function hitBusterEnemy(b){let enemyId=ENEMY.findEnemyIdAtPoint(b.x,b.y);if(enemyId===null)return false;if(Number.isFinite(b.damage)&&b.damage>0)ENEMY.applyDamage(enemyId,b.damage);ENEMY.debugFlash(enemyId);return true}"
+          if old not in text: raise SystemExit('game hitBusterEnemy block not found')
+          text=text.replace(old,new,1)
+
+          old="for(let i=bullets.length-1;i>=0;i--){let b=bullets[i];b.x+=b.dx*b.speed*dt;b.y+=b.dy*b.speed*dt;b.dist+=b.speed*dt;let p=proj(b.x,b.y),a=angle(b.dx,b.dy);b.el.style.transform=`translate(${p.x-9}px,${p.y-34}px) rotate(${a}deg)`;if(Number.isFinite(b.damage)&&b.damage>0&&hitBusterEnemy(b)){b.el.remove();bullets.splice(i,1);continue}if(b.dist>=b.range){b.el.remove();bullets.splice(i,1)}}"
+          new="for(let i=bullets.length-1;i>=0;i--){let b=bullets[i];b.x+=b.dx*b.speed*dt;b.y+=b.dy*b.speed*dt;b.dist+=b.speed*dt;let p=proj(b.x,b.y),a=angle(b.dx,b.dy);b.el.style.transform=`translate(${p.x-9}px,${p.y-34}px) rotate(${a}deg)`;P_SHADOW.update(b.el,p.x,p.y);if(Number.isFinite(b.damage)&&b.damage>0&&hitBusterEnemy(b)){P_SHADOW.detach(b.el);b.el.remove();bullets.splice(i,1);continue}if(b.dist>=b.range){P_SHADOW.detach(b.el);b.el.remove();bullets.splice(i,1)}}"
+          if old not in text: raise SystemExit('game bullet loop not found')
+          text=text.replace(old,new,1)
+          p.write_text(text)
+
+          # index versions.
+          p=Path('index.html')
+          text=p.read_text()
+          replacements={
+            './js/combat/enemy-foundation.js?v=75':'./js/combat/enemy-foundation.js?v=76',
+            './js/combat/projectile-shadow-renderer.js?v=75':'./js/combat/projectile-shadow-renderer.js?v=76',
+            './js/game.js?v=73':'./js/game.js?v=76'
+          }
+          for old,new in replacements.items():
+            if old not in text: raise SystemExit(f'index version not found: {old}')
+            text=text.replace(old,new,1)
+          p.write_text(text)
+
+          # SW cache version.
+          p=Path('sw.js')
+          text=p.read_text()
+          old="const CACHE_NAME = 'battlenetwork-runtime-v75';"
+          new="const CACHE_NAME = 'battlenetwork-runtime-v76';"
+          if old not in text: raise SystemExit('SW v75 cache name not found')
+          p.write_text(text.replace(old,new,1))
+
+          # Development status.
+          p=Path('DEVELOPMENT_STATUS.md')
+          text=p.read_text()
+          v75="v75で敵HP表示位置は足元側を正式採用し、頭上表示を削除した。残HP数字は34pxから40pxへ一回り拡大し、白太字＋黒縁の原作寄り表現を維持する。また実機でロックバスター発射時の画面負荷を確認したため、`projectile-shadow-renderer.js` の弾ごとの `MutationObserver` を廃止し、弾が存在する間だけ1本の `requestAnimationFrame` ループで影を同期する方式へ変更。発射時の `offsetWidth / offsetHeight` 読み取りも固定表示サイズ参照へ置き換え、強制レイアウトを避ける。攻撃力・連射間隔・弾速・命中判定は変更していない。v75のHP表示とロックバスター負荷改善は実機確認待ち。"
+          v76=v75+"\nv76で実機確認によりロックバスター連打時の負荷が残ることを確認。弾影の独立 `requestAnimationFrame` とtransform文字列解析を完全に廃止し、`game.js` の既存弾更新ループから弾本体と影を同時更新する方式へ統合した。またバスター弾の毎フレーム命中判定で `getEnemies()` による凍結スナップショット配列・Bounds生成を行わず、敵内部データを直接参照する `findEnemyIdAtPoint()` を追加した。弾1発ごとの `Set` も不要となるため削除。攻撃力・連射間隔・弾速・HitBox・見た目は変更していない。v76はロックバスター連打時の実機負荷確認待ち。"
+          if v75 not in text: raise SystemExit('v75 status paragraph not found')
+          text=text.replace(v75,v76,1)
+          old_phase="## 次フェーズ: v75実機確認 → プレイヤーHP\n\nv73のダメージ接続は実機確認済み。v75で敵HP表示を足元側へ確定し40pxへ拡大、ロックバスター発射時の負荷対策として弾影追従処理を軽量化した。まず実機で表示と負荷改善を確認し、問題なければプレイヤーHPへ進む。"
+          new_phase="## 次フェーズ: v76実機確認 → プレイヤーHP\n\nv73のダメージ接続は実機確認済み。v75の初回負荷対策後もロックバスター連打時の重さが残ったため、v76で弾本体・影・敵Hit判定の毎フレーム経路をさらに軽量化した。まず実機で連打時の負荷を再確認し、問題なければプレイヤーHPへ進む。"
+          if old_phase not in text: raise SystemExit('v75 next phase heading not found')
+          text=text.replace(old_phase,new_phase,1)
+          p.write_text(text)
+          PY
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/combat/enemy-foundation.js js/combat/projectile-shadow-renderer.js js/game.js index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m 'Optimize rapid buster projectile updates v76'
+          git rm .github/workflows/apply-v76-buster-performance.yml
+          git commit -m 'Remove one-time v76 performance workflow'
+          git push origin main
