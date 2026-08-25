@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v65';
+const CACHE_NAME = 'battlenetwork-runtime-v66';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -46,7 +46,7 @@ const STATIC_ASSETS = [
   './assets/attributes/12_plus.png',
   './assets/chips/cannon.png',
   './assets/chips/sword.png',
-  './assets/chips/WideSwordpng.png',
+  './assets/chips/WideSword.png',
   './assets/chips/MiniBomb.png',
   './assets/chips/Recovery_10.png'
 ];
