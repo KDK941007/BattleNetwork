@@ -27,6 +27,14 @@
       offsetY:finite(hitBox?.offsetY)
     });
   }
+  function normalizeHealth(health){
+    const maxHp=positive(health?.maxHp,null);
+    if(maxHp===null)return Object.freeze({maxHp:null,hp:null});
+    const requested=Number(health?.hp);
+    const hp=Number.isFinite(requested)?Math.max(0,Math.min(maxHp,requested)):maxHp;
+    return Object.freeze({maxHp,hp});
+  }
+  function hasHealth(enemy){return !!enemy&&enemy.maxHp!==null&&enemy.hp!==null}
   function getBounds(enemy){
     const centerX=enemy.x+enemy.hitBox.offsetX,centerY=enemy.y+enemy.hitBox.offsetY;
     const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
@@ -48,14 +56,33 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),el,flashToken:0};
+    const health=normalizeHealth(config.health);
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);render(enemy);
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
-  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,visual:enemy.visual,hitBox:enemy.hitBox,bounds:getBounds(enemy)}):null}
+  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,visual:enemy.visual,hitBox:enemy.hitBox,maxHp:enemy.maxHp,hp:enemy.hp,isDefeated:hasHealth(enemy)&&enemy.hp<=0,bounds:getBounds(enemy)}):null}
   function getEnemy(id){return getSnapshot(getById(id))}
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
+  function configureHealth(id,health={}){
+    const enemy=getById(id);if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',enemy:null});
+    const normalized=normalizeHealth(health);
+    if(normalized.maxHp===null)return Object.freeze({applied:false,reason:'INVALID_MAX_HP',enemy:getSnapshot(enemy)});
+    enemy.maxHp=normalized.maxHp;enemy.hp=normalized.hp;
+    return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
+  }
+  function applyDamage(id,amount){
+    const enemy=getById(id);if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',amount:0,before:null,after:null,defeatedNow:false,enemy:null});
+    const damage=Number(amount);
+    if(!Number.isFinite(damage)||damage<=0)return Object.freeze({applied:false,reason:'INVALID_DAMAGE',amount:0,before:enemy.hp,after:enemy.hp,defeatedNow:false,enemy:getSnapshot(enemy)});
+    if(!hasHealth(enemy))return Object.freeze({applied:false,reason:'HP_NOT_CONFIGURED',amount:0,before:null,after:null,defeatedNow:false,enemy:getSnapshot(enemy)});
+    if(enemy.hp<=0)return Object.freeze({applied:false,reason:'ALREADY_DEFEATED',amount:0,before:enemy.hp,after:enemy.hp,defeatedNow:false,enemy:getSnapshot(enemy)});
+    const before=enemy.hp;
+    enemy.hp=Math.max(0,before-damage);
+    const applied=before-enemy.hp;
+    return Object.freeze({applied:true,reason:null,amount:applied,before,after:enemy.hp,defeatedNow:before>0&&enemy.hp<=0,enemy:getSnapshot(enemy)});
+  }
   function containsPoint(id,x,y){
     const enemy=getById(id);if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
     const b=getBounds(enemy);return x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;
@@ -79,7 +106,7 @@
     },180);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,containsPoint,intersectsRange,getHitEnemies,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,intersectsRange,getHitEnemies,debugFlash});
 
   const testCenter=FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2),Math.floor(FIELD.GRID_COLS/2)+3);
   if(testCenter)spawn({x:testCenter.x,y:testCenter.y});
