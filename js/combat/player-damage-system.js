@@ -81,6 +81,7 @@
     if(isInvincible())return missResult('INVINCIBLE',input);
     const result=HEALTH.applyDamage(damage);
     if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){
+      PLAYER.beginHitStun?.();
       beginInvincibility();
     }
     return freezeResult({
