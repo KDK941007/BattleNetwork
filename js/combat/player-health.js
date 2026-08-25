@@ -1,5 +1,6 @@
 (()=>{
-  let state={maxHp:null,hp:null};
+  const INITIAL_MAX_HP=100;
+  let state={maxHp:INITIAL_MAX_HP,hp:INITIAL_MAX_HP};
   const listeners=new Set();
 
   function snapshot(){
@@ -79,6 +80,7 @@
   }
 
   window.BattleNetworkPlayerHealth=Object.freeze({
+    INITIAL_MAX_HP,
     getSnapshot:snapshot,
     subscribe,
     configureHealth,
