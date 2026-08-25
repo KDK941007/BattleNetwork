@@ -13,16 +13,16 @@
   function finite(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback}
   function normalizeVisual(visual){
     return Object.freeze({
-      width:positive(visual?.width,48),
-      height:positive(visual?.height,58),
+      width:positive(visual?.width,58),
+      height:positive(visual?.height,70),
       offsetX:finite(visual?.offsetX),
       offsetY:finite(visual?.offsetY,-29)
     });
   }
   function normalizeHitBox(hitBox){
     return Object.freeze({
-      width:positive(hitBox?.width,FIELD.TILE_SIZE*.55),
-      height:positive(hitBox?.height,FIELD.TILE_SIZE*.55),
+      width:positive(hitBox?.width,FIELD.TILE_SIZE*.66),
+      height:positive(hitBox?.height,FIELD.TILE_SIZE*.66),
       offsetX:finite(hitBox?.offsetX),
       offsetY:finite(hitBox?.offsetY)
     });
