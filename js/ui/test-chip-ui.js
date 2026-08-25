@@ -34,7 +34,8 @@
     if(!art||!detailName||!detailDesc||!detailRangeText||!detailRange)return;
 
     detailName.textContent=chip.chipName;
-    art.innerHTML=chip.imagePath?`<img src="${chip.imagePath}" alt="${chip.chipName}" draggable="false">`:'';
+    const imagePath=master.getChipImagePath(chip);
+    art.innerHTML=imagePath?`<img src="${imagePath}" alt="${chip.chipName}" draggable="false">`:'';
     detailDesc.textContent=chip.description||'';
     detailRangeText.textContent=chip.rangeDescription||'';
     detailRange.className=`rangeViz ${rangeVizClass(chip)}`.trim();
@@ -87,10 +88,11 @@
     card.className='chipCard testChipPreview';
     card.dataset.testChipId=chip.chipId;
     card.setAttribute('aria-label',`${chip.chipName} 動作確認用`);
+    const imagePath=master.getChipImagePath(chip);
     card.innerHTML=`
       <span class="slotNo">${slotNo}</span>
       <span class="chipName">${chip.chipName}</span>
-      <span class="chipArt">${chip.imagePath?`<img src="${chip.imagePath}" alt="${chip.chipName}" draggable="false">`:''}</span>
+      <span class="chipArt">${imagePath?`<img src="${imagePath}" alt="${chip.chipName}" draggable="false">`:''}</span>
       <span class="chipMeta">
         <span class="chipCode">${code}</span>
         <span class="chipAttr">${attrHtml(chip.chipId)}</span>
