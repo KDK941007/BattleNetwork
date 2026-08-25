@@ -44,9 +44,12 @@ v51実機確認では、稀に重くなることは残るものの大幅に改�
 敵は表示とHitBoxを分離し、`visual.width / visual.height / visual.offsetX / visual.offsetY` と `hitBox.width / hitBox.height / hitBox.offsetX / hitBox.offsetY` を独立して持つ。具体値は本番キャラ素材に合わせて個別調整し、表示サイズからHitBoxを自動決定しない。プレイヤー側も将来同じ分離方針へ揃える。
 
 v53で `BattleNetworkRangeGeometry.intersectsBounds()` を追加し、LINE / RECTは斜め向きRange矩形と敵の軸平行矩形HitBoxをSATで交差判定、CIRCLEは円と矩形の最短距離で交差判定できるようにした。
-`BattleNetworkEnemy.getHitEnemies(shape)` を追加し、正式Range Geometryと敵HitBoxの幾何交差を共通取得できるようにした。
-実機確認用として `js/combat/combat-hit-test.js` を追加し、A押下時に確定した `lastAttackRange` が敵HitBoxと交差した場合、テスト敵を一瞬発光させる。これは幾何命中判定の確認用であり、HP減少・ダメージ処理はまだ行わない。
-また、キャノンの弾到達時刻やミニボムの爆発遅延などBehaviorに依存する実際のダメージ発生タイミングはこの段階では接続せず、次段階でBehaviorとHit判定を接続する際に実装する。
+`BattleNetworkEnemy.getHitEnemies(shape)` を追加し、正式Range Geometryと敵HitBoxの幾何交差を共通取得できるようにした。キャノン / ソード / ワイドソード / ミニボムで実機確認し、想定どおり命中可視化されることを確認済み。
+v54でBehaviorと命中タイミングを接続し、キャノンは弾の到達時、ソード / ワイドソードは発動時、ミニボムは爆発遅延後に敵HitBoxへ命中可視化する構成へ変更。実機確認済み。
+v55で通常ロックバスター / チャージショットも飛翔中のworld座標と敵HitBoxを接続し、命中時に発光・弾消滅する構成へ変更。実機確認済み。
+v56でキャノン / 通常バスター / チャージショットへ床面上の正式world座標を示す影を追加した。
+v57で視認性確認用として通常バスターを30×15px、チャージショットを52×26px、キャノンを44×22pxへ拡大し、影も拡大。実機で良好と確認済み。
+v58でキャノンをさらに88×44pxへ倍化し、影を76×26pxへ拡大。同時に見た目と正式判定を揃えるため、キャノンRangeを `LINE(5×0.5)`、幅90 world unitsへ変更した。射程5マス、弾速、攻撃力は変更していない。v58は実機確認待ち。
 
 新規チップ追加は一旦止め、既存5種類を使用してバトル側の基礎システムを作り込む方針は継続する。
 
@@ -108,8 +111,8 @@ v53で `BattleNetworkRangeGeometry.intersectsBounds()` を追加し、LINE / REC
 - world座標上のRange形状を現在の斜め投影へ変換して表示する。
 - LINE / RECTはSVGポリゴン、CIRCLEは投影後のSVG楕円として描画する。
 - キャノン・ソード・ワイドソードは旧CSS長方形の回転表示ではなく、新Range形状そのものをプレビューする方式へ移行済み。
-- 表示と将来のHit判定で `BattleNetworkRangeGeometry` を共通利用する構成。
-- キャノン `5×0.25`、ソード `1×1`、ワイドソード `1×3` の描画は実機確認済み。
+- 表示とHit判定で `BattleNetworkRangeGeometry` を共通利用する構成。
+- キャノンはv58で `5×0.5`、ソード `1×1`、ワイドソード `1×3`。
 - ミニボムは `CIRCLE(radius_tiles=0.75)` を正式採用。
 - `js/combat/bomb-preview-renderer.js` を追加し、プレイヤー足元から3マス先の着弾地点までを放物線の投擲予告線として描画する。
 - v51でRange SVGを `scene` から分離し、`battle` 直下の専用 `combatPreviewLayer` で描画する構成へ変更。
@@ -158,9 +161,10 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - ワイドソード: ソードと同程度の射程で横幅を広くした攻撃範囲。
 - ミニボム: 前方3マス先へ投擲し、着弾地点を中心に半径0.75マスの円形爆発。
 - リカバリー: 回復エフェクトを表示。
-- キャノンは `LINE(5×0.25)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)` のマス単位Rangeへ移行済み。
+- キャノンは `LINE(5×0.5)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)` のマス単位Range。
 - ミニボム投擲距離は `BOMB_THROW.THROW_DISTANCE_TILES=3`。
 - ミニボム爆発半径は `CIRCLE / RADIUS_TILES=0.75`。
+- キャノン / 通常ロックバスター / チャージショットは床面world座標を示す影を表示する。
 
 ### IndexedDB v1
 
@@ -195,13 +199,12 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - Rangeは形状、Behaviorは効果の届け方・発生方法として責務分離する。
 - 基本Range Typeは `LINE / RECT / CIRCLE / SECTOR / RING / SELF`。
 - 距離系Range Parameterは整数限定にせず小数マスを許可する。
-- キャノンは `LINE(5×0.25)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)`、ミニボムは `CIRCLE(0.75)`、リカバリー10は `SELF` とする。
+- キャノンは `LINE(5×0.5)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)`、ミニボムは `CIRCLE(0.75)`、リカバリー10は `SELF` とする。
 - ミニボムの投擲距離はRangeではなく `BOMB_THROW` のBehavior Parameterとし、3マスとする。
 
 ## 現時点で未実装・未確定
 
-- v53の敵HitBox × Range幾何交差を実機確認。
-- キャノン弾・ミニボム爆発等のBehaviorと実際の命中タイミング接続。
+- v58キャノン表示サイズ・影・Range幅の実機確認。
 - 特殊地形の実ゲーム処理。
 - 穴等の侵入不可地形に対する移動HitBox判定。
 - 敵AI。
@@ -220,15 +223,15 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - 所持チップ・フォルダ・レギュラーチップとIndexedDBの実ゲーム接続。
 - `library_no / capacity_mb / rarity` の正式な原作値確認とマスタ反映。
 
-## 次フェーズ: 敵HitBox・HP基盤
+## 次フェーズ: 敵HP・ダメージ基盤
 
-Range表示中の操作負荷はv51で実用上許容として完了扱い。
-v53で敵HitBoxとRange Geometryの幾何交差基盤を実装したため、まず実機で命中可視化を確認する。
+敵HitBox、バトルチップBehavior命中タイミング、通常/チャージロックバスターの敵HitBox接続まで実機確認済み。
+まずv58のキャノン表示サイズとRange幅を実機確認し、問題なければ敵HP・ダメージ処理の最小基盤へ進む。
 
 優先対象は以下。
 
-1. キャノン / ソード / ワイドソード / ミニボムで、Rangeとテスト敵HitBoxが交差した場合だけ敵が発光するか実機確認する。
-2. 幾何判定に問題がなければ、各Behaviorと実際の命中発生タイミングを接続する。
-3. 敵HP・ダメージ処理の最小基盤へ進む。
+1. v58キャノンの表示サイズ88×44px、影76×26px、Range `5×0.5` の見た目と命中感を実機確認する。
+2. 敵HPの最小基盤を追加する。
+3. バトルチップ / ロックバスターのダメージ処理を接続する。
 4. プレイヤー表示 / HitBox分離とプレイヤーHPへ進む。
 5. その後、敵AI・被弾・撃破・Wave進行へ拡張する。
