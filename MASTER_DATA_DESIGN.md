@@ -26,7 +26,6 @@
 | chip_id | PK。内部参照用の不変ID |
 | library_no | UNIQUE。ライブラリ表示No.。通常ライブラリ対象外を考慮しNULL可 |
 | chip_name | チップ名 |
-| image_path | チップ固有イラストのパス |
 | capacity_mb | レギュラーチップ判定等に使用する容量 |
 | class_id | M_CHIP_CLASSへの参照 |
 | rarity | 1～5。排出率とは分離 |
@@ -37,7 +36,7 @@
 
 `chip_id` と `library_no` は分離する。ライブラリ表示順を変更しても内部参照を壊さないため、ゲーム処理は `chip_id` を使用する。
 
-画像素材全般を管理する Asset Master は現時点では作らない。チップ固有画像は `M_CHIP.image_path`、属性・系統アイコンは `M_CHIP_ATTRIBUTE.icon_path` に保持する。
+画像素材全般を管理する Asset Master は現時点では作らない。チップ固有画像のパスは `M_CHIP` に保持せず、正式な命名規約 `assets/chips/{chip_name}.png` からサービス層で生成する。したがって正式チップの画像ファイル名はチップ名と完全一致する日本語名とし、拡張子は原則 `.png` とする。`chip_name` は画像キーを兼ねるため重複不可とし、チップ名を変更する場合は対応する画像ファイル名も同時に変更する。属性・系統アイコンは引き続き `M_CHIP_ATTRIBUTE.icon_path` に保持する。テスト専用チップの画像流用は正式マスタへ画像パスを追加せず、サービス層のテスト互換定義で扱う。
 
 ## 3. 属性・系統
 

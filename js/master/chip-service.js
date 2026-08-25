@@ -22,8 +22,21 @@
     TEST_DARK:{chipId:'TEST_9003',type:'bomb',viz:'bomb'}
   };
 
+  const TEST_IMAGE_CHIP_NAME=Object.freeze({
+    TEST_9001:'ソード',
+    TEST_9002:'キャノン',
+    TEST_9003:'ミニボム'
+  });
+
   function getChip(chipId){
     return chipById.get(chipId)||null;
+  }
+
+  function getChipImagePath(chipOrId){
+    const chip=typeof chipOrId==='string'?getChip(chipOrId):chipOrId;
+    if(!chip)return null;
+    const assetChipName=TEST_IMAGE_CHIP_NAME[chip.chipId]||chip.chipName;
+    return `./assets/chips/${assetChipName}.png`;
   }
 
   function getChipClass(chipId){
@@ -103,10 +116,14 @@
     const errors=[];
     const chips=data.CHIP_MASTER||[];
     const chipIds=new Set();
+    const chipNames=new Set();
 
     chips.forEach(chip=>{
       if(chipIds.has(chip.chipId))errors.push(`chip_id重複: ${chip.chipId}`);
       chipIds.add(chip.chipId);
+      if(!chip.chipName)errors.push(`chip_name未設定: ${chip.chipId}`);
+      else if(chipNames.has(chip.chipName))errors.push(`chip_name重複: ${chip.chipName}`);
+      else chipNames.add(chip.chipName);
       if(!classById.has(chip.classId))errors.push(`class_id未定義: ${chip.chipId}/${chip.classId}`);
       if(!rangeTypeById.has(chip.rangeTypeId))errors.push(`range_type_id未定義: ${chip.chipId}/${chip.rangeTypeId}`);
       if(!behaviorById.has(chip.behaviorId))errors.push(`behavior_id未定義: ${chip.chipId}/${chip.behaviorId}`);
@@ -208,7 +225,7 @@
         lock:behavior.ACTION_LOCK,
         projectileSpeed:behavior.PROJECTILE_SPEED,
         explosionDelay:behavior.EXPLOSION_DELAY,
-        image:chip.imagePath,
+        image:getChipImagePath(chip),
         detail:chip.description,
         rangeText:chip.rangeDescription,
         viz:legacy.viz
@@ -220,6 +237,7 @@
 
   window.BattleNetworkMaster={
     getChip,
+    getChipImagePath,
     getChipClass,
     getChipSpecialTypes,
     getChipTheme,
