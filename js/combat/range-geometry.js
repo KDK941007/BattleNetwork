@@ -95,6 +95,53 @@
     return false;
   }
 
+  function normalizeBounds(bounds){
+    if(!bounds)return null;
+    const left=Number(bounds.left),right=Number(bounds.right),top=Number(bounds.top),bottom=Number(bounds.bottom);
+    if(![left,right,top,bottom].every(Number.isFinite))return null;
+    return {left:Math.min(left,right),right:Math.max(left,right),top:Math.min(top,bottom),bottom:Math.max(top,bottom)};
+  }
+
+  function projectPoints(points,axis){
+    let min=Infinity,max=-Infinity;
+    for(const point of points){
+      const value=point.x*axis.x+point.y*axis.y;
+      if(value<min)min=value;
+      if(value>max)max=value;
+    }
+    return {min,max};
+  }
+
+  function overlapsOnAxis(aPoints,bPoints,axis){
+    const a=projectPoints(aPoints,axis),b=projectPoints(bPoints,axis);
+    return a.max+EPSILON>=b.min&&b.max+EPSILON>=a.min;
+  }
+
+  function intersectsBounds(shape,bounds){
+    const box=normalizeBounds(bounds);
+    if(!shape||!box)return false;
+
+    if(shape.rangeTypeId==='CIRCLE'){
+      const closestX=Math.max(box.left,Math.min(shape.center.x,box.right));
+      const closestY=Math.max(box.top,Math.min(shape.center.y,box.bottom));
+      return Math.hypot(shape.center.x-closestX,shape.center.y-closestY)<=shape.radiusWorld+EPSILON;
+    }
+
+    if(shape.rangeTypeId==='LINE'||shape.rangeTypeId==='RECT'){
+      if(!Array.isArray(shape.points)||shape.points.length!==4)return false;
+      const boxPoints=[
+        {x:box.left,y:box.top},
+        {x:box.right,y:box.top},
+        {x:box.right,y:box.bottom},
+        {x:box.left,y:box.bottom}
+      ];
+      const axes=[shape.direction,shape.normal,{x:1,y:0},{x:0,y:1}];
+      return axes.every(axis=>overlapsOnAxis(shape.points,boxPoints,axis));
+    }
+
+    return false;
+  }
+
   function getTilesByCenter(shape){
     if(!shape)return [];
     const result=[];
@@ -111,6 +158,7 @@
     createCircle,
     createFromChip,
     containsPoint,
+    intersectsBounds,
     getTilesByCenter
   });
 })();
