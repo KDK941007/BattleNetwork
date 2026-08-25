@@ -1,0 +1,25 @@
+name: Apply v84 status update
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v84-status.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v84 status
+        run: python tools/apply_v84_status.py
+      - name: Commit v84 status
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEVELOPMENT_STATUS.md
+          git commit -m 'Record v84 HUD adjustment'
+          git rm tools/apply_v84_status.py .github/workflows/apply-v84-status.yml
+          git commit -m 'Remove one-time v84 status files'
+          git push origin main
