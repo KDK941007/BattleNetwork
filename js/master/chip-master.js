@@ -32,7 +32,7 @@
       chipId:'CHIP_0003',
       libraryNo:null,
       chipName:'ワイドソード',
-      imagePath:'./assets/chips/WideSwordpng.png',
+      imagePath:'./assets/chips/WideSword.png',
       capacityMb:null,
       classId:'STANDARD',
       rarity:null,
