@@ -1,0 +1,25 @@
+name: Apply v86 verification status
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v86-verification.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v86 verification
+        run: python tools/apply_v86_verification.py
+      - name: Commit v86 verification
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEVELOPMENT_STATUS.md
+          git commit -m 'Record v86 HP display verification'
+          git rm tools/apply_v86_verification.py .github/workflows/apply-v86-verification.yml
+          git commit -m 'Remove one-time v86 verification files'
+          git push origin main
