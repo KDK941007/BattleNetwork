@@ -4,9 +4,9 @@
 
   const tracked=new Map();
   const bulletConfig={
-    cannon:{bulletWidth:28,shadowWidth:20,shadowHeight:7,opacity:.42},
-    normal:{bulletWidth:18,shadowWidth:14,shadowHeight:5,opacity:.34},
-    charged:{bulletWidth:38,shadowWidth:26,shadowHeight:8,opacity:.48}
+    cannon:{shadowWidth:38,shadowHeight:13,opacity:.46},
+    normal:{shadowWidth:28,shadowHeight:10,opacity:.4},
+    charged:{shadowWidth:50,shadowHeight:16,opacity:.5}
   };
 
   function getKind(bullet){
@@ -23,7 +23,7 @@
     const tx=Number(match[1]),ty=Number(match[2]);
     if(!Number.isFinite(tx)||!Number.isFinite(ty))return;
     const cfg=entry.config;
-    const floorX=tx+cfg.bulletWidth/2;
+    const floorX=tx+entry.bullet.offsetWidth/2;
     const floorY=ty+34;
     entry.shadow.style.transform=`translate(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px)`;
   }
