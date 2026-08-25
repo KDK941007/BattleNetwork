@@ -7,10 +7,11 @@
   const LEGACY_TRANSLATE_Y=34;
   const FLOOR_CLEARANCE=20;
   const bulletConfig={
-    cannon:{shadowWidth:114,shadowHeight:39,opacity:.48},
-    normal:{shadowWidth:28,shadowHeight:10,opacity:.4},
-    charged:{shadowWidth:50,shadowHeight:16,opacity:.5}
+    cannon:{bulletWidth:132,bulletHeight:66,shadowWidth:114,shadowHeight:39,opacity:.48},
+    normal:{bulletWidth:30,bulletHeight:15,shadowWidth:28,shadowHeight:10,opacity:.4},
+    charged:{bulletWidth:52,bulletHeight:26,shadowWidth:50,shadowHeight:16,opacity:.5}
   };
+  let rafId=0;
 
   function getKind(bullet){
     if(bullet.classList.contains('cannon'))return 'cannon';
@@ -21,6 +22,8 @@
 
   function sync(entry){
     const transform=entry.bullet.style.transform||'';
+    if(!transform||transform===entry.lastTransform)return;
+    entry.lastTransform=transform;
     const match=transform.match(/translate\(([-+\d.]+)px,\s*([-+\d.]+)px\)/);
     if(!match)return;
     const tx=Number(match[1]),ty=Number(match[2]);
@@ -31,33 +34,40 @@
     entry.shadow.style.transform=`translate(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px)`;
   }
 
+  function tick(){
+    rafId=0;
+    tracked.forEach(sync);
+    if(tracked.size)rafId=requestAnimationFrame(tick);
+  }
+
+  function ensureLoop(){
+    if(!rafId&&tracked.size)rafId=requestAnimationFrame(tick);
+  }
+
   function attach(bullet){
     if(tracked.has(bullet))return;
     const kind=getKind(bullet),config=bulletConfig[kind];
     if(!config)return;
 
-    const bulletWidth=bullet.offsetWidth;
-    const bulletHeight=bullet.offsetHeight;
-    bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-bulletWidth/2}px`;
-    bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-bulletHeight-FLOOR_CLEARANCE}px`;
+    bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
+    bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
 
     const shadow=document.createElement('div');
     shadow.className=`projectileFloorShadow ${kind}`;
     shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;`;
     scene.appendChild(shadow);
-    const entry={bullet,shadow,config,observer:null};
-    entry.observer=new MutationObserver(()=>sync(entry));
-    entry.observer.observe(bullet,{attributes:true,attributeFilter:['style']});
+    const entry={bullet,shadow,config,lastTransform:''};
     tracked.set(bullet,entry);
     sync(entry);
+    ensureLoop();
   }
 
   function detach(bullet){
     const entry=tracked.get(bullet);
     if(!entry)return;
-    entry.observer.disconnect();
     entry.shadow.remove();
     tracked.delete(bullet);
+    if(!tracked.size&&rafId){cancelAnimationFrame(rafId);rafId=0}
   }
 
   const sceneObserver=new MutationObserver(records=>{
