@@ -40,6 +40,14 @@ v50実機確認では、CUSTOMゲージMAX後の初回タップと蓄積アニ�
 v51ではRange SVGを床・プレイヤー・弾と同じ巨大 `scene` から分離し、`battle` 直下の専用 `combatPreviewLayer` へ移した。専用レイヤーは `scene.style.transform` のみ同期し、Range描画とゲーム本体DOMツリーの再描画を分離する。Range Geometry、攻撃判定値、見た目のRange値は変更しない。
 v51実機確認では、稀に重くなることは残るものの大幅に改善され、現時点では実用上許容としてこの負荷対応を完了扱いとする。将来、戦闘要素追加後に再び負荷が顕在化した場合は再調査する。
 
+2026-08-25に敵HitBox基盤へ着手し、`js/combat/enemy-foundation.js` に簡易テスト敵、world座標、矩形HitBox、HitBox境界取得・点判定の最小基盤を追加した。
+敵は表示とHitBoxを分離し、`visual.width / visual.height / visual.offsetX / visual.offsetY` と `hitBox.width / hitBox.height / hitBox.offsetX / hitBox.offsetY` を独立して持つ。具体値は本番キャラ素材に合わせて個別調整し、表示サイズからHitBoxを自動決定しない。プレイヤー側も将来同じ分離方針へ揃える。
+
+v53で `BattleNetworkRangeGeometry.intersectsBounds()` を追加し、LINE / RECTは斜め向きRange矩形と敵の軸平行矩形HitBoxをSATで交差判定、CIRCLEは円と矩形の最短距離で交差判定できるようにした。
+`BattleNetworkEnemy.getHitEnemies(shape)` を追加し、正式Range Geometryと敵HitBoxの幾何交差を共通取得できるようにした。
+実機確認用として `js/combat/combat-hit-test.js` を追加し、A押下時に確定した `lastAttackRange` が敵HitBoxと交差した場合、テスト敵を一瞬発光させる。これは幾何命中判定の確認用であり、HP減少・ダメージ処理はまだ行わない。
+また、キャノンの弾到達時刻やミニボムの爆発遅延などBehaviorに依存する実際のダメージ発生タイミングはこの段階では接続せず、次段階でBehaviorとHit判定を接続する際に実装する。
+
 新規チップ追加は一旦止め、既存5種類を使用してバトル側の基礎システムを作り込む方針は継続する。
 
 ## 実装済み
@@ -69,13 +77,26 @@ v51実機確認では、稀に重くなることは残るものの大幅に改�
 - v48でbattleの表示サイズを初期化時・resize時にキャッシュし、カメラ計算時の毎フレームレイアウト計測を廃止。
 - v48でスティック矩形をpointerdown時にキャッシュし、pointermove中のレイアウト計測を廃止。
 
+### 敵HitBox基盤
+
+- `js/combat/enemy-foundation.js` を追加。
+- テスト用簡易敵を1体配置。
+- 敵位置はworld座標で保持。
+- 表示サイズ・表示位置補正とHitBoxサイズ・HitBox位置補正を独立定義可能。
+- `getEnemy / getEnemies` からworld座標上のHitBox境界を取得可能。
+- `containsPoint` でworld座標上の点が敵HitBox内か判定可能。
+- `intersectsRange / getHitEnemies` でRange Geometryと矩形HitBoxの交差判定が可能。
+- 本番キャラの具体的な表示サイズ・HitBox値は未確定。
+- プレイヤー側も将来、表示とHitBoxを同様に分離する。
+
 ### 攻撃Range共通基盤
 
 - `js/combat/range-geometry.js` を追加。
 - `LINE / RECT` は、発動位置・360度自由方向・長さ・幅からworld座標上の四角形を生成する。
 - `CIRCLE` は指定中心と半径を保持し、点判定・地形判定では連続座標の円として扱う。
 - CIRCLEはプレビュー用の多頂点生成を必須とせず、必要な場合だけ任意のsegmentsでポリゴン点を生成できる。
-- `containsPoint(shape, x, y)` を実装し、将来の敵HitBox判定からプレビューと同一Rangeを利用できる構成にした。
+- `containsPoint(shape, x, y)` を実装し、点判定からプレビューと同一Rangeを利用できる構成にした。
+- `intersectsBounds(shape, bounds)` を実装し、LINE / RECT / CIRCLEと矩形HitBoxの幾何交差を判定できる。
 - `getTilesByCenter(shape)` を実装し、地形変更時にマス中心点ルールで対象マスを取得できる構成にした。
 - A押下時にはその時点の向きを正規化して固定し、`lastAttackRange` として同一Range形状を保持する。
 - `BattleNetworkCombatRange` から直近攻撃Range・点判定・対象マス取得を参照可能。
@@ -89,17 +110,9 @@ v51実機確認では、稀に重くなることは残るものの大幅に改�
 - キャノン・ソード・ワイドソードは旧CSS長方形の回転表示ではなく、新Range形状そのものをプレビューする方式へ移行済み。
 - 表示と将来のHit判定で `BattleNetworkRangeGeometry` を共通利用する構成。
 - キャノン `5×0.25`、ソード `1×1`、ワイドソード `1×3` の描画は実機確認済み。
-- v43でSceneサイズ・投影係数のキャッシュ、不要なhide/show抑制、同一属性更新のスキップを実施し、プレビュー表示中の操作負荷改善を実機確認済み。
 - ミニボムは `CIRCLE(radius_tiles=0.75)` を正式採用。
 - `js/combat/bomb-preview-renderer.js` を追加し、プレイヤー足元から3マス先の着弾地点までを放物線の投擲予告線として描画する。
-- v46でCIRCLEの多頂点プレビュー生成をやめ、SVG楕円を直接更新する方式へ軽量化。
-- v46でゲームループ中のカスタムゲージ更新とRange描画を分離し、同一フレーム内の二重Range描画を解消。
-- v47でスティック `pointermove` 時のRange即時再描画を廃止し、Range描画をゲームループ側の1回/フレームに統一。
-- v49で試した約30fps制限は実機で効果が確認できなかったため、v50で撤回。
-- v50でLINE / RECTはpolygonの頂点座標を毎フレーム書き換えず、ローカル形状＋SVG matrix transform方式へ変更。
-- v50でCIRCLEは楕円半径を固定し、中心位置をtranslate更新する方式へ変更。
-- v50でミニボム放物線もローカルpathとtranslateを分離し、移動だけではpath形状を再生成しない構成へ変更。
-- v51でRange SVGを `scene` から分離し、`battle` 直下の専用 `combatPreviewLayer` で描画する構成へ変更。専用レイヤーはカメラtransformのみ `scene` と同期する。
+- v51でRange SVGを `scene` から分離し、`battle` 直下の専用 `combatPreviewLayer` で描画する構成へ変更。
 - v51実機確認で、稀な引っかかりは残るが大幅に改善し、現時点では許容としてRange負荷対応を完了扱いとした。
 
 ### CUSTOM
@@ -111,10 +124,6 @@ v51実機確認では、稀に重くなることは残るものの大幅に改�
 - 決定ボタンとソウルユニゾン用ボタン枠を実装。
 - ソウルユニゾンは現時点では未実装。
 - カスタムゲージは10秒でMAX。
-- v48でCUSTOMゲージのオープン処理を共通化し、`pointerdown` と `click` の両方から同じ処理を呼ぶ。CUSTOM画面がすでに開いている場合は再実行しない。
-- v49でCUSTOMゲージ本体をネイティブ `button` 要素へ変更。
-- v50でv49のFill表示退行を修正し、ゲージが溜まる幅アニメーションを復旧。
-- v50でCUSTOMゲージの見た目は維持したまま、透明な疑似要素でタップ可能領域を拡張。
 - v50実機確認で、CUSTOMゲージMAX後の初回タップと蓄積アニメーションの両方を改善済みと確認。
 - チップコードを表示し、同一チップまたは同一コードを基準とした複数選択制御を実装。
 - `*` コードをワイルドカードとして扱う。
@@ -142,27 +151,6 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - `assets/chips/Recovery_10.png`
 - `assets/chips/common/chip_background_standard.jpg`
 
-共通方針:
-
-- チップ名、コード、属性、攻撃力等は画像素材内に描かずCUSTOM側UIで表示する。
-- チップイラストの背景は `chip_background_standard.jpg` を標準背景とする。
-- リカバリーは現在「リカバリー10」のイラストを正式採用している。
-- チップ画像はService Workerのオフラインキャッシュ対象に追加済み。
-
-### チップ詳細
-
-- チップ詳細の外枠はチップごとの情報量で変動させない方針。
-- 左側はチップイラストをアスペクト比を維持して表示し、その下に基本情報を2×2で固定表示。
-- 基本情報は `No. / CLASS / MB / RARITY`。
-- `CLASS` はマスタの `class_initial` を使用して `S / M / G` で表示。
-- `No. / MB / RARITY` は正式値未確定の場合 `--` 表示とし、推測値を入れない。
-- 右側は `チップの内容 / 主要値 / 属性・系統` の固定高構成。
-- 主要値は `R_CHIP_VALUE` から複数件を横並び表示。
-- 属性・系統は `R_CHIP_ATTRIBUTE` から複数件をアイコン付きで横並び表示。
-- 主要値・属性/系統が固定幅に収まらない場合、その領域だけ横スクロールする。
-- 範囲表示のレイアウトと既存の範囲イメージは維持。
-- チップ詳細のマスタ描画処理は `js/ui/chip-detail-ui.js` に分離。
-
 ### チップ使用プロトタイプ
 
 - キャノン: 前方への直進弾。
@@ -170,27 +158,9 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - ワイドソード: ソードと同程度の射程で横幅を広くした攻撃範囲。
 - ミニボム: 前方3マス先へ投擲し、着弾地点を中心に半径0.75マスの円形爆発。
 - リカバリー: 回復エフェクトを表示。
-- 現在セットされている次チップの攻撃範囲プレビューを表示。
 - キャノンは `LINE(5×0.25)`、ソードは `RECT(1×1)`、ワイドソードは `RECT(1×3)` のマス単位Rangeへ移行済み。
-- 実行時は `BattleNetworkField.toWorldDistance()` でworld unitsへ変換する。
 - ミニボム投擲距離は `BOMB_THROW.THROW_DISTANCE_TILES=3`。
 - ミニボム爆発半径は `CIRCLE / RADIUS_TILES=0.75`。
-- ミニボムのプレビューとA使用時の `lastAttackRange` / 爆発サイズは同じCIRCLE Rangeを使用する。
-
-### チップマスタ基盤
-
-- `MASTER_DATA_DESIGN.md` をチップマスタ・Range/Behavior・セーブデータ設計のSource of Truthとして追加。
-- `js/master/chip-definitions.js` に属性・コード・クラス・主要値種別・Range・Behavior等の共通定義を追加。
-- Range Typeとして `LINE / RECT / CIRCLE / SECTOR / RING / SELF` を定義済み。
-- 旧 `THROW_AOE` は新規設計では使用せず、互換定義としてのみ残す。
-- `js/master/chip-master.js` に現行5チップの基本情報を移行。
-- ミニボムはマスタ上も `CIRCLE` へ移行済み。
-- `js/master/chip-relations.js` に属性/系統、コード、主要値、Range Parameter、Behavior Parameterの関連を追加。
-- `js/master/chip-service.js` にマスタ参照API、整合性チェック、マス単位Rangeからworld unitsへの互換変換を追加。
-- 現行 `game.js` のチップ定義はマスタ互換層から取得する方式へ変更し、チップ基本情報の二重定義を廃止。
-- キャノンの弾速、各チップの行動硬直、ミニボムの爆発遅延・投擲距離もBehavior Parameterから取得可能な構成へ移行。
-- `library_no / capacity_mb / rarity` は原作確認前に推測で設定せず `null` のままとする。
-- 現行30枚プロトタイプフォルダのコード値はマスタへ移したが、正式な原作準拠値は別途確認対象。
 
 ### IndexedDB v1
 
@@ -203,16 +173,6 @@ CUSTOM画面には各チップの正式イラストを表示済み。
 - `folder_chips`
 
 を作成する基盤を実装。
-
-`js/data/database.js` がIndexedDBスキーマと基本アクセスを担当し、`js/data/save-data.js` がゲーム側から利用するセーブデータAPIを担当する。
-IndexedDBが利用できない環境ではゲーム本体を停止させず、セーブデータ永続化のみ失敗扱いとする。
-
-現時点のプロトタイプフォルダはまだIndexedDBから読み込んでいない。フォルダ編集機能を実装する段階で `folders / folder_chips / owned_chips` へ接続する。
-
-### 端末設定
-
-コントローラー配置・サイズ・透明度は引き続きlocalStorageで管理する。
-ゲーム共通固定データ、ユーザーセーブデータ、端末設定の責務を分離する。
 
 ## 設計確定・段階実装中: 論理フィールドと攻撃範囲
 
@@ -240,43 +200,35 @@ IndexedDBが利用できない環境ではゲーム本体を停止させず、�
 
 ## 現時点で未実装・未確定
 
+- v53の敵HitBox × Range幾何交差を実機確認。
+- キャノン弾・ミニボム爆発等のBehaviorと実際の命中タイミング接続。
 - 特殊地形の実ゲーム処理。
 - 穴等の侵入不可地形に対する移動HitBox判定。
-- 敵キャラクター。
 - 敵AI。
 - プレイヤーHP。
 - 敵HP。
 - ダメージ計算。
-- 敵HitBoxと `BattleNetworkRangeGeometry.containsPoint()` 等の正式接続。
 - 被弾処理。
 - 敵攻撃と攻撃予兆。
 - 撃破処理。
 - Wave進行の実戦フロー。
 - ボス。
-- リカバリー10はマスタ上 `RECOVERY=10` だが、プレイヤーHP未実装のため実HP回復処理は未接続。
+- リカバリー10の実HP回復処理。
 - Yボタンの正式用途。
 - ソウルユニゾン。
 - 本格的なプレイヤー・敵・ステージのビジュアル。
 - 所持チップ・フォルダ・レギュラーチップとIndexedDBの実ゲーム接続。
 - `library_no / capacity_mb / rarity` の正式な原作値確認とマスタ反映。
 
-## 直近の開発方針
-
-### 新規チップ追加は後回し
-
-チップ1種類ごとにイラスト制作・調整の工数が大きいため、当面は新しいチップを追加しない。
-現在完成している5種類を使用して戦闘システムを成立させることを優先する。
-
-新規チップ制作は、基礎戦闘が成立した後にまとめて行う。
-
 ## 次フェーズ: 敵HitBox・HP基盤
 
-ミニボムを含む既存5チップのRange Type / Range Parameter移行が完了した。
-v46のミニボム見た目は実機確認済み。CUSTOMゲージの初回タップと蓄積アニメーションはv50で実機確認済み。Range表示中の操作負荷はv51で実用上許容として完了扱いとする。
+Range表示中の操作負荷はv51で実用上許容として完了扱い。
+v53で敵HitBoxとRange Geometryの幾何交差基盤を実装したため、まず実機で命中可視化を確認する。
 
 優先対象は以下。
 
-1. 敵キャラクターの最小HitBoxを追加する。
-2. `BattleNetworkRangeGeometry` と敵HitBoxの連続座標判定を接続する。
-3. プレイヤーHP・敵HP・ダメージ処理の最小基盤へ進む。
-4. その後、敵AI・被弾・撃破・Wave進行へ拡張する。
+1. キャノン / ソード / ワイドソード / ミニボムで、Rangeとテスト敵HitBoxが交差した場合だけ敵が発光するか実機確認する。
+2. 幾何判定に問題がなければ、各Behaviorと実際の命中発生タイミングを接続する。
+3. 敵HP・ダメージ処理の最小基盤へ進む。
+4. プレイヤー表示 / HitBox分離とプレイヤーHPへ進む。
+5. その後、敵AI・被弾・撃破・Wave進行へ拡張する。
