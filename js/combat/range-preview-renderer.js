@@ -7,6 +7,7 @@
   const svg=document.createElementNS(SVG_NS,'svg');
   const polygon=document.createElementNS(SVG_NS,'polygon');
   const ellipse=document.createElementNS(SVG_NS,'ellipse');
+  const MIN_RENDER_INTERVAL_MS=32;
   svg.setAttribute('class','battleRangeOverlay');
   svg.setAttribute('aria-hidden','true');
   svg.setAttribute('preserveAspectRatio','none');
@@ -27,6 +28,7 @@
   let lastPoints='';
   let lastRangeType='';
   let lastEllipse='';
+  let lastRenderAt=-Infinity;
 
   function refreshProjection(){
     const nextWidth=scene.clientWidth;
@@ -41,6 +43,7 @@
     svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
     lastPoints='';
     lastEllipse='';
+    lastRenderAt=-Infinity;
     return true;
   }
 
@@ -67,6 +70,7 @@
     if(!visible)return;
     svg.classList.remove('show');
     visible=false;
+    lastRenderAt=-Infinity;
   }
 
   function hide(){
@@ -117,6 +121,10 @@
         return;
       }
     }
+
+    const now=performance.now();
+    if(visible&&now-lastRenderAt<MIN_RENDER_INTERVAL_MS)return;
+    lastRenderAt=now;
 
     const rendered=shape.rangeTypeId==='CIRCLE'
       ?renderCircle(shape)
