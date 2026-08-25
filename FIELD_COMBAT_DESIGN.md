@@ -173,17 +173,17 @@ worldDistance = tileDistance × TILE_SIZE
 `TILE_SIZE = 180`。
 
 距離系パラメータは整数に限定せず、小数マスを許可する。
-例: `0.25マス = 45 world units`。
+例: `0.25マス = 45 world units`、`0.5マス = 90 world units`。
 
 例:
 
 ```text
 キャノン
 射程: 5マス
-→ 5 × 180 = 900 world units
+幅: 0.5マス
+→ 射程 5 × 180 = 900 world units
+→ 幅 0.5 × 180 = 90 world units
 ```
-
-既存プロトタイプのキャノン射程900と一致する。
 
 共通変換API `BattleNetworkField.toWorldDistance(tileDistance)` は実装済み。
 2026-08-25にキャノン・ソード・ワイドソードを新Range Parameterへ移行し、実ゲーム側もこの変換を通す構成へ接続した。
@@ -230,7 +230,7 @@ A押下時点の向きをその攻撃の基準方向として固定する。
 マスは射程・幅等の設計単位として使用し、敵Hit判定そのものを離散化しない。
 
 `BattleNetworkRangeGeometry.containsPoint(shape, x, y)` を共通Range判定APIとして実装済み。
-現在は敵HitBox自体が未実装のため正式Hit判定への接続待ちだが、プレビューと将来のHit判定で同一Range形状を使用することを固定する。
+敵HitBoxとの交差は `BattleNetworkRangeGeometry.intersectsBounds(shape, bounds)` を使用し、プレビューとHit判定で同一Range形状を参照する。
 
 ゲーム側からは `BattleNetworkCombatRange` を通じ、直近攻撃Rangeと点判定を参照可能とする。
 
@@ -281,7 +281,7 @@ Rangeは「どの形の範囲に効果が届くか」だけを表す。
 ```text
 Range = LINE
 length_tiles = 5
-width_tiles = 0.25
+width_tiles = 0.5
 ```
 
 ### 11.2 RECT
@@ -317,7 +317,6 @@ width_tiles = 3
 ```text
 Behavior = BOMB_THROW
 throw_distance_tiles = 3
-
 Range = CIRCLE
 radius_tiles = 0.75
 ```
@@ -358,7 +357,7 @@ Behavior
 
 ```text
 キャノン
-Range: LINE 5マス
+Range: LINE 5マス / 幅0.5マス
 Behavior: CANNON_SHOT
 → 弾速、非貫通等はBehavior
 
@@ -376,7 +375,7 @@ Behavior: BOMB_THROW 3マス
 
 | チップ | Range Type | Range Parameter |
 | --- | --- | --- |
-| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.25` |
+| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.5` |
 | ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
 | ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
 | ミニボム | `CIRCLE` | `radius_tiles=0.75` |
@@ -385,6 +384,8 @@ Behavior: BOMB_THROW 3マス
 キャノン・ソード・ワイドソード・ミニボムはマスタ・実行時変換・共通Range形状生成まで移行済み。
 ミニボムの投擲距離はRange Parameterではなく `BOMB_THROW.THROW_DISTANCE_TILES=3` とする。
 旧 `THROW_AOE` は互換定義として残してよいが、既存5チップの正式マスタでは使用しない。
+
+2026-08-25、キャノン弾の視認性向上に合わせて表示サイズを88×44pxへ拡大し、正式Range幅も `0.25マス` から `0.5マス` へ拡大した。射程5マスは維持する。
 
 ## 14. プレビューと判定の共通化
 
@@ -397,7 +398,7 @@ Behavior: BOMB_THROW 3マス
 ```text
 プレビューが描く形状
 = BattleNetworkRangeGeometry が生成した形状
-= 将来の敵Hit判定・地形判定が参照する形状
+= 敵Hit判定・地形判定が参照する形状
 ```
 
 これにより、「表示だけ広い／狭い」「Hit判定だけ別形状」となる二重管理を避ける。
@@ -410,7 +411,7 @@ CIRCLEはworld上の円を24～48頂点のポリゴンへ毎フレーム変換�
 投擲経路はRangeではなくBehaviorプレビューとして `js/combat/bomb-preview-renderer.js` が3マス先の着弾地点までの放物線を描画する。
 またv46ではカスタムゲージ更新とRange描画を分離し、ゲームループ内の二重プレビュー描画を解消した。
 
-v46のミニボム表示・操作負荷は実機確認待ち。
+v51でRange専用レイヤーへ分離し、実機では稀な引っかかりを残すものの実用上許容まで改善済み。
 
 ## 15. 実装順序
 
@@ -425,8 +426,8 @@ v46のミニボム表示・操作負荷は実機確認待ち。
 5. 攻撃距離をマス単位からワールド距離へ変換する共通処理を追加する。**完了**
 6. キャノン・ソード・ワイドソードを新Range方式へ移行する。**完了／実機確認済み**
 7. ミニボムの `radius_tiles` を実機比較して確定する。**完了／0.75採用**
-8. ミニボムを `CIRCLE / RADIUS_TILES` へ完全移行し、投擲距離3マス・放物線表示へ変更する。**リポジトリ実装完了／実機確認待ち**
-9. 敵HitBox導入時に `BattleNetworkRangeGeometry` を正式当たり判定へ接続する。
+8. ミニボムを `CIRCLE / RADIUS_TILES` へ完全移行し、投擲距離3マス・放物線表示へ変更する。**完了／実機確認済み**
+9. 敵HitBox導入時に `BattleNetworkRangeGeometry` を正式当たり判定へ接続する。**完了／実機確認済み**
 10. 特殊地形は基礎戦闘成立後または必要なチップ実装時に追加する。
 
 既存の自由移動・カメラ・チップ操作を壊さず、小さい単位で実装と実機確認を行う。
