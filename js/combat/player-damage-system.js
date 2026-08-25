@@ -2,9 +2,14 @@
   const HEALTH=window.BattleNetworkPlayerHealth;
   const PLAYER=window.BattleNetworkPlayer;
   const RANGE=window.BattleNetworkRangeGeometry;
+  const PLAYER_EL=document.getElementById('player');
   if(!HEALTH)throw new Error('BattleNetworkPlayerDamage: player health is not loaded.');
   if(!PLAYER)throw new Error('BattleNetworkPlayerDamage: player foundation is not loaded.');
   if(!RANGE)throw new Error('BattleNetworkPlayerDamage: range geometry is not loaded.');
+
+  const INVINCIBILITY_MS=2000;
+  let invincibleUntil=0;
+  let invincibilityTimer=null;
 
   function freezeResult(result){return Object.freeze(result)}
   function sourceMeta(input={}){
@@ -13,6 +18,45 @@
       sourceId:input.sourceId??null,
       attackId:input.attackId??null
     });
+  }
+  function isInvincible(now=performance.now()){
+    return now<invincibleUntil;
+  }
+  function remainingInvincibilityMs(now=performance.now()){
+    return Math.max(0,invincibleUntil-now);
+  }
+  function clearInvincibilityVisual(){
+    PLAYER_EL?.classList.remove('damageInvincible');
+  }
+  function scheduleInvincibilityEnd(){
+    if(invincibilityTimer!==null)clearTimeout(invincibilityTimer);
+    const remaining=remainingInvincibilityMs();
+    if(remaining<=0){
+      invincibilityTimer=null;
+      clearInvincibilityVisual();
+      return;
+    }
+    invincibilityTimer=setTimeout(()=>{
+      invincibilityTimer=null;
+      if(isInvincible())scheduleInvincibilityEnd();
+      else clearInvincibilityVisual();
+    },remaining+16);
+  }
+  function beginInvincibility(durationMs=INVINCIBILITY_MS){
+    const duration=Number(durationMs);
+    if(!Number.isFinite(duration)||duration<=0)return false;
+    invincibleUntil=performance.now()+duration;
+    PLAYER_EL?.classList.add('damageInvincible');
+    scheduleInvincibilityEnd();
+    return true;
+  }
+  function clearInvincibility(){
+    invincibleUntil=0;
+    if(invincibilityTimer!==null){
+      clearTimeout(invincibilityTimer);
+      invincibilityTimer=null;
+    }
+    clearInvincibilityVisual();
   }
   function missResult(reason,input={}){
     const health=HEALTH.getSnapshot();
@@ -25,6 +69,8 @@
       beforeHp:health.hp,
       afterHp:health.hp,
       defeatedNow:false,
+      invincible:isInvincible(),
+      remainingInvincibilityMs:remainingInvincibilityMs(),
       ...sourceMeta(input),
       health
     });
@@ -32,7 +78,11 @@
   function applyResolvedDamage(input={}){
     const damage=Number(input.damage);
     if(!Number.isFinite(damage)||damage<=0)return missResult('INVALID_DAMAGE',input);
+    if(isInvincible())return missResult('INVINCIBLE',input);
     const result=HEALTH.applyDamage(damage);
+    if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){
+      beginInvincibility();
+    }
     return freezeResult({
       hit:true,
       applied:result.ok===true,
@@ -42,6 +92,8 @@
       beforeHp:result.beforeHp,
       afterHp:result.afterHp,
       defeatedNow:result.defeatedNow===true,
+      invincible:isInvincible(),
+      remainingInvincibilityMs:remainingInvincibilityMs(),
       ...sourceMeta(input),
       health:HEALTH.getSnapshot()
     });
@@ -61,5 +113,12 @@
     return applyResolvedDamage(input);
   }
 
-  window.BattleNetworkPlayerDamage=Object.freeze({resolvePointHit,resolveRangeHit});
+  window.BattleNetworkPlayerDamage=Object.freeze({
+    INVINCIBILITY_MS,
+    resolvePointHit,
+    resolveRangeHit,
+    isInvincible,
+    getRemainingInvincibilityMs:remainingInvincibilityMs,
+    clearInvincibility
+  });
 })();
