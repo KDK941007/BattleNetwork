@@ -173,16 +173,16 @@ worldDistance = tileDistance × TILE_SIZE
 `TILE_SIZE = 180`。
 
 距離系パラメータは整数に限定せず、小数マスを許可する。
-例: `0.25マス = 45 world units`、`0.5マス = 90 world units`。
+例: `0.25マス = 45 world units`、`0.5マス = 90 world units`、`0.75マス = 135 world units`。
 
 例:
 
 ```text
 キャノン
 射程: 5マス
-幅: 0.5マス
+幅: 0.75マス
 → 射程 5 × 180 = 900 world units
-→ 幅 0.5 × 180 = 90 world units
+→ 幅 0.75 × 180 = 135 world units
 ```
 
 共通変換API `BattleNetworkField.toWorldDistance(tileDistance)` は実装済み。
@@ -281,7 +281,7 @@ Rangeは「どの形の範囲に効果が届くか」だけを表す。
 ```text
 Range = LINE
 length_tiles = 5
-width_tiles = 0.5
+width_tiles = 0.75
 ```
 
 ### 11.2 RECT
@@ -357,7 +357,7 @@ Behavior
 
 ```text
 キャノン
-Range: LINE 5マス / 幅0.5マス
+Range: LINE 5マス / 幅0.75マス
 Behavior: CANNON_SHOT
 → 弾速、非貫通等はBehavior
 
@@ -375,7 +375,7 @@ Behavior: BOMB_THROW 3マス
 
 | チップ | Range Type | Range Parameter |
 | --- | --- | --- |
-| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.5` |
+| キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.75` |
 | ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
 | ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
 | ミニボム | `CIRCLE` | `radius_tiles=0.75` |
@@ -386,6 +386,7 @@ Behavior: BOMB_THROW 3マス
 旧 `THROW_AOE` は互換定義として残してよいが、既存5チップの正式マスタでは使用しない。
 
 2026-08-25、キャノン弾の視認性向上に合わせて表示サイズを88×44pxへ拡大し、正式Range幅も `0.25マス` から `0.5マス` へ拡大した。射程5マスは維持する。
+同日v59でキャノン表示をさらに132×66pxへ拡大し、影を114×39pxへ変更。見た目に合わせて正式Range幅を `0.5マス` から `0.75マス`（135 world units）へ拡大した。射程5マスは維持する。
 
 ## 14. プレビューと判定の共通化
 
@@ -412,6 +413,7 @@ CIRCLEはworld上の円を24～48頂点のポリゴンへ毎フレーム変換�
 またv46ではカスタムゲージ更新とRange描画を分離し、ゲームループ内の二重プレビュー描画を解消した。
 
 v51でRange専用レイヤーへ分離し、実機では稀な引っかかりを残すものの実用上許容まで改善済み。
+v59でRange Geometryや色相は変えず、Range SVGレイヤーの表示opacityを下げて実攻撃エフェクト・弾を見やすくした。ミニボム投擲軌道も同様に薄く表示する。
 
 ## 15. 実装順序
 
