@@ -176,7 +176,7 @@ Rangeは純粋に効果範囲の形状を表し、投擲・弾速・貫通・発
 既存5チップで当面使用するのは `LINE / RECT / CIRCLE / SELF`。
 `SECTOR / RING` は将来拡張用として保持する。
 
-旧 `LINE_FORWARD / FRONT_RECT / THROW_AOE` は論理グリッド移行時に上記Typeへ段階移行する。移行完了までは既存ゲーム互換用として残してよいが、新規設計では使用しない。
+旧 `LINE_FORWARD / FRONT_RECT / THROW_AOE` は互換定義として残してよいが、新規設計および既存5チップの正式マスタでは使用しない。
 
 ### M_RANGE_PARAM
 
@@ -240,7 +240,8 @@ TILE_SIZE = 180 world units
 
 `SELF` のように距離パラメータ不要なRangeは関連レコード0件でよい。
 
-2026-08-25時点の既存5チップ実装・互換層にはworld unitsのRange値が残っている。論理グリッド実装と同時に段階移行し、既存値をマス数として誤解釈しない。
+2026-08-25に既存5チップのRangeマスタを論理マス単位へ移行した。
+既存ゲーム互換層が必要とする `range / width / radius` は、`chip-service.js` がマス単位Parameterからworld unitsへ変換して返す。
 
 ### 既存5チップの正式Range割当
 
@@ -249,7 +250,7 @@ TILE_SIZE = 180 world units
 | キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.25` |
 | ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
 | ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
-| ミニボム | `CIRCLE` | `radius_tiles` は実機調整で確定 |
+| ミニボム | `CIRCLE` | `radius_tiles=0.75` |
 | リカバリー10 | `SELF` | なし |
 
 ## 8. Behavior
@@ -307,8 +308,10 @@ PKは `(chip_id, param_id)`。
 - Behavior: 何をするか、どこをRangeの発生中心にするか、どう届けるか。
 - Behavior Parameter: どう動くか。例: 行動硬直、弾速、爆発までの時間、投擲距離。
 
-フィールド上の距離を表すBehavior Parameterも、正式な論理グリッド移行後はマス数を設計単位とする。
-例えばミニボムの投擲距離はRangeに持たせず、`BOMB_THROW` のBehavior Parameterとしてマス単位で保持する。
+フィールド上の距離を表すBehavior Parameterも、論理マス数を設計単位とする。
+ミニボムは投擲距離をRangeに持たせず、`BOMB_THROW.THROW_DISTANCE_TILES=3` とする。
+`TILE_SIZE=180` のため実行時の投擲距離は540 world units。
+投擲経路の放物線表示もRangeではなく、BOMB_THROWのBehavior可視化として扱う。
 
 ## 9. チップ詳細UI
 
@@ -389,6 +392,10 @@ js/
 ├─ data/
 │  ├─ database.js
 │  └─ save-data.js
+├─ combat/
+│  ├─ range-geometry.js
+│  ├─ range-preview-renderer.js
+│  └─ bomb-preview-renderer.js
 ├─ game.js
 └─ service-worker-register.js
 ```
@@ -397,7 +404,7 @@ js/
 
 画面・ゲーム処理からマスタ配列やIndexedDBを直接操作せず、`chip-service.js` / `save-data.js` を経由する。
 
-## 13. 現行5チップの移行方針
+## 13. 現行5チップの移行状況
 
 対象:
 
@@ -407,19 +414,21 @@ js/
 4. ミニボム
 5. リカバリー10
 
-現行プロトタイプに存在する威力・回復量・範囲・硬直・弾速・爆発遅延等を新マスタへ移す。
+威力・回復量・範囲・硬直・弾速・爆発遅延等を新マスタへ移行済み。
 `library_no / capacity_mb / rarity` は原作確認前に推測で埋めず、現時点では `null` とする。
 
-現在の30枚プロトタイプフォルダで使用中のコードは移行するが、正式な原作準拠コード値は別途確認して確定する。
+現在の30枚プロトタイプフォルダで使用中のコードは移行済みだが、正式な原作準拠コード値は別途確認して確定する。
 
-Rangeの距離系パラメータは、論理グリッド実装時に `FIELD_COMBAT_DESIGN.md` に従いマス数へ移行する。既存のworld units値は移行完了まで互換値として保持する。
+Rangeは `FIELD_COMBAT_DESIGN.md` に従いマス単位へ移行済み。
+ミニボムは `CIRCLE / RADIUS_TILES=0.75`、投擲距離は `BOMB_THROW.THROW_DISTANCE_TILES=3` とする。
 
 ## 14. 移行中の互換性
 
-既存ゲーム挙動を壊さないため、初期移行では `chip-service.js` に互換変換層を置く。
+既存ゲーム挙動を壊さないため、`chip-service.js` に互換変換層を置く。
 正規化マスタから現行 `game.js` が必要とする `name / type / attr / power / heal / range / width / radius / lock / image / detail / rangeText / viz` を生成する。
 
 新規機能は正規化マスタAPIを利用し、既存ロジックは段階的に互換層から直接マスタ参照へ移行する。
 互換層は永久仕様ではなく、安全な段階移行のための一時的な境界とする。
 
-論理グリッド移行までは互換層が返す `range / width / radius` は既存world unitsとして扱う。マス単位への切替時は共通変換処理を導入し、同一フィールド名の意味を暗黙に変更しない。
+現在の互換層は、`rangeTiles / widthTiles / radiusTiles / throwDistanceTiles` を保持しつつ、既存処理向けの `range / width / radius` を `BattleNetworkField.toWorldDistance()` でworld unitsへ変換して返す。
+同一フィールド名の意味を暗黙に変更せず、マスタ上の単位と実行時のworld unitsを明確に分離する。
