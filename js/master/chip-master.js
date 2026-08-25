@@ -49,7 +49,7 @@
       capacityMb:null,
       classId:'STANDARD',
       rarity:null,
-      rangeTypeId:'THROW_AOE',
+      rangeTypeId:'CIRCLE',
       behaviorId:'BOMB_THROW',
       description:'前方へボムを投げ、着弾地点の周囲を爆発で攻撃する。',
       rangeDescription:'前方へ投擲／着弾地点を中心に範囲攻撃'
@@ -101,7 +101,7 @@
       capacityMb:70,
       classId:'STANDARD',
       rarity:4,
-      rangeTypeId:'THROW_AOE',
+      rangeTypeId:'CIRCLE',
       behaviorId:'BOMB_THROW',
       description:'Dark特殊種別の色・特別感・詳細画面を確認するための動作確認用チップ。',
       rangeDescription:'テスト用／前方へ投擲・着弾地点周囲'
