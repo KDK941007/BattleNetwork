@@ -8,7 +8,7 @@
   if(!battle||!scene||!editTopBar||!field||!playerApi)return;
 
   const STORAGE_KEY='battleNetworkCameraZoomV1';
-  const MIN_ZOOM=.50;
+  const MIN_ZOOM=.40;
   const MAX_ZOOM=.62;
   const DEFAULT_ZOOM=.58;
   const PX=.72,PY=.36,SW=field.WORLD_SIZE*PX*2,SH=field.WORLD_SIZE*PY*2,FOLLOW=.14;
@@ -25,8 +25,7 @@
 
   const control=document.createElement('label');
   control.id='cameraZoomControl';
-  control.style.cssText='display:flex;align-items:center;gap:6px;min-width:190px;font-size:11px;font-weight:900;white-space:nowrap;';
-  control.innerHTML='<span>カメラ倍率</span><input id="cameraZoomSlider" type="range" min="50" max="62" step="1" style="width:105px;touch-action:auto"><span id="cameraZoomValue" style="min-width:38px;text-align:right"></span>';
+  control.innerHTML='<span class="cameraZoomLabel">カメラ倍率</span><input id="cameraZoomSlider" type="range" min="40" max="62" step="1"><span id="cameraZoomValue"></span>';
   editTopBar.insertBefore(control,resetButton||null);
 
   const slider=control.querySelector('#cameraZoomSlider');
@@ -50,6 +49,7 @@
 
   slider.addEventListener('input',()=>setZoom(Number(slider.value)/100,true));
   slider.addEventListener('pointerdown',event=>event.stopPropagation());
+  slider.addEventListener('pointermove',event=>event.stopPropagation());
   slider.addEventListener('click',event=>event.stopPropagation());
 
   if(resetButton){
