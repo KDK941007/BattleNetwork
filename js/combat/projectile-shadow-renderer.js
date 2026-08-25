@@ -3,6 +3,9 @@
   if(!scene)throw new Error('BattleNetworkProjectileShadow: scene is not available.');
 
   const tracked=new Map();
+  const LEGACY_TRANSLATE_X=9;
+  const LEGACY_TRANSLATE_Y=34;
+  const FLOOR_CLEARANCE=20;
   const bulletConfig={
     cannon:{shadowWidth:114,shadowHeight:39,opacity:.48},
     normal:{shadowWidth:28,shadowHeight:10,opacity:.4},
@@ -23,8 +26,8 @@
     const tx=Number(match[1]),ty=Number(match[2]);
     if(!Number.isFinite(tx)||!Number.isFinite(ty))return;
     const cfg=entry.config;
-    const floorX=tx+entry.bullet.offsetWidth/2;
-    const floorY=ty+34;
+    const floorX=tx+LEGACY_TRANSLATE_X;
+    const floorY=ty+LEGACY_TRANSLATE_Y;
     entry.shadow.style.transform=`translate(${floorX-cfg.shadowWidth/2}px,${floorY-cfg.shadowHeight/2}px)`;
   }
 
@@ -32,6 +35,12 @@
     if(tracked.has(bullet))return;
     const kind=getKind(bullet),config=bulletConfig[kind];
     if(!config)return;
+
+    const bulletWidth=bullet.offsetWidth;
+    const bulletHeight=bullet.offsetHeight;
+    bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-bulletWidth/2}px`;
+    bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-bulletHeight-FLOOR_CLEARANCE}px`;
+
     const shadow=document.createElement('div');
     shadow.className=`projectileFloorShadow ${kind}`;
     shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;`;
