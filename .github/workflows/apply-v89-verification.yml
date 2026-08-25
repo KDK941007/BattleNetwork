@@ -1,0 +1,21 @@
+name: Apply v89 verification status
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v89-verification.yml'
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v89 verification
+        run: python3 tools/apply_v89_verification.py
+      - name: Commit v89 verification
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record v89 device verification"
+          git push
