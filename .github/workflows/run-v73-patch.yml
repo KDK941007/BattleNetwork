@@ -1,0 +1,23 @@
+name: Run v73 patch
+on:
+  push:
+    paths:
+      - '.github/workflows/run-v73-patch.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: python .github/scripts/apply_v73.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/combat/enemy-foundation.js js/combat/combat-hit-test.js js/game.js index.html sw.js GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m "Integrate configurable B attack damage v73"
+          git rm .github/scripts/apply_v73.py .github/workflows/run-v73-patch.yml
+          git commit -m "Remove temporary v73 patch files"
+          git push origin main
