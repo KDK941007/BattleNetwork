@@ -70,7 +70,7 @@
 }
 
 .rangeGridSelf{
-  width:calc(100% / 7 * .84);
+  width:12%;
   aspect-ratio:1;
   transform:translate(-50%,-50%);
   border:3px solid rgba(112,255,158,.95);
@@ -82,7 +82,7 @@
 .rangeGridPlayer{
   position:absolute;
   z-index:5;
-  width:calc(100% / 7 * .54);
+  width:7.7%;
   aspect-ratio:1;
   display:grid;
   place-items:center;
