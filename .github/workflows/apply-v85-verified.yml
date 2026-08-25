@@ -1,0 +1,25 @@
+name: Apply v85 verified status
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v85-verified.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v85 verified status
+        run: python tools/apply_v85_verified.py
+      - name: Commit v85 verification
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEVELOPMENT_STATUS.md
+          git commit -m 'Mark v85 HUD verified'
+          git rm tools/apply_v85_verified.py .github/workflows/apply-v85-verified.yml
+          git commit -m 'Remove one-time v85 verification files'
+          git push origin main
