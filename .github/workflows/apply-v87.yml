@@ -1,0 +1,25 @@
+name: Apply v87 player damage foundation
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v87.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v87
+        run: python tools/apply_v87.py
+      - name: Commit v87
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m 'Wire player damage receive path (v87)'
+          git rm tools/apply_v87.py .github/workflows/apply-v87.yml
+          git commit -m 'Remove one-time v87 files'
+          git push origin main
