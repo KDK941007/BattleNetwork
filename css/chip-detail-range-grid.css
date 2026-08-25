@@ -1,0 +1,197 @@
+/* BattleNetwork - chip detail logical tile range diagram */
+.rangeLayout .rangeViz.rangeGridViz{
+  position:relative !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:6px !important;
+  overflow:hidden !important;
+  background:
+    radial-gradient(circle at 50% 46%,rgba(54,151,181,.08),transparent 58%),
+    linear-gradient(180deg,#092330,#061822) !important;
+}
+
+.rangeGridBoard{
+  position:relative;
+  width:min(100%,260px);
+  max-width:100%;
+  aspect-ratio:7 / 5;
+  overflow:hidden;
+  border:1px solid rgba(91,188,216,.68);
+  border-radius:7px;
+  background-color:#08212d;
+  background-image:
+    linear-gradient(rgba(108,211,239,.22) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(108,211,239,.22) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(21,67,84,.58),rgba(7,28,39,.76));
+  background-size:
+    calc(100% / 7) calc(100% / 5),
+    calc(100% / 7) calc(100% / 5),
+    100% 100%;
+  box-shadow:inset 0 0 0 1px rgba(179,242,255,.05),0 0 9px rgba(51,199,235,.08);
+}
+
+.rangeGridBoard::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:6;
+  pointer-events:none;
+  border:1px solid rgba(198,247,255,.06);
+  border-radius:6px;
+}
+
+.rangeGridAttack,
+.rangeGridCircle,
+.rangeGridSelf{
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+}
+
+.rangeGridLine{
+  border:2px solid rgba(255,230,102,.96);
+  border-radius:4px;
+  background:rgba(255,224,78,.30);
+  box-shadow:0 0 9px rgba(255,222,86,.22),inset 0 0 8px rgba(255,245,180,.10);
+}
+
+.rangeGridRect{
+  border:2px solid rgba(113,237,255,.96);
+  border-radius:4px;
+  background:rgba(79,218,245,.28);
+  box-shadow:0 0 9px rgba(89,229,255,.20),inset 0 0 8px rgba(190,249,255,.08);
+}
+
+.rangeGridCircle{
+  border:2px dashed rgba(255,178,72,.98);
+  border-radius:50%;
+  background:rgba(255,145,43,.24);
+  box-shadow:0 0 9px rgba(255,166,62,.18),inset 0 0 9px rgba(255,218,135,.08);
+}
+
+.rangeGridSelf{
+  width:calc(100% / 7 * .84);
+  aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border:3px solid rgba(112,255,158,.95);
+  border-radius:50%;
+  background:rgba(83,255,143,.12);
+  box-shadow:0 0 12px rgba(83,255,143,.38),inset 0 0 9px rgba(154,255,189,.10);
+}
+
+.rangeGridPlayer{
+  position:absolute;
+  z-index:5;
+  width:calc(100% / 7 * .54);
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  transform:translate(-50%,-50%);
+  border:2px solid #c5f5ff;
+  border-radius:50%;
+  background:radial-gradient(circle at 42% 38%,#5dd8ff 0 18%,#167db2 19% 58%,#0a4367 59% 100%);
+  box-shadow:0 0 0 2px rgba(89,229,255,.12),0 0 8px rgba(89,229,255,.34);
+  color:#effcff;
+  font-size:8px;
+  line-height:1;
+  font-weight:1000;
+}
+
+.rangeGridPlayer::after{
+  content:'';
+  position:absolute;
+  left:calc(100% + 1px);
+  top:50%;
+  width:0;
+  height:0;
+  transform:translateY(-50%);
+  border-top:4px solid transparent;
+  border-bottom:4px solid transparent;
+  border-left:6px solid #a9f1ff;
+  filter:drop-shadow(0 0 2px rgba(89,229,255,.75));
+}
+
+.rangeGridArc{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  pointer-events:none;
+}
+
+.rangeGridArc path{
+  fill:none;
+  stroke:#ffbd58;
+  stroke-width:5;
+  stroke-linecap:round;
+  stroke-dasharray:10 9;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 2px rgba(255,174,72,.42));
+}
+
+.rangeGridForward,
+.rangeGridUnit,
+.rangeGridLegend,
+.rangeGridUnsupported{
+  position:absolute;
+  z-index:7;
+  pointer-events:none;
+  border-radius:4px;
+  background:rgba(4,20,28,.80);
+  color:#dff9ff;
+  font-size:7px;
+  line-height:1.2;
+  font-weight:900;
+  white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.75);
+}
+
+.rangeGridForward{
+  right:4px;
+  top:4px;
+  padding:2px 4px;
+  color:#9eefff;
+}
+
+.rangeGridUnit{
+  left:4px;
+  bottom:4px;
+  padding:2px 4px;
+  color:#89dced;
+}
+
+.rangeGridLegend{
+  right:4px;
+  bottom:4px;
+  max-width:70%;
+  padding:2px 4px;
+  overflow:hidden;
+  color:#fff1a8;
+  text-overflow:ellipsis;
+}
+
+.rangeGridUnsupported{
+  left:50%;
+  top:50%;
+  padding:4px 7px;
+  transform:translate(-50%,-50%);
+}
+
+@media(min-height:431px){
+  .rangeLayout .rangeViz.rangeGridViz{
+    padding:8px !important;
+  }
+
+  .rangeGridForward,
+  .rangeGridUnit,
+  .rangeGridLegend,
+  .rangeGridUnsupported{
+    font-size:8px;
+  }
+
+  .rangeGridPlayer{
+    font-size:9px;
+  }
+}
