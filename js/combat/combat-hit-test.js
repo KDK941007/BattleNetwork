@@ -6,7 +6,7 @@
   if(!ENEMY)throw new Error('BattleNetworkCombatHitTest: enemy foundation is not loaded.');
   if(!DATA)throw new Error('BattleNetworkCombatHitTest: master data is not loaded.');
 
-  let lastObservedRange=null;
+  let lastObservedAttack=null;
 
   function behaviorParam(behaviorId,paramId,fallback){
     const row=DATA.BEHAVIOR_PARAM_MASTER?.find(item=>item.behaviorId===behaviorId&&item.paramId===paramId);
@@ -14,13 +14,17 @@
     return Number.isFinite(value)?value:fallback;
   }
 
-  function testRange(shape){
-    return ENEMY.getHitEnemies(shape);
+  function testRange(shape){return ENEMY.getHitEnemies(shape)}
+
+  function damageAndFlash(enemy,damage){
+    const value=Number(damage);
+    if(Number.isFinite(value)&&value>0)ENEMY.applyDamage(enemy.id,value);
+    ENEMY.debugFlash(enemy.id);
   }
 
-  function flashHits(shape){
+  function flashHits(shape,damage=null){
     const hits=testRange(shape);
-    hits.forEach(enemy=>ENEMY.debugFlash(enemy.id));
+    hits.forEach(enemy=>damageAndFlash(enemy,damage));
     return hits;
   }
 
@@ -37,35 +41,39 @@
     return far>=0?Math.max(0,near):null;
   }
 
-  function scheduleCannon(shape){
+  function scheduleCannon(attack){
+    const shape=attack.shape;
     const speed=behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',900);
-    if(!(speed>0))return;
+    if(!shape||!(speed>0))return;
     const hits=testRange(shape);
     hits.forEach(enemy=>{
       const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);
       if(distance===null||distance>shape.lengthWorld)return;
-      setTimeout(()=>ENEMY.debugFlash(enemy.id),distance/speed*1000);
+      setTimeout(()=>damageAndFlash(enemy,attack.damage),distance/speed*1000);
     });
   }
 
-  function scheduleBomb(shape){
+  function scheduleBomb(attack){
     const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);
-    setTimeout(()=>flashHits(shape),Math.max(0,delay)*1000);
+    setTimeout(()=>flashHits(attack.shape,attack.damage),Math.max(0,delay)*1000);
   }
 
-  function resolveBehavior(shape){
+  function resolveBehavior(input){
+    if(!input)return;
+    const attack=input.shape?input:{shape:input,damage:null};
+    const shape=attack.shape;
     if(!shape)return;
-    if(shape.rangeTypeId==='LINE'){scheduleCannon(shape);return}
-    if(shape.rangeTypeId==='RECT'){flashHits(shape);return}
-    if(shape.rangeTypeId==='CIRCLE')scheduleBomb(shape);
+    if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}
+    if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage);return}
+    if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack);
   }
 
   function observeAttackRange(){
     const combatRange=window.BattleNetworkCombatRange;
-    const shape=combatRange?.getLastAttackRange?.()||null;
-    if(shape&&shape!==lastObservedRange){
-      lastObservedRange=shape;
-      resolveBehavior(shape);
+    const attack=combatRange?.getLastAttackContext?.()||null;
+    if(attack&&attack!==lastObservedAttack){
+      lastObservedAttack=attack;
+      resolveBehavior(attack);
     }
     requestAnimationFrame(observeAttackRange);
   }

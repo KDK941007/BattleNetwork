@@ -46,6 +46,12 @@
     enemy.el.style.height=v.height+'px';
     enemy.el.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
   }
+  function renderHealth(enemy){
+    if(!enemy.hpEl)return;
+    if(!hasHealth(enemy)){enemy.hpEl.style.display='none';return}
+    enemy.hpEl.style.display='block';
+    enemy.hpEl.textContent=`HP ${Math.ceil(enemy.hp)} / ${Math.ceil(enemy.maxHp)}`;
+  }
   function spawn(config={}){
     const x=Number(config.x),y=Number(config.y);
     if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error('BattleNetworkEnemy: spawn requires finite world x/y.');
@@ -56,9 +62,13 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
+    const hpEl=document.createElement('div');
+    hpEl.className='enemyPrototypeHp';
+    hpEl.style.cssText='position:absolute;left:50%;top:-29px;transform:translateX(-50%);min-width:92px;padding:3px 8px;border:2px solid rgba(255,255,255,.78);border-radius:12px;background:rgba(16,8,18,.88);color:#fff7d0;font:900 13px/1.2 system-ui,sans-serif;text-align:center;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.45);';
+    el.appendChild(hpEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,flashToken:0};
-    scene.appendChild(el);enemies.push(enemy);render(enemy);
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,flashToken:0};
+    scene.appendChild(el);enemies.push(enemy);renderHealth(enemy);render(enemy);
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
@@ -69,7 +79,7 @@
     const enemy=getById(id);if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',enemy:null});
     const normalized=normalizeHealth(health);
     if(normalized.maxHp===null)return Object.freeze({applied:false,reason:'INVALID_MAX_HP',enemy:getSnapshot(enemy)});
-    enemy.maxHp=normalized.maxHp;enemy.hp=normalized.hp;
+    enemy.maxHp=normalized.maxHp;enemy.hp=normalized.hp;renderHealth(enemy);
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function applyDamage(id,amount){
@@ -79,7 +89,7 @@
     if(!hasHealth(enemy))return Object.freeze({applied:false,reason:'HP_NOT_CONFIGURED',amount:0,before:null,after:null,defeatedNow:false,enemy:getSnapshot(enemy)});
     if(enemy.hp<=0)return Object.freeze({applied:false,reason:'ALREADY_DEFEATED',amount:0,before:enemy.hp,after:enemy.hp,defeatedNow:false,enemy:getSnapshot(enemy)});
     const before=enemy.hp;
-    enemy.hp=Math.max(0,before-damage);
+    enemy.hp=Math.max(0,before-damage);renderHealth(enemy);
     const applied=before-enemy.hp;
     return Object.freeze({applied:true,reason:null,amount:applied,before,after:enemy.hp,defeatedNow:before>0&&enemy.hp<=0,enemy:getSnapshot(enemy)});
   }
@@ -109,5 +119,5 @@
   window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,configureHealth,applyDamage,containsPoint,intersectsRange,getHitEnemies,debugFlash});
 
   const testCenter=FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2),Math.floor(FIELD.GRID_COLS/2)+3);
-  if(testCenter)spawn({x:testCenter.x,y:testCenter.y});
+  if(testCenter)spawn({x:testCenter.x,y:testCenter.y,health:{maxHp:200}});
 })();
