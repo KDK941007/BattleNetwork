@@ -9,6 +9,7 @@
   display:none;
   overflow:visible;
   pointer-events:none;
+  opacity:.45;
 }
 
 .battleRangeOverlay.show,
@@ -40,6 +41,7 @@
 
 .bombTrajectoryOverlay{
   z-index:5;
+  opacity:.55;
 }
 
 .bombTrajectoryPath{
