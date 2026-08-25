@@ -1,0 +1,25 @@
+name: Apply v86 player HP
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v86.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v86
+        run: python tools/apply_v86.py
+      - name: Commit v86
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html sw.js GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m 'Finalize initial player HP 100 v86'
+          git rm tools/apply_v86.py .github/workflows/apply-v86.yml
+          git commit -m 'Remove one-time v86 files'
+          git push origin main
