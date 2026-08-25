@@ -1,0 +1,25 @@
+name: Apply v80 custom gauge blink
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v80.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v80
+        run: python tools/apply_v80.py
+      - name: Commit v80
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add css/style.css index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m 'Restore lightweight CUSTOM ready blink v80'
+          git rm tools/apply_v80.py .github/workflows/apply-v80.yml
+          git commit -m 'Remove one-time v80 patch files'
+          git push origin main
