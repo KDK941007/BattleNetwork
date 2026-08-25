@@ -19,8 +19,10 @@
   const chipsByName=new Map((data.CHIP_MASTER||[]).map(chip=>[chip.chipName,chip]));
   const GRID_COLS=7;
   const GRID_ROWS=5;
-  const ORIGIN_X=1.5;
-  const ORIGIN_Y=2.5;
+  const PLAYER_TILE_COL=1;
+  const PLAYER_TILE_ROW=2;
+  const ORIGIN_X=PLAYER_TILE_COL+.5;
+  const ORIGIN_Y=PLAYER_TILE_ROW+.5;
 
   function createEmptyToken(text='--'){
     const token=document.createElement('span');
@@ -185,7 +187,8 @@
       if(Number.isFinite(length)&&Number.isFinite(width)){
         const attack=document.createElement('span');
         attack.className=`rangeGridAttack ${chip.rangeTypeId==='LINE'?'rangeGridLine':'rangeGridRect'}`;
-        setTileRect(attack,ORIGIN_X,ORIGIN_Y-width/2,length,width);
+        const attackLeft=PLAYER_TILE_COL+1;
+        setTileRect(attack,attackLeft,ORIGIN_Y-width/2,length,width);
         board.appendChild(attack);
         legend=`射程 ${length}マス / 幅 ${width}マス`;
       }
@@ -208,8 +211,7 @@
     }else if(chip.rangeTypeId==='SELF'){
       const self=document.createElement('span');
       self.className='rangeGridSelf';
-      self.style.left=percentX(ORIGIN_X);
-      self.style.top=percentY(ORIGIN_Y);
+      setTileRect(self,PLAYER_TILE_COL,PLAYER_TILE_ROW,1,1);
       board.appendChild(self);
       legend='対象：自分自身';
     }else{
