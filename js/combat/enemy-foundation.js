@@ -7,21 +7,34 @@
   let nextId=1;
 
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
-  function normalizeHitBox(hitBox){
-    const width=Number(hitBox?.width);
-    const height=Number(hitBox?.height);
+  function positive(value,fallback){const n=Number(value);return Number.isFinite(n)&&n>0?n:fallback}
+  function finite(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback}
+  function normalizeVisual(visual){
     return Object.freeze({
-      width:Number.isFinite(width)&&width>0?width:FIELD.TILE_SIZE*.55,
-      height:Number.isFinite(height)&&height>0?height:FIELD.TILE_SIZE*.55
+      width:positive(visual?.width,48),
+      height:positive(visual?.height,58),
+      offsetX:finite(visual?.offsetX),
+      offsetY:finite(visual?.offsetY,-29)
+    });
+  }
+  function normalizeHitBox(hitBox){
+    return Object.freeze({
+      width:positive(hitBox?.width,FIELD.TILE_SIZE*.55),
+      height:positive(hitBox?.height,FIELD.TILE_SIZE*.55),
+      offsetX:finite(hitBox?.offsetX),
+      offsetY:finite(hitBox?.offsetY)
     });
   }
   function getBounds(enemy){
+    const centerX=enemy.x+enemy.hitBox.offsetX,centerY=enemy.y+enemy.hitBox.offsetY;
     const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
-    return Object.freeze({left:enemy.x-halfW,right:enemy.x+halfW,top:enemy.y-halfH,bottom:enemy.y+halfH,width:enemy.hitBox.width,height:enemy.hitBox.height});
+    return Object.freeze({left:centerX-halfW,right:centerX+halfW,top:centerY-halfH,bottom:centerY+halfH,width:enemy.hitBox.width,height:enemy.hitBox.height,centerX,centerY});
   }
   function render(enemy){
-    const p=project(enemy.x,enemy.y);
-    enemy.el.style.transform=`translate(${p.x-24}px,${p.y-58}px)`;
+    const p=project(enemy.x,enemy.y),v=enemy.visual;
+    enemy.el.style.width=v.width+'px';
+    enemy.el.style.height=v.height+'px';
+    enemy.el.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
   }
   function spawn(config={}){
     const x=Number(config.x),y=Number(config.y);
@@ -32,13 +45,13 @@
     const el=document.createElement('div');
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
-    el.style.cssText='position:absolute;width:48px;height:58px;border:3px solid #ff5b67;border-radius:12px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const enemy={id:nextId++,x,y,hitBox:normalizeHitBox(config.hitBox),el};
+    el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:12px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),el};
     scene.appendChild(el);enemies.push(enemy);render(enemy);
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
-  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,hitBox:enemy.hitBox,bounds:getBounds(enemy)}):null}
+  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,visual:enemy.visual,hitBox:enemy.hitBox,bounds:getBounds(enemy)}):null}
   function getEnemy(id){return getSnapshot(getById(id))}
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
   function containsPoint(id,x,y){
