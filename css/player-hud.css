@@ -1,4 +1,4 @@
-.playerStatusHud{position:absolute;left:4px;top:6px;z-index:36;display:flex;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:none;transform-origin:top left}
+.playerStatusHud{position:absolute;left:4px;top:4px;z-index:36;display:flex;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:none;transform-origin:top left}
 .playerHpWindow{position:relative;width:clamp(70px,9vw,88px);height:clamp(30px,4.2vw,36px);display:flex;align-items:center;justify-content:flex-end;padding:1px 6px 0 4px;border:3px solid #e8f4f3;border-radius:2px;background:linear-gradient(180deg,#315567 0%,#213e50 48%,#152d3c 100%);box-shadow:inset 0 0 0 2px #13222c,0 2px 0 rgba(0,0,0,.75);overflow:hidden}
 .playerHpWindow::before{content:"";position:absolute;inset:3px;border-top:1px solid rgba(177,221,232,.28);border-left:1px solid rgba(177,221,232,.18);pointer-events:none}
 .playerHpValue{position:relative;z-index:1;display:inline-block;min-width:4ch;text-align:right;color:#f7ffff;font-family:var(--bn-ui-font);font-size:clamp(22px,3.2vw,29px);font-weight:800;line-height:.9;letter-spacing:-.09em;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'palt' 0;-webkit-text-stroke:2px #18212a;text-shadow:1px 1px 0 #18212a,-1px 1px 0 #18212a,1px -1px 0 #18212a,-1px -1px 0 #18212a;transform:scaleX(.88);transform-origin:right center}
@@ -9,4 +9,4 @@
 .kokoroPortrait::after{content:"";position:absolute;left:50%;top:43%;width:24%;height:12%;transform:translateX(-50%);border-top:3px solid #19232b;border-bottom:2px solid #19232b;border-radius:50%}
 .kokoroStateMark{display:grid;place-items:center;background:linear-gradient(180deg,#d85c20,#9a3216);color:#fff7c9;font-family:var(--bn-ui-font);font-size:clamp(10px,1.5vw,14px);font-weight:800;line-height:1;letter-spacing:-.04em;-webkit-text-stroke:1px #30130c;text-shadow:1px 1px 0 #30130c;transform-origin:center}
 .kokoroWindow[data-state="NORMAL"] .kokoroStateMark::before{content:"N"}
-@media (max-height:390px){.playerStatusHud{left:3px;top:5px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroWindow{width:68px;height:28px}.playerHpValue{font-size:21px}}
+@media (max-height:390px){.playerStatusHud{left:3px;top:4px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroWindow{width:68px;height:28px}.playerHpValue{font-size:21px}}
