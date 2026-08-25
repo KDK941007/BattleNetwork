@@ -1,0 +1,115 @@
+name: Migrate chip image names v69
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/migrate-chip-image-names-v69.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Migrate chip image naming and master design
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git mv 'assets/chips/cannon.png' 'assets/chips/キャノン.png'
+          git mv 'assets/chips/sword.png' 'assets/chips/ソード.png'
+          git mv 'assets/chips/WideSword.png' 'assets/chips/ワイドソード.png'
+          git mv 'assets/chips/MiniBomb.png' 'assets/chips/ミニボム.png'
+          git mv 'assets/chips/Recovery_10.png' 'assets/chips/リカバリー10.png'
+
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          master = Path('js/master/chip-master.js')
+          text = master.read_text(encoding='utf-8')
+          text = re.sub(r"\n\s+imagePath:'[^']+',", '', text)
+          master.write_text(text, encoding='utf-8')
+
+          service = Path('js/master/chip-service.js')
+          text = service.read_text(encoding='utf-8')
+          legacy_end = "  };\n\n  function getChip(chipId){"
+          test_map = "  };\n\n  const TEST_IMAGE_CHIP_NAME=Object.freeze({\n    TEST_9001:'ソード',\n    TEST_9002:'キャノン',\n    TEST_9003:'ミニボム'\n  });\n\n  function getChip(chipId){"
+          if legacy_end not in text:
+              raise SystemExit('chip-service LEGACY_CHIP_MAP insertion point not found')
+          text = text.replace(legacy_end, test_map, 1)
+
+          get_chip_block = "  function getChip(chipId){\n    return chipById.get(chipId)||null;\n  }\n"
+          image_resolver = get_chip_block + "\n  function getChipImagePath(chipOrId){\n    const chip=typeof chipOrId==='string'?getChip(chipOrId):chipOrId;\n    if(!chip)return null;\n    const assetChipName=TEST_IMAGE_CHIP_NAME[chip.chipId]||chip.chipName;\n    return `./assets/chips/${assetChipName}.png`;\n  }\n"
+          if get_chip_block not in text:
+              raise SystemExit('chip-service getChip block not found')
+          text = text.replace(get_chip_block, image_resolver, 1)
+
+          text = text.replace("    const chipIds=new Set();", "    const chipIds=new Set();\n    const chipNames=new Set();", 1)
+          validation_point = "      if(chipIds.has(chip.chipId))errors.push(`chip_id重複: ${chip.chipId}`);\n      chipIds.add(chip.chipId);"
+          validation_replacement = validation_point + "\n      if(!chip.chipName)errors.push(`chip_name未設定: ${chip.chipId}`);\n      else if(chipNames.has(chip.chipName))errors.push(`chip_name重複: ${chip.chipName}`);\n      else chipNames.add(chip.chipName);"
+          if validation_point not in text:
+              raise SystemExit('chip-service validation point not found')
+          text = text.replace(validation_point, validation_replacement, 1)
+          text = text.replace("        image:chip.imagePath,", "        image:getChipImagePath(chip),", 1)
+          text = text.replace("    getChip,\n    getChipClass,", "    getChip,\n    getChipImagePath,\n    getChipClass,", 1)
+          service.write_text(text, encoding='utf-8')
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          text = text.replace('./js/master/chip-master.js?v=66', './js/master/chip-master.js?v=69')
+          text = text.replace('./js/master/chip-service.js?v=41', './js/master/chip-service.js?v=69')
+          index.write_text(text, encoding='utf-8')
+
+          sw = Path('sw.js')
+          text = sw.read_text(encoding='utf-8')
+          text = re.sub(r"const CACHE_NAME = 'battlenetwork-runtime-v\d+';", "const CACHE_NAME = 'battlenetwork-runtime-v69';", text, count=1)
+          for asset in [
+              "  './assets/chips/cannon.png',\n",
+              "  './assets/chips/sword.png',\n",
+              "  './assets/chips/WideSword.png',\n",
+              "  './assets/chips/MiniBomb.png',\n",
+              "  './assets/chips/Recovery_10.png'\n",
+              "  './assets/chips/Recovery_10.png',\n",
+          ]:
+              text = text.replace(asset, '')
+          # Remove a dangling comma before closing STATIC_ASSETS if needed.
+          text = text.replace("  './assets/attributes/12_plus.png',\n];", "  './assets/attributes/12_plus.png'\n];")
+          sw.write_text(text, encoding='utf-8')
+
+          design = Path('MASTER_DATA_DESIGN.md')
+          text = design.read_text(encoding='utf-8')
+          text = text.replace('| image_path | チップ固有イラストのパス |\n', '')
+          old = "画像素材全般を管理する Asset Master は現時点では作らない。チップ固有画像は `M_CHIP.image_path`、属性・系統アイコンは `M_CHIP_ATTRIBUTE.icon_path` に保持する。"
+          new = "画像素材全般を管理する Asset Master は現時点では作らない。チップ固有画像のパスは `M_CHIP` に保持せず、正式な命名規約 `assets/chips/{chip_name}.png` からサービス層で生成する。したがって正式チップの画像ファイル名はチップ名と完全一致する日本語名とし、拡張子は原則 `.png` とする。`chip_name` は画像キーを兼ねるため重複不可とし、チップ名を変更する場合は対応する画像ファイル名も同時に変更する。属性・系統アイコンは引き続き `M_CHIP_ATTRIBUTE.icon_path` に保持する。テスト専用チップの画像流用は正式マスタへ画像パスを追加せず、サービス層のテスト互換定義で扱う。"
+          if old not in text:
+              raise SystemExit('MASTER_DATA_DESIGN image paragraph not found')
+          text = text.replace(old, new, 1)
+          design.write_text(text, encoding='utf-8')
+
+          status = Path('DEVELOPMENT_STATUS.md')
+          text = status.read_text(encoding='utf-8')
+          marker = "v67でチップ詳細画面の攻撃範囲イメージ図を、旧来の雰囲気図から論理マス基準の7×5縮小グリッドへ変更した。"
+          pos = text.find(marker)
+          if pos < 0:
+              raise SystemExit('DEVELOPMENT_STATUS v67 marker not found')
+          line_end = text.find('\n', pos)
+          insert = "\nv68で非投擲系の詳細Range図を説明用のマス整列表示へ修正し、ソード `1×1`、ワイドソード `1×3`、リカバリー10のSELF範囲をグリッド境界へ一致させた。実機確認済み。\nv69でチップ固有画像の管理を `M_CHIP.image_path` 方式から `assets/chips/{chip_name}.png` の命名規約方式へ移行した。正式5チップの画像を `キャノン.png / ソード.png / ワイドソード.png / ミニボム.png / リカバリー10.png` へリネームし、`chip-master.js` から画像パス項目を削除。`chip-service.js` がチップ名から画像パスを生成し、`chip_name` 重複をマスタ検証エラーとする。Service Workerのチップ画像個別プリキャッシュ列挙も廃止し、`assets/chips/` は既存の実行時キャッシュで取得する。テストチップの画像流用はサービス層のテスト互換定義へ分離した。v69は実機確認待ち。"
+          text = text[:line_end] + insert + text[line_end:]
+          text = text.replace("- `assets/chips/cannon.png`\n- `assets/chips/sword.png`\n- `assets/chips/WideSword.png`\n- `assets/chips/MiniBomb.png`\n- `assets/chips/Recovery_10.png`", "- `assets/chips/キャノン.png`\n- `assets/chips/ソード.png`\n- `assets/chips/ワイドソード.png`\n- `assets/chips/ミニボム.png`\n- `assets/chips/リカバリー10.png`", 1)
+          text = text.replace("- v67チップ詳細画面のマス基準Range図の見やすさ・各チップ表示の実機確認。", "- v69チップ名ベース画像解決と日本語ファイル名の実機確認。", 1)
+          status.write_text(text, encoding='utf-8')
+          PY
+
+          git rm '.github/workflows/migrate-chip-image-names-v69.yml'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Adopt chip-name based image assets v69'
+          git push
