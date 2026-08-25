@@ -13,16 +13,16 @@
   function finite(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback}
   function normalizeVisual(visual){
     return Object.freeze({
-      width:positive(visual?.width,48),
-      height:positive(visual?.height,58),
+      width:positive(visual?.width,116),
+      height:positive(visual?.height,140),
       offsetX:finite(visual?.offsetX),
       offsetY:finite(visual?.offsetY,-29)
     });
   }
   function normalizeHitBox(hitBox){
     return Object.freeze({
-      width:positive(hitBox?.width,FIELD.TILE_SIZE*.55),
-      height:positive(hitBox?.height,FIELD.TILE_SIZE*.55),
+      width:positive(hitBox?.width,FIELD.TILE_SIZE*1.32),
+      height:positive(hitBox?.height,FIELD.TILE_SIZE*1.32),
       offsetX:finite(hitBox?.offsetX),
       offsetY:finite(hitBox?.offsetY)
     });
@@ -47,7 +47,7 @@
     const el=document.createElement('div');
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
-    el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:12px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
+    el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
     const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),el,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);render(enemy);
     return enemy.id;
@@ -75,7 +75,7 @@
     setTimeout(()=>{
       if(enemy.flashToken!==token)return;
       enemy.el.style.filter='';
-      enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.18) inset,0 0 16px rgba(255,70,90,.55)';
+      enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55)';
     },180);
   }
 

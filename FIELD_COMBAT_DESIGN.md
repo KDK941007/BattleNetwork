@@ -104,6 +104,24 @@ row = floor(worldY / TILE_SIZE)
 
 侵入不可地形へ斜めに接触した場合は、可能であればX/Y方向を分けて判定し、完全停止ではなく地形に沿って滑れる移動を目標とする。
 
+### 4.4 プレイヤー表示とHitBox
+
+プレイヤーの表示サイズとHitBoxサイズは分離して管理する。
+
+v62時点のプロトタイプ既定値は以下。
+
+```text
+visual.width  = 108px
+visual.height = 136px
+hitBox.width  = 1.32マス = 237.6 world units
+hitBox.height = 1.32マス = 237.6 world units
+hitBox.offsetX = 0
+hitBox.offsetY = 0
+```
+
+`window.BattleNetworkPlayer` から現在位置、表示設定、HitBox設定、world座標上の矩形境界、点包含判定を参照可能とする。
+この数値は現在の仮キャラクター表示に対するプロトタイプ既定値であり、本番キャラクター素材に合わせて表示サイズとHitBoxを個別調整できる構造を維持する。
+
 ## 5. 地形データ
 
 マスは将来的に以下のような地形を持てる構造とする。
@@ -233,6 +251,17 @@ A押下時点の向きをその攻撃の基準方向として固定する。
 敵HitBoxとの交差は `BattleNetworkRangeGeometry.intersectsBounds(shape, bounds)` を使用し、プレビューとHit判定で同一Range形状を参照する。
 
 ゲーム側からは `BattleNetworkCombatRange` を通じ、直近攻撃Rangeと点判定を参照可能とする。
+
+敵も表示とHitBoxを分離する。v62時点のテスト敵既定値は以下。
+
+```text
+visual.width  = 116px
+visual.height = 140px
+hitBox.width  = 1.32マス = 237.6 world units
+hitBox.height = 1.32マス = 237.6 world units
+```
+
+敵ごとに `visual.*` と `hitBox.*` を個別設定可能とし、本番素材時に表示サイズからHitBoxを自動決定しない。
 
 ## 10. 地形への攻撃判定
 
@@ -430,6 +459,7 @@ v59でRange Geometryや色相は変えず、Range SVGレイヤーの表示opacit
 7. ミニボムの `radius_tiles` を実機比較して確定する。**完了／0.75採用**
 8. ミニボムを `CIRCLE / RADIUS_TILES` へ完全移行し、投擲距離3マス・放物線表示へ変更する。**完了／実機確認済み**
 9. 敵HitBox導入時に `BattleNetworkRangeGeometry` を正式当たり判定へ接続する。**完了／実機確認済み**
-10. 特殊地形は基礎戦闘成立後または必要なチップ実装時に追加する。
+10. プレイヤーHitBox基盤を追加し、表示とHitBoxを分離する。**完了／実機確認待ち**
+11. 特殊地形は基礎戦闘成立後または必要なチップ実装時に追加する。
 
 既存の自由移動・カメラ・チップ操作を壊さず、小さい単位で実装と実機確認を行う。
