@@ -79,12 +79,46 @@
     });
   }
 
+  function applyHealing(amount){
+    const healing=Number(amount);
+    const before=snapshot();
+
+    if(!before.isConfigured){
+      return Object.freeze({ok:false,reason:'HP_NOT_CONFIGURED',requestedHealing:healing,appliedHealing:0,beforeHp:null,afterHp:null,...before});
+    }
+    if(!Number.isFinite(healing)||healing<=0){
+      return Object.freeze({ok:false,reason:'INVALID_HEALING',requestedHealing:healing,appliedHealing:0,beforeHp:before.hp,afterHp:before.hp,...before});
+    }
+    if(before.isDefeated){
+      return Object.freeze({ok:false,reason:'ALREADY_DEFEATED',requestedHealing:healing,appliedHealing:0,beforeHp:before.hp,afterHp:before.hp,...before});
+    }
+
+    const afterHp=Math.min(before.maxHp,before.hp+healing);
+    const appliedHealing=afterHp-before.hp;
+    if(appliedHealing<=0){
+      return Object.freeze({ok:true,reason:'FULL_HP',requestedHealing:healing,appliedHealing:0,beforeHp:before.hp,afterHp:before.hp,...before});
+    }
+
+    state.hp=afterHp;
+    const after=emit();
+    return Object.freeze({
+      ok:true,
+      reason:null,
+      requestedHealing:healing,
+      appliedHealing,
+      beforeHp:before.hp,
+      afterHp,
+      ...after
+    });
+  }
+
   window.BattleNetworkPlayerHealth=Object.freeze({
     INITIAL_MAX_HP,
     getSnapshot:snapshot,
     subscribe,
     configureHealth,
     clearHealth,
-    applyDamage
+    applyDamage,
+    applyHealing
   });
 })();
