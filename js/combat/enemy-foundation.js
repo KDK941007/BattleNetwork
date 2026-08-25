@@ -46,19 +46,17 @@
     enemy.el.style.height=v.height+'px';
     enemy.el.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
   }
-  function createHealthLabel(position){
+  function createHealthLabel(){
     const hpEl=document.createElement('div');
-    hpEl.className=`enemyPrototypeHp enemyPrototypeHp-${position}`;
-    const vertical=position==='top'?'top:-45px;':'bottom:-43px;';
-    hpEl.style.cssText=`position:absolute;left:50%;${vertical}transform:translateX(-50%);min-width:92px;color:#fff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:34px;font-weight:800;line-height:1;letter-spacing:.015em;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;-webkit-text-stroke:2.5px #050505;text-shadow:-2px -2px 0 #050505,2px -2px 0 #050505,-2px 2px 0 #050505,2px 2px 0 #050505,0 3px 0 #050505;pointer-events:none;z-index:2;`;
+    hpEl.className='enemyPrototypeHp enemyPrototypeHp-bottom';
+    hpEl.style.cssText="position:absolute;left:50%;bottom:-49px;transform:translateX(-50%);min-width:104px;color:#fff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:40px;font-weight:800;line-height:1;letter-spacing:.015em;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;-webkit-text-stroke:3px #050505;text-shadow:-2px -2px 0 #050505,2px -2px 0 #050505,-2px 2px 0 #050505,2px 2px 0 #050505,0 4px 0 #050505;pointer-events:none;z-index:2;";
     return hpEl;
   }
   function renderHealth(enemy){
-    const labels=[enemy.hpTopEl,enemy.hpBottomEl].filter(Boolean);
-    if(!labels.length)return;
-    if(!hasHealth(enemy)){labels.forEach(label=>label.style.display='none');return}
-    const text=String(Math.ceil(enemy.hp));
-    labels.forEach(label=>{label.style.display='block';label.textContent=text});
+    if(!enemy.hpEl)return;
+    if(!hasHealth(enemy)){enemy.hpEl.style.display='none';return}
+    enemy.hpEl.style.display='block';
+    enemy.hpEl.textContent=String(Math.ceil(enemy.hp));
   }
   function spawn(config={}){
     const x=Number(config.x),y=Number(config.y);
@@ -70,11 +68,10 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const hpTopEl=createHealthLabel('top');
-    const hpBottomEl=createHealthLabel('bottom');
-    el.append(hpTopEl,hpBottomEl);
+    const hpEl=createHealthLabel();
+    el.appendChild(hpEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpTopEl,hpBottomEl,flashToken:0};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);renderHealth(enemy);render(enemy);
     return enemy.id;
   }
