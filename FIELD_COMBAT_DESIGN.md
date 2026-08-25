@@ -188,9 +188,8 @@ worldDistance = tileDistance × TILE_SIZE
 共通変換API `BattleNetworkField.toWorldDistance(tileDistance)` は実装済み。
 2026-08-25にキャノン・ソード・ワイドソードを新Range Parameterへ移行し、実ゲーム側もこの変換を通す構成へ接続した。
 
-ミニボム投擲距離430 world unitsはBehavior側 `THROW_DISTANCE_TILES` へ移し、現行距離を維持するため約2.3889マスとする。
-爆発半径の正式 `radius_tiles` は未確定。マスタ上は移行完了まで既存115 world unitsを互換値として保持する。
-実機比較用として、ゲーム側では一時的に `0.5 / 0.75 / 1.0マス` の3候補を切り替えて確認できる。これらは比較候補であり、正式マスタ値ではない。
+ミニボムはBehavior側 `THROW_DISTANCE_TILES=3` とし、プレイヤーから3マス先、つまり540 world units先を着弾中心とする。
+爆発半径は360度自由移動での当てやすさを考慮し、`radius_tiles=0.75`、つまり135 world unitsを正式採用する。
 
 ## 8. 360度攻撃範囲
 
@@ -216,7 +215,7 @@ A押下時点の向きをその攻撃の基準方向として固定する。
 
 2026-08-25に `js/combat/range-geometry.js` を追加した。
 `LINE / RECT` は、発動原点・正規化した方向ベクトル・長さ・幅からworld座標上の四角形を生成する。
-`CIRCLE` は、発生中心と半径からworld座標上の円形ポリゴンを生成できる。
+`CIRCLE` は、発生中心と半径を連続world座標として保持し、Hit判定や地形判定に使用する。プレビュー用ポリゴン点は必須としない。
 
 ゲーム側はA押下時に生成したRange形状を `lastAttackRange` として保持し、攻撃方向をその時点で固定する。
 
@@ -313,18 +312,17 @@ width_tiles = 3
 - Range自体は発生中心を決めない。
 - 自分中心、着弾地点、敵位置等の「どこを中心に発生させるか」はBehavior側で決める。
 
-ミニボムは以下の責務分離とする。
+ミニボムは以下で正式確定する。
 
 ```text
 Behavior = BOMB_THROW
-throwDistance = マス単位の投擲距離
+throw_distance_tiles = 3
 
 Range = CIRCLE
-radius_tiles = 爆発半径
+radius_tiles = 0.75
 ```
 
-正式値決定前の比較候補は `0.5 / 0.75 / 1.0マス`。
-比較中はミニボムが先頭チップのときだけYボタンで候補を循環させる。Yボタンの恒久用途としては扱わない。
+投擲予告はRange形状とは分離し、Behaviorの見せ方としてプレイヤーから着弾地点までの放物線を表示する。
 
 ### 11.4 SECTOR
 
@@ -365,9 +363,9 @@ Behavior: CANNON_SHOT
 → 弾速、非貫通等はBehavior
 
 ミニボム
-Range: CIRCLE
-Behavior: BOMB_THROW
-→ 投擲距離、爆発遅延等はBehavior
+Range: CIRCLE 0.75マス
+Behavior: BOMB_THROW 3マス
+→ 投擲距離、爆発遅延、放物線表示等はBehavior
 ```
 
 同じ `CIRCLE` を「自分中心」「着弾地点」「敵位置」など複数Behaviorから再利用できる設計とする。
@@ -381,19 +379,18 @@ Behavior: BOMB_THROW
 | キャノン | `LINE` | `length_tiles=5`, `width_tiles=0.25` |
 | ソード | `RECT` | `length_tiles=1`, `width_tiles=1` |
 | ワイドソード | `RECT` | `length_tiles=1`, `width_tiles=3` |
-| ミニボム | `CIRCLE` | `radius_tiles` は実機比較後に確定 |
+| ミニボム | `CIRCLE` | `radius_tiles=0.75` |
 | リカバリー10 | `SELF` | なし |
 
-キャノン・ソード・ワイドソードはマスタ・実行時変換・共通Range形状生成まで移行済み。
-ミニボムの投擲距離はRange Parameterではなく `BOMB_THROW` のBehavior Parameterへ移行済み。
-爆発半径未確定のためマスタ上のRange Typeは互換 `THROW_AOE` を一時的に使用するが、v44の比較モードでは `BattleNetworkRangeGeometry.createCircle()` により候補半径のCIRCLEをプレビューおよび直近攻撃Rangeとして生成する。
-正式値決定後にマスタも `CIRCLE / RADIUS_TILES` へ完全移行し、比較モードは削除する。
+キャノン・ソード・ワイドソード・ミニボムはマスタ・実行時変換・共通Range形状生成まで移行済み。
+ミニボムの投擲距離はRange Parameterではなく `BOMB_THROW.THROW_DISTANCE_TILES=3` とする。
+旧 `THROW_AOE` は互換定義として残してよいが、既存5チップの正式マスタでは使用しない。
 
 ## 14. プレビューと判定の共通化
 
 攻撃範囲プレビュー専用の別計算は行わない。
 
-`js/combat/range-geometry.js` が生成したworld座標上のRange形状を、`js/combat/range-preview-renderer.js` が現在の斜め投影へ変換してSVGポリゴンとして描画する。
+`js/combat/range-geometry.js` が生成したworld座標上のRange形状を、`js/combat/range-preview-renderer.js` が現在の斜め投影へ変換して表示する。
 
 原則:
 
@@ -408,7 +405,12 @@ Behavior: BOMB_THROW
 キャノン・ソード・ワイドソードは新プレビューへ移行済みで、描画形状は実機確認済み。
 初回実装ではRange描画中の操作負荷が大きかったため、v43でSceneサイズ・投影係数のキャッシュ、不要なhide/show抑制、同一属性更新のスキップを実施し、実機で改善を確認済み。
 
-ミニボムはv44で、投擲先を中心とした候補CIRCLEを同じ共通Rangeプレビューへ接続した。候補値は `0.5 / 0.75 / 1.0マス` で、正式値決定前の比較専用とする。
+ミニボムは `CIRCLE(radius_tiles=0.75)` を同じ共通Rangeへ接続する。
+CIRCLEはworld上の円を24～48頂点のポリゴンへ毎フレーム変換せず、斜め投影後に得られるSVG楕円を直接描画することでプレビュー負荷を抑える。
+投擲経路はRangeではなくBehaviorプレビューとして `js/combat/bomb-preview-renderer.js` が3マス先の着弾地点までの放物線を描画する。
+またv46ではカスタムゲージ更新とRange描画を分離し、ゲームループ内の二重プレビュー描画を解消した。
+
+v46のミニボム表示・操作負荷は実機確認待ち。
 
 ## 15. 実装順序
 
@@ -422,8 +424,8 @@ Behavior: BOMB_THROW
 4. プレイヤー所属マス取得を実装する。**完了**
 5. 攻撃距離をマス単位からワールド距離へ変換する共通処理を追加する。**完了**
 6. キャノン・ソード・ワイドソードを新Range方式へ移行する。**完了／実機確認済み**
-7. ミニボムの `radius_tiles` を `0.5 / 0.75 / 1.0` から実機比較して確定する。**比較モード実装済み／確認待ち**
-8. 正式値確定後、ミニボムをマスタ上も `CIRCLE / RADIUS_TILES` へ完全移行し、比較用Y操作を削除する。
+7. ミニボムの `radius_tiles` を実機比較して確定する。**完了／0.75採用**
+8. ミニボムを `CIRCLE / RADIUS_TILES` へ完全移行し、投擲距離3マス・放物線表示へ変更する。**リポジトリ実装完了／実機確認待ち**
 9. 敵HitBox導入時に `BattleNetworkRangeGeometry` を正式当たり判定へ接続する。
 10. 特殊地形は基礎戦闘成立後または必要なチップ実装時に追加する。
 
