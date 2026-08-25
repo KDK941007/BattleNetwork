@@ -12,10 +12,15 @@
   const values=document.getElementById('detailValues');
   const attributes=document.getElementById('detailAttributes');
   const artwork=document.getElementById('detailArt');
+  const rangeViz=document.getElementById('detailRange');
 
   if(!master||!modal||!detailName||!chipTitleName||!libraryNo||!classValue||!capacity||!rarity||!values||!attributes)return;
 
   const chipsByName=new Map((data.CHIP_MASTER||[]).map(chip=>[chip.chipName,chip]));
+  const GRID_COLS=7;
+  const GRID_ROWS=5;
+  const ORIGIN_X=1.5;
+  const ORIGIN_Y=2.5;
 
   function createEmptyToken(text='--'){
     const token=document.createElement('span');
@@ -111,6 +116,115 @@
     img.style.setProperty('display','none','important');
   }
 
+  function percentX(tileValue){return `${tileValue/GRID_COLS*100}%`}
+  function percentY(tileValue){return `${tileValue/GRID_ROWS*100}%`}
+
+  function setTileRect(element,left,top,width,height){
+    element.style.left=percentX(left);
+    element.style.top=percentY(top);
+    element.style.width=percentX(width);
+    element.style.height=percentY(height);
+  }
+
+  function createGridPlayer(){
+    const player=document.createElement('span');
+    player.className='rangeGridPlayer';
+    player.style.left=percentX(ORIGIN_X);
+    player.style.top=percentY(ORIGIN_Y);
+    player.textContent='P';
+    return player;
+  }
+
+  function createGridLabels(board,legend){
+    const forward=document.createElement('span');
+    forward.className='rangeGridForward';
+    forward.textContent='前方 →';
+
+    const unit=document.createElement('span');
+    unit.className='rangeGridUnit';
+    unit.textContent='1グリッド = 1マス';
+
+    const value=document.createElement('span');
+    value.className='rangeGridLegend';
+    value.textContent=legend;
+
+    board.append(forward,unit,value);
+  }
+
+  function createBombArc(targetX){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.classList.add('rangeGridArc');
+    svg.setAttribute('viewBox',`0 0 ${GRID_COLS*100} ${GRID_ROWS*100}`);
+    svg.setAttribute('preserveAspectRatio','none');
+
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const startX=ORIGIN_X*100;
+    const startY=ORIGIN_Y*100;
+    const endX=targetX*100;
+    const lift=Math.max(70,(endX-startX)*.34);
+    path.setAttribute('d',`M ${startX} ${startY} Q ${(startX+endX)/2} ${startY-lift} ${endX} ${startY}`);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function renderRangeDiagram(chip){
+    if(!rangeViz)return;
+
+    const range=master.getRangeParams(chip.chipId);
+    const behavior=master.getBehaviorParams(chip.chipId);
+    const board=document.createElement('div');
+    board.className='rangeGridBoard';
+    board.dataset.rangeType=chip.rangeTypeId||'';
+    board.appendChild(createGridPlayer());
+
+    let legend='';
+
+    if(chip.rangeTypeId==='LINE'||chip.rangeTypeId==='RECT'){
+      const length=Number(range.LENGTH_TILES);
+      const width=Number(range.WIDTH_TILES);
+      if(Number.isFinite(length)&&Number.isFinite(width)){
+        const attack=document.createElement('span');
+        attack.className=`rangeGridAttack ${chip.rangeTypeId==='LINE'?'rangeGridLine':'rangeGridRect'}`;
+        setTileRect(attack,ORIGIN_X,ORIGIN_Y-width/2,length,width);
+        board.appendChild(attack);
+        legend=`射程 ${length}マス / 幅 ${width}マス`;
+      }
+    }else if(chip.rangeTypeId==='CIRCLE'){
+      const radius=Number(range.RADIUS_TILES);
+      const throwDistance=Number(behavior.THROW_DISTANCE_TILES);
+      const centerX=ORIGIN_X+(Number.isFinite(throwDistance)?throwDistance:0);
+      if(Number.isFinite(radius)){
+        const target=document.createElement('span');
+        target.className='rangeGridCircle';
+        setTileRect(target,centerX-radius,ORIGIN_Y-radius,radius*2,radius*2);
+        board.appendChild(target);
+      }
+      if(Number.isFinite(throwDistance)&&throwDistance>0){
+        board.appendChild(createBombArc(centerX));
+        legend=`${throwDistance}マス先 / 半径 ${radius}マス`;
+      }else{
+        legend=`半径 ${radius}マス`;
+      }
+    }else if(chip.rangeTypeId==='SELF'){
+      const self=document.createElement('span');
+      self.className='rangeGridSelf';
+      self.style.left=percentX(ORIGIN_X);
+      self.style.top=percentY(ORIGIN_Y);
+      board.appendChild(self);
+      legend='対象：自分自身';
+    }else{
+      const unsupported=document.createElement('span');
+      unsupported.className='rangeGridUnsupported';
+      unsupported.textContent='範囲図は準備中';
+      board.appendChild(unsupported);
+      legend=chip.rangeTypeId||'--';
+    }
+
+    createGridLabels(board,legend);
+    rangeViz.classList.add('rangeGridViz');
+    rangeViz.replaceChildren(board);
+  }
+
   function render(){
     if(!modal.classList.contains('open'))return;
     const chip=chipsByName.get(detailName.textContent.trim());
@@ -118,6 +232,7 @@
     renderHeaderInfo(chip);
     renderValues(chip);
     renderAttributes(chip);
+    renderRangeDiagram(chip);
     fitArtwork();
     values.scrollLeft=0;
     attributes.scrollLeft=0;
