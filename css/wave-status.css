@@ -1,4 +1,4 @@
-/* v96 temporary Wave verification UI. Positioned below the CUSTOM gauge; final Wave presentation is not decided. */
+/* v99 temporary Wave verification UI. Normal Wave position is provisional; CLEAR/START use a centered lightweight transition effect. */
 .waveStatusNotice{
   position:absolute;
   left:50%;
@@ -20,6 +20,46 @@
   text-align:center;
   white-space:nowrap;
 }
-.waveStatusNotice[data-status="CLEARED"]{
-  min-width:132px;
+
+/* CLEAR / START are transition-only presentations. Keep effects to transform/opacity/box-shadow. */
+.waveStatusNotice[data-status="CLEARING"],
+.waveStatusNotice[data-status="STARTING"]{
+  top:50%;
+  z-index:45;
+  min-width:min(480px,78vw);
+  padding:15px 30px;
+  border-width:3px;
+  border-radius:10px;
+  font-size:clamp(26px,6vw,48px);
+  line-height:1.05;
+  letter-spacing:.12em;
+  background:rgba(8,14,24,.9);
+  will-change:transform,opacity;
+}
+.waveStatusNotice[data-status="CLEARING"]{
+  border-color:rgba(255,226,112,.98);
+  color:#fff3b0;
+  box-shadow:0 0 0 2px rgba(255,245,190,.16) inset,0 0 24px rgba(255,211,82,.42);
+  animation:waveClearBurst 1.5s cubic-bezier(.2,.72,.2,1) both;
+}
+.waveStatusNotice[data-status="STARTING"]{
+  border-color:rgba(125,232,255,.98);
+  color:#d9faff;
+  box-shadow:0 0 0 2px rgba(205,250,255,.14) inset,0 0 24px rgba(72,211,255,.42);
+  animation:waveStartBurst 1.5s cubic-bezier(.2,.72,.2,1) both;
+}
+
+@keyframes waveClearBurst{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.72);letter-spacing:.24em}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.08);letter-spacing:.14em}
+  38%{opacity:1;transform:translate(-50%,-50%) scale(1);letter-spacing:.12em}
+  82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:.12;transform:translate(-50%,-50%) scale(1.02)}
+}
+@keyframes waveStartBurst{
+  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.58) scaleY(.86);letter-spacing:.24em}
+  20%{opacity:1;transform:translate(-50%,-50%) scaleX(1.06) scaleY(1.03);letter-spacing:.14em}
+  40%{opacity:1;transform:translate(-50%,-50%) scale(1);letter-spacing:.12em}
+  82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:.12;transform:translate(-50%,-50%) scale(1.02)}
 }

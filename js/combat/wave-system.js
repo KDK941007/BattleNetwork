@@ -6,12 +6,12 @@
   if(!ENEMY)throw new Error('BattleNetworkWave: enemy foundation is not loaded.');
   if(!battle)throw new Error('BattleNetworkWave: battle element is not available.');
 
-  // v98 test-only composition/timing. Count/positions/HP/timing are not final game-balance values.
+  // v99 test-only composition/timing/presentation. Count/positions/HP/timing are not final game-balance values.
   const TEST_CONFIG=Object.freeze({
     testOnly:true,
     enemyMaxHp:200,
-    clearNoticeMs:1000,
-    startNoticeMs:1000,
+    clearNoticeMs:1500,
+    startNoticeMs:1500,
     spawnTiles:Object.freeze([
       Object.freeze({rowOffset:0,colOffset:3}),
       Object.freeze({rowOffset:-3,colOffset:3})
