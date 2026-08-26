@@ -1,0 +1,57 @@
+name: Apply v104 enemy behavior channels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/apply_v104_enemy_behavior_channels.py'
+      - '.github/workflows/apply-v104-enemy-behavior-channels.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply v104
+        run: python tools/apply_v104_enemy_behavior_channels.py
+
+      - name: Syntax check
+        run: |
+          node --check js/combat/enemy-foundation.js
+          node --check js/combat/enemy-ai-system.js
+          node --check js/combat/enemy-behavior-straight-shot.js
+          node --check js/combat/enemy-behavior-oscillate-movement.js
+          node --check js/combat/wave-system.js
+
+      - name: Sanity check
+        run: |
+          grep -q "INDEPENDENT_PER_ENEMY_CHANNEL" js/combat/enemy-ai-system.js
+          grep -q "channel:'MOVEMENT'" js/combat/enemy-behavior-oscillate-movement.js
+          grep -q "setPosition" js/combat/enemy-foundation.js
+          grep -q "PROTOTYPE_OSCILLATE_MOVEMENT" js/combat/wave-system.js
+          grep -q "enemy-behavior-oscillate-movement.js?v=104" index.html
+          grep -q "battlenetwork-runtime-v104" sw.js
+          grep -q "v104 攻撃／移動Behavior共存" DEVELOPMENT_STATUS.md
+          grep -q "v104 攻撃Behavior／移動Behavior共存検証" GAME_DESIGN.md
+
+      - name: Commit v104
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/combat/enemy-foundation.js js/combat/enemy-ai-system.js js/combat/enemy-behavior-straight-shot.js js/combat/enemy-behavior-oscillate-movement.js js/combat/wave-system.js index.html sw.js GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m "Implement v104 enemy attack movement coexistence"
+          git push origin main
+
+      - name: Remove one-time v104 files
+        run: |
+          git pull --rebase origin main
+          git rm tools/apply_v104_enemy_behavior_channels.py .github/workflows/apply-v104-enemy-behavior-channels.yml
+          git commit -m "Remove one-time v104 files"
+          git push origin main
