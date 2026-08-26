@@ -1,0 +1,45 @@
+name: Apply v102 enemy attack performance
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/apply_v102_enemy_attack_perf.py'
+      - '.github/workflows/apply-v102-enemy-attack-perf.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply v102
+        run: python tools/apply_v102_enemy_attack_perf.py
+      - name: Syntax check
+        run: |
+          node --check js/combat/enemy-attack-layer.js
+          node --check js/combat/enemy-behavior-straight-shot.js
+          node --check js/combat/enemy-ai-system.js
+      - name: Sanity check
+        run: |
+          grep -q 'enemy-attack-layer.js?v=102' index.html
+          grep -q 'enemy-behavior-straight-shot.js?v=102' index.html
+          grep -q "battlenetwork-runtime-v102" sw.js
+          grep -q "enemy-attack-layer.js" sw.js
+          ! grep -q 'scene.appendChild' js/combat/enemy-behavior-straight-shot.js
+          grep -q 'INDEPENDENT_PER_ENEMY' js/combat/enemy-ai-system.js
+      - name: Commit v102
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/combat/enemy-attack-layer.js js/combat/enemy-behavior-straight-shot.js index.html sw.js DEVELOPMENT_STATUS.md
+          git commit -m 'Optimize enemy attack rendering (v102)'
+          git push origin main
+      - name: Remove one-time v102 files
+        run: |
+          git pull --rebase origin main
+          git rm tools/apply_v102_enemy_attack_perf.py .github/workflows/apply-v102-enemy-attack-perf.yml
+          git commit -m 'Remove one-time v102 performance files'
+          git push origin main
