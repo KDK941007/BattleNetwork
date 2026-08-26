@@ -78,11 +78,18 @@
     hpEl.style.cssText="position:absolute;left:50%;bottom:-49px;transform:translateX(-50%);min-width:104px;color:#fff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:40px;font-weight:800;line-height:1;letter-spacing:.015em;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;-webkit-text-stroke:3px #050505;text-shadow:-2px -2px 0 #050505,2px -2px 0 #050505,-2px 2px 0 #050505,2px 2px 0 #050505,0 4px 0 #050505;pointer-events:none;z-index:2;";
     return hpEl;
   }
+  function createHitFlash(){
+    const hitFlashEl=document.createElement('div');
+    hitFlashEl.className='enemyPrototypeHitFlash';
+    hitFlashEl.style.cssText='position:absolute;inset:-3px;border:2px solid rgba(255,248,178,.96);border-radius:18px;background:rgba(255,244,150,.58);opacity:0;pointer-events:none;z-index:4;will-change:opacity;transform:translateZ(0);';
+    return hitFlashEl;
+  }
   function renderHealth(enemy){
     if(!enemy.hpEl)return;
-    if(!hasHealth(enemy)||isDefeatedRaw(enemy)){enemy.hpEl.style.display='none';return}
-    enemy.hpEl.style.display='block';
-    enemy.hpEl.textContent=String(Math.ceil(enemy.hp));
+    if(!hasHealth(enemy)||isDefeatedRaw(enemy)){if(enemy.hpEl.style.display!=='none')enemy.hpEl.style.display='none';return}
+    if(enemy.hpEl.style.display!=='block')enemy.hpEl.style.display='block';
+    const text=String(Math.ceil(enemy.hp));
+    if(enemy.hpEl.textContent!==text)enemy.hpEl.textContent=text;
   }
   function syncDefeatPresentation(enemy){
     const defeated=isDefeatedRaw(enemy);
@@ -103,10 +110,10 @@
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
-    const hpEl=createHealthLabel(),defeatEl=createDefeatLabel();
-    el.appendChild(hpEl);el.appendChild(defeatEl);
+    const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
+    el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,flashToken:0};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
@@ -116,7 +123,7 @@
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
   function getActiveEnemies(){return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)).map(getSnapshot))}
   function clearAll(){
-    enemies.forEach(enemy=>{enemy.flashToken++;enemy.el?.remove()});
+    enemies.forEach(enemy=>{enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
@@ -136,7 +143,8 @@
     const before=enemy.hp;
     enemy.hp=Math.max(0,before-damage);
     const applied=before-enemy.hp,defeatedNow=before>0&&enemy.hp<=0;
-    syncDefeatPresentation(enemy);emitBattleState();
+    if(defeatedNow){syncDefeatPresentation(enemy);emitBattleState()}
+    else renderHealth(enemy);
     return Object.freeze({applied:true,reason:null,amount:applied,before,after:enemy.hp,defeatedNow,enemy:getSnapshot(enemy)});
   }
   function containsPointRaw(enemy,x,y){
@@ -163,15 +171,20 @@
     return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)&&RANGE.intersectsBounds(shape,getBounds(enemy))).map(getSnapshot));
   }
   function debugFlash(id){
-    const enemy=getById(id);if(!enemy||isDefeatedRaw(enemy))return;
-    const token=++enemy.flashToken;
-    enemy.el.style.filter='brightness(2.35) saturate(1.7)';
-    enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.8) inset,0 0 30px rgba(255,245,120,.95)';
-    setTimeout(()=>{
-      if(enemy.flashToken!==token)return;
-      enemy.el.style.filter='';
-      enemy.el.style.boxShadow='0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55)';
-    },180);
+    const enemy=getById(id);if(!enemy||isDefeatedRaw(enemy)||!enemy.hitFlashEl)return;
+    const el=enemy.hitFlashEl;
+    enemy.flashToken++;
+    enemy.hitFlashAnimation?.cancel?.();
+    if(typeof el.animate==='function'){
+      const animation=el.animate([{opacity:.88},{opacity:0}],{duration:140,easing:'ease-out'});
+      enemy.hitFlashAnimation=animation;
+      animation.onfinish=()=>{if(enemy.hitFlashAnimation===animation){enemy.hitFlashAnimation=null;el.style.opacity='0'}};
+      animation.oncancel=()=>{if(enemy.hitFlashAnimation===animation)enemy.hitFlashAnimation=null};
+      return;
+    }
+    const token=enemy.flashToken;
+    el.style.opacity='.88';
+    setTimeout(()=>{if(enemy.flashToken===token)el.style.opacity='0'},140);
   }
 
   window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
