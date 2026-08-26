@@ -1,0 +1,33 @@
+name: Apply v98 wave pacing
+on:
+  push:
+    paths:
+      - 'tools/apply_v98_wave_pacing.py'
+      - '.github/workflows/apply-v98-wave-pacing.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply v98
+        run: python tools/apply_v98_wave_pacing.py
+      - name: Syntax check
+        run: |
+          node --check js/combat/wave-system.js
+          node --check js/game.js
+      - name: Commit v98
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/combat/wave-system.js js/game.js index.html sw.js GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m 'Implement v98 wave transition pacing'
+          git push
+      - name: Remove one-time v98 files
+        run: |
+          git rm tools/apply_v98_wave_pacing.py .github/workflows/apply-v98-wave-pacing.yml
+          git commit -m 'Remove one-time v98 pacing files'
+          git push
