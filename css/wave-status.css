@@ -1,0 +1,25 @@
+/* v95 temporary Wave verification UI. Final Wave presentation is not decided. */
+.waveStatusNotice{
+  position:absolute;
+  left:50%;
+  top:6px;
+  transform:translateX(-50%);
+  z-index:24;
+  pointer-events:none;
+  min-width:96px;
+  padding:5px 12px;
+  border:2px solid rgba(255,225,120,.9);
+  border-radius:7px;
+  background:rgba(16,19,28,.82);
+  color:#fff0b0;
+  font-family:Orbitron,var(--bn-ui-font),system-ui,sans-serif;
+  font-size:clamp(12px,2.5vw,19px);
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.08em;
+  text-align:center;
+  white-space:nowrap;
+}
+.waveStatusNotice[data-status="CLEARED"]{
+  min-width:132px;
+}
