@@ -1,0 +1,29 @@
+name: Apply enemy 1 and perception design
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-enemy1-perception-design.yml'
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply design update
+        run: python tools/apply_enemy1_perception_design.py
+      - name: Commit design update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add GAME_DESIGN.md DEVELOPMENT_STATUS.md
+          git commit -m "Record enemy 1 and perception design"
+          git push
+      - name: Remove one-time design files
+        run: |
+          git pull --rebase
+          git rm tools/apply_enemy1_perception_design.py .github/workflows/apply-enemy1-perception-design.yml
+          git commit -m "Remove one-time enemy 1 design files"
+          git push
