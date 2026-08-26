@@ -1,4 +1,4 @@
-const CACHE_NAME = 'battlenetwork-runtime-v99';
+const CACHE_NAME = 'battlenetwork-runtime-v100';
 const OFFLINE_URL = './index.html';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -35,7 +35,8 @@ const STATIC_ASSETS = [
   './js/combat/wave-system.js',
   './js/combat/player-health.js',
   './js/combat/player-damage-system.js',
-  './js/combat/enemy-test-attack.js',
+  './js/combat/enemy-ai-system.js',
+  './js/combat/enemy-behavior-straight-shot.js',
   './js/ui/player-hud.js',
   './js/combat/projectile-shadow-renderer.js',
   './js/combat/buster-projectile-layer.js',
