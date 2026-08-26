@@ -163,7 +163,7 @@ behavior = r'''(()=>{
 (root/'js/combat/enemy-behavior-straight-shot.js').write_text(behavior, encoding='utf-8')
 
 index = (root/'index.html').read_text(encoding='utf-8')
-old = '<script src="./js/combat/player-damage-system.js?v=92"></script>\n<script src="./js/combat/enemy-ai-system.js?v=100"></script>\n<script src="./js/combat/enemy-behavior-straight-shot.js?v=100"></script>'
+old = '<script src="./js/combat/player-damage-system.js?v=92"></script>\n<script src="./js/combat/enemy-ai-system.js?v=101"></script>\n<script src="./js/combat/enemy-behavior-straight-shot.js?v=100"></script>'
 new = '<script src="./js/combat/player-damage-system.js?v=92"></script>\n<script src="./js/combat/enemy-attack-layer.js?v=102"></script>\n<script src="./js/combat/enemy-ai-system.js?v=101"></script>\n<script src="./js/combat/enemy-behavior-straight-shot.js?v=102"></script>'
 if old not in index:
     raise SystemExit('index script block not found')
