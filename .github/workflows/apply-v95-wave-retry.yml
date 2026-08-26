@@ -1,0 +1,29 @@
+name: Apply v95 minimal wave retry
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v95-wave-retry.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v95 retry
+        run: python tools/retry_v95_wave.py
+      - name: Commit v95
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement v95 minimal wave flow"
+          git push
+      - name: Remove one-time v95 files
+        run: |
+          git rm tools/apply_v95_wave.py tools/retry_v95_wave.py .github/workflows/apply-v95-wave.yml .github/workflows/apply-v95-wave-retry.yml
+          git commit -m "Remove one-time v95 files"
+          git push
