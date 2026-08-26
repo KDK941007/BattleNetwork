@@ -8,11 +8,11 @@
   if(!AI)throw new Error('BattleNetworkWave: enemy AI foundation is not loaded.');
   if(!battle)throw new Error('BattleNetworkWave: battle element is not available.');
 
-  // v104 test-only composition/timing/behavior assignment. These are not final enemy or Wave specifications.
+  // v105 test-only composition/timing/behavior assignment. These are not final enemy or Wave specifications.
   const TEST_CONFIG=Object.freeze({
     testOnly:true,
     enemyMaxHp:200,
-    attackBehaviorId:'PROTOTYPE_STRAIGHT_SHOT',
+    attackBehaviorIds:Object.freeze(['PROTOTYPE_STRAIGHT_SHOT','PROTOTYPE_TARGET_AREA']),
     movementBehaviorId:'PROTOTYPE_OSCILLATE_MOVEMENT',
     movementDistanceTiles:1,
     movementSpeedWorld:90,
@@ -60,8 +60,9 @@
     });
     if(!movement.ok)throw new Error(`BattleNetworkWave: failed to assign ${TEST_CONFIG.movementBehaviorId} to enemy ${enemyId}: ${movement.reason}`);
 
-    const attack=AI.assignBehavior(enemyId,TEST_CONFIG.attackBehaviorId);
-    if(!attack.ok)throw new Error(`BattleNetworkWave: failed to assign ${TEST_CONFIG.attackBehaviorId} to enemy ${enemyId}: ${attack.reason}`);
+    const attackBehaviorId=TEST_CONFIG.attackBehaviorIds[index%TEST_CONFIG.attackBehaviorIds.length];
+    const attack=AI.assignBehavior(enemyId,attackBehaviorId);
+    if(!attack.ok)throw new Error(`BattleNetworkWave: failed to assign ${attackBehaviorId} to enemy ${enemyId}: ${attack.reason}`);
     return enemyId;
   }
   function spawnWave(waveNumber){

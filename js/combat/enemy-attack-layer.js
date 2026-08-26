@@ -60,9 +60,42 @@
     el.style.transform=`translate3d(${p.x-14}px,${p.y-31}px,0)`;
   }
   function hideProjectile(el){if(el)el.style.display='none'}
+  function createAreaMarker(){
+    const el=document.createElement('div');
+    el.className='enemyTestAreaMarker';
+    el.style.cssText='display:none;position:absolute;border-radius:50%;pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;';
+    layer.appendChild(el);
+    return el;
+  }
+  function placeArea(el,center,radiusWorld){
+    if(!el||!center||!Number.isFinite(radiusWorld))return false;
+    const p=project(center.x,center.y);
+    const radiusX=radiusWorld*Math.SQRT2*PX;
+    const radiusY=radiusWorld*Math.SQRT2*PY;
+    el.style.width=`${radiusX*2}px`;
+    el.style.height=`${radiusY*2}px`;
+    el.style.transform=`translate3d(${p.x-radiusX}px,${p.y-radiusY}px,0)`;
+    return true;
+  }
+  function showAreaTelegraph(el,center,radiusWorld){
+    if(!placeArea(el,center,radiusWorld))return;
+    el.style.border='2px solid rgba(255,86,86,.95)';
+    el.style.background='rgba(255,70,70,.20)';
+    el.style.opacity='1';
+    el.style.display='block';
+  }
+  function showAreaImpact(el,center,radiusWorld){
+    if(!placeArea(el,center,radiusWorld))return;
+    el.style.border='3px solid rgba(255,236,126,.98)';
+    el.style.background='rgba(255,108,74,.62)';
+    el.style.opacity='.96';
+    el.style.display='block';
+  }
+  function hideArea(el){if(el)el.style.display='none'}
+
   function destroy(el){el?.remove()}
 
   window.addEventListener('resize',refreshSize,{passive:true});
   requestAnimationFrame(syncTransform);
-  window.BattleNetworkEnemyAttackLayer=Object.freeze({createTelegraph,showTelegraph,hideTelegraph,createProjectile,showProjectile,updateProjectile,hideProjectile,destroy,refreshSize});
+  window.BattleNetworkEnemyAttackLayer=Object.freeze({createTelegraph,showTelegraph,hideTelegraph,createProjectile,showProjectile,updateProjectile,hideProjectile,createAreaMarker,showAreaTelegraph,showAreaImpact,hideArea,destroy,refreshSize});
 })();
