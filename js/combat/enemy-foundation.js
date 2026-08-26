@@ -115,6 +115,11 @@
   function getEnemy(id){return getSnapshot(getById(id))}
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
   function getActiveEnemies(){return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)).map(getSnapshot))}
+  function clearAll(){
+    enemies.forEach(enemy=>{enemy.flashToken++;enemy.el?.remove()});
+    enemies.length=0;
+    return emitBattleState();
+  }
   function configureHealth(id,health={}){
     const enemy=getById(id);if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',enemy:null});
     const normalized=normalizeHealth(health);
@@ -169,5 +174,5 @@
     },180);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,getBattleState,subscribe,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
 })();
