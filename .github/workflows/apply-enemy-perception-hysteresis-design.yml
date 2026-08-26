@@ -1,0 +1,30 @@
+name: Apply enemy perception hysteresis design
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-enemy-perception-hysteresis-design.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply design update
+        run: python tools/apply_enemy_perception_hysteresis_design.py
+      - name: Sanity check
+        run: |
+          grep -q '知覚解除距離 > 知覚開始距離' GAME_DESIGN.md
+          grep -q 'ヒステリシス' GAME_DESIGN.md
+      - name: Commit design update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GAME_DESIGN.md
+          git commit -m 'Formalize enemy perception hysteresis'
+          git push
+      - name: Remove one-time design files
+        run: |
+          git rm tools/apply_enemy_perception_hysteresis_design.py .github/workflows/apply-enemy-perception-hysteresis-design.yml
+          git commit -m 'Remove one-time perception hysteresis files'
+          git push
