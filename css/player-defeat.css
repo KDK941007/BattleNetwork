@@ -1,0 +1,20 @@
+/* v93 temporary defeat presentation. Replaceable by final artwork/effects. */
+.player.defeated{opacity:.28}
+.defeatNotice{
+  position:absolute;
+  left:50%;
+  top:48%;
+  transform:translate(-50%,-50%);
+  z-index:45;
+  pointer-events:none;
+  padding:8px 18px;
+  border:2px solid rgba(255,225,120,.9);
+  border-radius:8px;
+  background:rgba(18,20,28,.82);
+  color:#fff0b0;
+  font-family:Orbitron,system-ui,sans-serif;
+  font-size:clamp(22px,5vw,42px);
+  font-weight:900;
+  letter-spacing:.12em;
+  text-shadow:0 2px 0 #4b1b1b;
+}
