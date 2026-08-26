@@ -12,7 +12,6 @@
   const chipDetailModal=document.getElementById('chipDetailModal');
   const editTopBar=document.getElementById('editTopBar');
 
-  let activeEnemyId=null;
   let running=true;
   let lastFrame=performance.now();
 
@@ -25,10 +24,16 @@
     try{return typeof controller?.[method]==='function'?controller[method](...args):undefined}
     catch(error){console.error(`BattleNetworkEnemyAI controller ${method} failed.`,error);return undefined}
   }
+  function isBusy(assignment){return call(assignment?.controller,'isBusy')===true}
+  function cancelAssignment(assignment,now=performance.now()){
+    if(!assignment||!isBusy(assignment))return false;
+    call(assignment.controller,'cancel',now);
+    return true;
+  }
   function destroyAssignment(enemyId){
     const assignment=assignments.get(enemyId);
     if(!assignment)return false;
-    if(activeEnemyId===enemyId){call(assignment.controller,'cancel',performance.now());activeEnemyId=null}
+    cancelAssignment(assignment);
     call(assignment.controller,'destroy');
     assignments.delete(enemyId);
     return true;
@@ -36,12 +41,10 @@
   function cleanupMissingEnemies(){
     for(const enemyId of [...assignments.keys()])if(!ENEMY.getEnemy(enemyId))destroyAssignment(enemyId);
   }
-  function cancelActive(now=performance.now()){
-    if(activeEnemyId===null)return false;
-    const assignment=assignments.get(activeEnemyId);
-    if(assignment)call(assignment.controller,'cancel',now);
-    activeEnemyId=null;
-    return true;
+  function cancelAll(now=performance.now()){
+    let cancelled=0;
+    for(const assignment of assignments.values())if(cancelAssignment(assignment,now))cancelled++;
+    return cancelled;
   }
   function registerBehavior(behaviorId,factory){
     const id=normalizeId(behaviorId);
@@ -66,14 +69,14 @@
     return Object.freeze({ok:true,reason:null,enemyId,behaviorId:id});
   }
   function clearAssignments(){
-    cancelActive();
+    cancelAll();
     for(const enemyId of [...assignments.keys()])destroyAssignment(enemyId);
     return getSnapshot();
   }
   function pause(reason='MANUAL'){
     const key=normalizeId(reason)||'MANUAL';
     pauseReasons.add(key);
-    cancelActive();
+    cancelAll();
     return getSnapshot();
   }
   function resume(reason='MANUAL'){
@@ -82,31 +85,33 @@
     return getSnapshot();
   }
   function getSnapshot(){
+    const activeEnemyIds=[];
+    for(const assignment of assignments.values())if(isBusy(assignment))activeEnemyIds.push(assignment.enemyId);
     return Object.freeze({
-      schedulerPolicy:'FIRST_ACTIVE',
+      schedulerPolicy:'INDEPENDENT_PER_ENEMY',
       running,
       paused:isSystemPaused(),
       pauseReasons:Object.freeze([...pauseReasons]),
-      activeEnemyId,
+      activeEnemyIds:Object.freeze(activeEnemyIds),
       assignments:Object.freeze([...assignments.values()].map(item=>Object.freeze({enemyId:item.enemyId,behaviorId:item.behaviorId}))),
       registeredBehaviors:Object.freeze([...registry.keys()])
     });
   }
-  function tryStartFirstActive(now){
-    const enemy=ENEMY.getActiveEnemies()[0]||null;
-    if(!enemy)return;
-    const assignment=assignments.get(enemy.id);
-    if(!assignment)return;
+  function updateAssignment(assignment,now,dt){
+    const enemy=ENEMY.getEnemy(assignment.enemyId);
+    if(!enemy){destroyAssignment(assignment.enemyId);return}
+
+    // A behavior that already started keeps ownership of its own update cycle.
+    // Whether an already-fired attack survives source defeat remains behavior-specific.
+    if(isBusy(assignment)){
+      call(assignment.controller,'update',now,dt);
+      return;
+    }
+
+    // Defeated enemies never start a new action.
+    if(enemy.isDefeated)return;
     if(call(assignment.controller,'canStart',now)!==true)return;
     call(assignment.controller,'start',now);
-    if(call(assignment.controller,'isBusy')===true)activeEnemyId=enemy.id;
-  }
-  function updateActive(now,dt){
-    if(activeEnemyId===null)return;
-    const assignment=assignments.get(activeEnemyId);
-    if(!assignment){activeEnemyId=null;return}
-    call(assignment.controller,'update',now,dt);
-    if(call(assignment.controller,'isBusy')!==true)activeEnemyId=null;
   }
   function loop(now){
     if(!running)return;
@@ -114,15 +119,14 @@
     lastFrame=now;
     cleanupMissingEnemies();
     if(isSystemPaused()){
-      cancelActive(now);
+      cancelAll(now);
       requestAnimationFrame(loop);
       return;
     }
-    updateActive(now,dt);
-    if(activeEnemyId===null)tryStartFirstActive(now);
+    for(const assignment of [...assignments.values()])updateAssignment(assignment,now,dt);
     requestAnimationFrame(loop);
   }
-  function stop(){if(!running)return;running=false;cancelActive()}
+  function stop(){if(!running)return;running=false;cancelAll()}
   function start(){if(running)return;running=true;lastFrame=performance.now();requestAnimationFrame(loop)}
 
   window.BattleNetworkEnemyAI=Object.freeze({
