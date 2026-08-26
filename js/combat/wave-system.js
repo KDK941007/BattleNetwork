@@ -8,11 +8,14 @@
   if(!AI)throw new Error('BattleNetworkWave: enemy AI foundation is not loaded.');
   if(!battle)throw new Error('BattleNetworkWave: battle element is not available.');
 
-  // v100 test-only composition/timing/behavior assignment. These are not final enemy or Wave specifications.
+  // v104 test-only composition/timing/behavior assignment. These are not final enemy or Wave specifications.
   const TEST_CONFIG=Object.freeze({
     testOnly:true,
     enemyMaxHp:200,
-    behaviorId:'PROTOTYPE_STRAIGHT_SHOT',
+    attackBehaviorId:'PROTOTYPE_STRAIGHT_SHOT',
+    movementBehaviorId:'PROTOTYPE_OSCILLATE_MOVEMENT',
+    movementDistanceTiles:1,
+    movementSpeedWorld:90,
     clearNoticeMs:1500,
     startNoticeMs:1500,
     spawnTiles:Object.freeze([
@@ -44,13 +47,21 @@
   function subscribe(listener){if(typeof listener!=='function')return()=>{};listeners.add(listener);listener(getSnapshot());return()=>listeners.delete(listener)}
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function scheduleTransition(delayMs,callback){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)callback()},delayMs)}
-  function spawnTestEnemy(tile){
+  function spawnTestEnemy(tile,index){
     const centerRow=Math.floor(FIELD.GRID_ROWS/2),centerCol=Math.floor(FIELD.GRID_COLS/2);
     const point=FIELD.tileToWorldCenter(centerRow+tile.rowOffset,centerCol+tile.colOffset);
     if(!point)throw new Error('BattleNetworkWave: test spawn tile is outside the field.');
     const enemyId=ENEMY.spawn({x:point.x,y:point.y,health:{maxHp:TEST_CONFIG.enemyMaxHp}});
-    const assigned=AI.assignBehavior(enemyId,TEST_CONFIG.behaviorId);
-    if(!assigned.ok)throw new Error(`BattleNetworkWave: failed to assign ${TEST_CONFIG.behaviorId} to enemy ${enemyId}: ${assigned.reason}`);
+
+    const movement=AI.assignBehavior(enemyId,TEST_CONFIG.movementBehaviorId,{
+      distanceTiles:TEST_CONFIG.movementDistanceTiles,
+      speedWorld:TEST_CONFIG.movementSpeedWorld,
+      directionSign:index%2===0?1:-1
+    });
+    if(!movement.ok)throw new Error(`BattleNetworkWave: failed to assign ${TEST_CONFIG.movementBehaviorId} to enemy ${enemyId}: ${movement.reason}`);
+
+    const attack=AI.assignBehavior(enemyId,TEST_CONFIG.attackBehaviorId);
+    if(!attack.ok)throw new Error(`BattleNetworkWave: failed to assign ${TEST_CONFIG.attackBehaviorId} to enemy ${enemyId}: ${attack.reason}`);
     return enemyId;
   }
   function spawnWave(waveNumber){

@@ -109,7 +109,7 @@
     const el=document.createElement('div');
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
-    el.style.cssText='position:absolute;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
+    el.style.cssText='position:absolute;will-change:transform;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
@@ -122,6 +122,16 @@
   function getEnemy(id){return getSnapshot(getById(id))}
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
   function getActiveEnemies(){return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)).map(getSnapshot))}
+  function setPosition(id,x,y){
+    const enemy=getById(id);
+    if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',enemy:null});
+    const nextX=Number(x),nextY=Number(y);
+    if(!Number.isFinite(nextX)||!Number.isFinite(nextY))return Object.freeze({applied:false,reason:'INVALID_POSITION',enemy:getSnapshot(enemy)});
+    enemy.x=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextX));
+    enemy.y=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextY));
+    render(enemy);
+    return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
+  }
   function clearAll(){
     enemies.forEach(enemy=>{enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
@@ -187,5 +197,5 @@
     setTimeout(()=>{if(enemy.flashToken===token)el.style.opacity='0'},140);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
 })();

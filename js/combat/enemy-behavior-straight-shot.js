@@ -43,16 +43,25 @@
     function removeProjectile(){ATTACK_LAYER.hideProjectile(projectileEl);projectile=null}
     function scheduleNext(now=performance.now()){nextAttackAt=now+cfg.cooldownMs}
     function canStart(now){const enemy=ENEMY.getEnemy(enemyId);return !!enemy&&!enemy.isDefeated&&!telegraph&&!projectile&&now>=nextAttackAt}
+    function renderTelegraphFromCurrentEnemy(){
+      if(!telegraph)return;
+      const enemy=ENEMY.getEnemy(enemyId);
+      if(enemy&&!enemy.isDefeated)telegraph.origin={x:enemy.x,y:enemy.y};
+      const end={x:telegraph.origin.x+telegraph.direction.x*telegraph.distance,y:telegraph.origin.y+telegraph.direction.y*telegraph.distance};
+      ATTACK_LAYER.showTelegraph(telegraphEl,telegraph.origin,end);
+    }
     function start(now){
       if(!canStart(now))return false;
       const enemy=ENEMY.getEnemy(enemyId),playerPos=PLAYER.getPosition();
       if(!enemy)return false;
       const direction=normalize(playerPos.x-enemy.x,playerPos.y-enemy.y);
-      const distance=FIELD.toWorldDistance(cfg.telegraphDistanceTiles);
-      const origin={x:enemy.x,y:enemy.y};
-      const end={x:enemy.x+direction.x*distance,y:enemy.y+direction.y*distance};
-      ATTACK_LAYER.showTelegraph(telegraphEl,origin,end);
-      telegraph={origin,direction,fireAt:now+cfg.telegraphMs};
+      telegraph={
+        origin:{x:enemy.x,y:enemy.y},
+        direction,
+        distance:FIELD.toWorldDistance(cfg.telegraphDistanceTiles),
+        fireAt:now+cfg.telegraphMs
+      };
+      renderTelegraphFromCurrentEnemy();
       return true;
     }
     function fireTelegraph(){
@@ -73,7 +82,10 @@
       const out=projectile.x<0||projectile.x>FIELD.WORLD_SIZE||projectile.y<0||projectile.y>FIELD.WORLD_SIZE;
       if(out||projectile.travel>=cfg.maxTravelWorld)finish(now);
     }
-    function update(now,dt){if(telegraph&&now>=telegraph.fireAt)fireTelegraph();updateProjectile(dt,now)}
+    function update(now,dt){
+      if(telegraph){renderTelegraphFromCurrentEnemy();if(now>=telegraph.fireAt)fireTelegraph()}
+      updateProjectile(dt,now);
+    }
     function cancel(now=performance.now()){const busy=!!telegraph||!!projectile;removeTelegraph();removeProjectile();if(busy)scheduleNext(now)}
     function destroy(){removeTelegraph();removeProjectile();ATTACK_LAYER.destroy(telegraphEl);ATTACK_LAYER.destroy(projectileEl)}
     function isBusy(){return !!telegraph||!!projectile}
@@ -81,6 +93,6 @@
     return Object.freeze({canStart,start,update,cancel,destroy,isBusy,getSnapshot});
   }
 
-  AI.registerBehavior(BEHAVIOR_ID,createController);
+  AI.registerBehavior(BEHAVIOR_ID,createController,{channel:'ATTACK'});
   window.BattleNetworkEnemyStraightShotBehavior=Object.freeze({BEHAVIOR_ID,DEFAULT_CONFIG});
 })();
