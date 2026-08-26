@@ -1,8 +1,8 @@
-/* v95 temporary Wave verification UI. Final Wave presentation is not decided. */
+/* v96 temporary Wave verification UI. Positioned below the CUSTOM gauge; final Wave presentation is not decided. */
 .waveStatusNotice{
   position:absolute;
   left:50%;
-  top:6px;
+  top:28px;
   transform:translateX(-50%);
   z-index:24;
   pointer-events:none;
