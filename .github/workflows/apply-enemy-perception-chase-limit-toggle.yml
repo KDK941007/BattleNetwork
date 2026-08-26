@@ -1,0 +1,36 @@
+name: Apply enemy perception chase limit toggle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-enemy-perception-chase-limit-toggle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply design update
+        run: python tools/apply_enemy_perception_chase_limit_toggle.py
+      - name: Sanity check
+        run: |
+          grep -q '追跡限界距離を使用する / 使用しない' GAME_DESIGN.md
+          grep -q '距離による強制的な追跡解除を行わない' GAME_DESIGN.md
+      - name: Commit design update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GAME_DESIGN.md
+          git commit -m 'Define optional enemy chase limit distance'
+          git push origin main
+      - name: Remove one-time design files
+        run: |
+          git pull --rebase origin main
+          git rm tools/apply_enemy_perception_chase_limit_toggle.py .github/workflows/apply-enemy-perception-chase-limit-toggle.yml
+          git commit -m 'Remove one-time chase limit design files'
+          git push origin main
