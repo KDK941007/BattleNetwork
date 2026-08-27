@@ -13,7 +13,10 @@
       attackRecoveryMs:250,
       attackTelegraphMs:850,
       fullSyncWindowMs:180,
-      approachStopTiles:1
+      approachStopTiles:1,
+      perceptionStartTiles:5,
+      perceptionReleaseTiles:8,
+      chaseRangeTiles:8
     })
   });
   const modifiers=Object.freeze({player:new Map(),enemy:new Map()});
