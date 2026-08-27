@@ -1,4 +1,6 @@
 (()=>{
+  const DEFAULTS=window.BattleNetworkCombatDefaults;
+  if(!DEFAULTS)throw new Error('BattleNetworkEnemy1Runtime: combat defaults are not loaded.');
   const attackLocks=new Set();
   const perception=new Map();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',STOP_IN_ATTACK_RANGE:'STOP_IN_ATTACK_RANGE'});
@@ -6,7 +8,7 @@
   let patternIndex=0;
   // Current confirmed enemy1 values. The PATTERN UI is kept as temporary test infrastructure for the next tuning item.
   const patterns=Object.freeze([
-    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:180,recoveryMs:250,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5})
+    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
