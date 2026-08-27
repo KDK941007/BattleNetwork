@@ -90,6 +90,7 @@
   window.BattleNetworkCameraZoomSettings=Object.freeze({
     get:()=>zoom,
     set:value=>setZoom(value,true),
-    getRange:()=>Object.freeze({min:MIN_ZOOM,max:MAX_ZOOM,step:.01,default:DEFAULT_ZOOM})
+    getRange:()=>Object.freeze({min:MIN_ZOOM,max:MAX_ZOOM,step:.01,default:DEFAULT_ZOOM}),
+    getCameraState:()=>Object.freeze({zoom,cameraX,cameraY})
   });
 })();
