@@ -2,11 +2,11 @@
   const attackLocks=new Set();
   const perception=new Map();
   let patternIndex=1;
-  // Temporary device-test patterns: shockwave speed 520 is selected; vary only attack telegraph duration.
+  // Temporary device-test patterns: selected telegraph 850ms and shockwave speed 520 are fixed; vary only Full Sync window.
   const patterns=Object.freeze([
-    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:180,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5}),
-    Object.freeze({id:'B',label:'B',moveSpeedWorld:95,telegraphMs:700,fullSyncWindowMs:180,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5}),
-    Object.freeze({id:'C',label:'C',moveSpeedWorld:95,telegraphMs:550,fullSyncWindowMs:180,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5})
+    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:140,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5}),
+    Object.freeze({id:'B',label:'B',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:180,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5}),
+    Object.freeze({id:'C',label:'C',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:220,recoveryMs:350,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
