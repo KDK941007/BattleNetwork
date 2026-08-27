@@ -5,7 +5,7 @@
   const perception=new Map();
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',STOP_IN_ATTACK_RANGE:'STOP_IN_ATTACK_RANGE'});
-  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.STOP_IN_ATTACK_RANGE,perceptionStartTiles:5,perceptionReleaseTiles:6});
+  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.STOP_IN_ATTACK_RANGE,perceptionStartTiles:5,perceptionReleaseTiles:8});
   let patternIndex=0;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
   // Current confirmed enemy1 values. Additional comparison patterns can be added again when a new tuning item is tested.
