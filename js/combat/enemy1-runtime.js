@@ -7,12 +7,12 @@
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
   const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
-  const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10});
+  const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
   const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,chaseDistanceMode:CHASE_DISTANCE_MODE.APPROACH,perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8,approachStopTiles:DEFAULTS.enemyApproachStopTiles,keepDistanceMinTiles:null,keepDistanceMaxTiles:null});
   let patternIndex=0;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
   const patterns=Object.freeze([
-    Object.freeze({id:'B',label:'B',moveSpeedWorld:DEFAULTS.enemyMoveSpeed,telegraphMs:DEFAULTS.enemyAttackTelegraphMs,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:ATTACK_DEFAULTS.projectileSpeed,maxRangeTiles:enemyConfig.perceptionReleaseTiles})
+    Object.freeze({id:'B',label:'B',moveSpeedWorld:DEFAULTS.enemyMoveSpeed,telegraphMs:DEFAULTS.enemyAttackTelegraphMs,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:ATTACK_DEFAULTS.projectileSpeed,attackStartRangeTiles:ATTACK_DEFAULTS.attackStartRangeTiles,projectileMaxRangeTiles:ATTACK_DEFAULTS.projectileMaxRangeTiles})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
