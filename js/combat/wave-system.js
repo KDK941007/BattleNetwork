@@ -1,8 +1,8 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/combat-defaults.js?v=129','./js/combat/enemy1-runtime.js?v=129','./js/combat/enemy1-movement.js?v=129','./js/combat/enemy1-shockwave.js?v=129','./js/ui/enemy1-pattern-test-ui.js?v=129'];
-  function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})
+  const MODULES=['./js/combat/combat-defaults.js?v=130','./js/combat/enemy1-runtime.js?v=130','./js/combat/enemy1-movement.js?v=130','./js/combat/enemy1-shockwave.js?v=130','./js/ui/enemy1-pattern-test-ui.js?v=130'];
+  function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({testOnly:true,enemyMaxHp:40,attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',movementBehaviorId:'ENEMY1_MOVEMENT',clearNoticeMs:1500,startNoticeMs:1500,spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})])});
   const listeners=new Set(),notice=document.createElement('div');notice.className='waveStatusNotice';notice.setAttribute('aria-live','polite');battle.appendChild(notice);
