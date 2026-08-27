@@ -29,7 +29,10 @@
     });
   }
   function normalizeCollision(collision){
-    return Object.freeze({allowPlayerOverlap:collision?.allowPlayerOverlap===true});
+    return Object.freeze({
+      allowPlayerOverlap:collision?.allowPlayerOverlap===true,
+      allowEnemyOverlap:collision?.allowEnemyOverlap===true
+    });
   }
   function normalizeHealth(health){
     const maxHp=positive(health?.maxHp,null);
@@ -64,6 +67,11 @@
   }
   function getBounds(enemy){return getBoundsAt(enemy)}
   function boundsOverlap(a,b){return !!a&&!!b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top}
+  function isEnemyPositionBlocked(enemy,x,y){
+    if(!enemy||enemy.collision.allowEnemyOverlap)return false;
+    const bounds=getBoundsAt(enemy,x,y);
+    return enemies.some(other=>other.id!==enemy.id&&!isDefeatedRaw(other)&&!other.collision.allowEnemyOverlap&&boundsOverlap(bounds,getBounds(other)));
+  }
   function render(enemy){
     const p=project(enemy.x,enemy.y),v=enemy.visual;
     enemy.el.style.width=v.width+'px';
@@ -132,8 +140,10 @@
     if(!enemy)return Object.freeze({applied:false,reason:'ENEMY_NOT_FOUND',enemy:null});
     const nextX=Number(x),nextY=Number(y);
     if(!Number.isFinite(nextX)||!Number.isFinite(nextY))return Object.freeze({applied:false,reason:'INVALID_POSITION',enemy:getSnapshot(enemy)});
-    enemy.x=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextX));
-    enemy.y=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextY));
+    const clampedX=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextX)),clampedY=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextY));
+    if(isEnemyPositionBlocked(enemy,clampedX,clampedY))return Object.freeze({applied:false,reason:'ENEMY_COLLISION',enemy:getSnapshot(enemy)});
+    enemy.x=clampedX;
+    enemy.y=clampedY;
     render(enemy);
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
@@ -197,14 +207,14 @@
         {x:enemy.x,y:bounds.top-enemy.hitBox.height/2-enemy.hitBox.offsetY},
         {x:enemy.x,y:bounds.bottom+enemy.hitBox.height/2-enemy.hitBox.offsetY}
       ].map(c=>({x:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.x)),y:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.y))}))
-       .filter(c=>!boundsOverlap(getBoundsAt(enemy,c.x,c.y),bounds));
+       .filter(c=>!boundsOverlap(getBoundsAt(enemy,c.x,c.y),bounds)&&!isEnemyPositionBlocked(enemy,c.x,c.y));
       if(!candidates.length)continue;
       candidates.sort((a,b)=>{
         const adx=a.x-enemy.x,ady=a.y-enemy.y,bdx=b.x-enemy.x,bdy=b.y-enemy.y;
         const da=Math.hypot(adx,ady),db=Math.hypot(bdx,bdy);if(Math.abs(da-db)>.001)return da-db;
         return (bdx*ux+bdy*uy)-(adx*ux+ady*uy);
       });
-      const chosen=candidates[0];setPosition(enemy.id,chosen.x,chosen.y);pushed.push(enemy.id);
+      const chosen=candidates[0],result=setPosition(enemy.id,chosen.x,chosen.y);if(result.applied)pushed.push(enemy.id);
     }
     return Object.freeze(pushed);
   }
