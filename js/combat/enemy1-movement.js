@@ -2,13 +2,13 @@
   const AI=window.BattleNetworkEnemyAI,FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,PLAYER=window.BattleNetworkPlayer,RUNTIME=window.BattleNetworkEnemy1Runtime;
   if(!AI||!FIELD||!ENEMY||!PLAYER||!RUNTIME)throw new Error('BattleNetworkEnemy1Movement: required dependency is missing.');
   const BEHAVIOR_ID='ENEMY1_MOVEMENT';
-  const START=FIELD.toWorldDistance(5),RELEASE=FIELD.toWorldDistance(6),EDGE=FIELD.TILE_SIZE*.7;
+  const EDGE=FIELD.TILE_SIZE*.7;
   function random(a,b){return a+Math.random()*(b-a)}
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
   function createController({enemyId}){
     let active=false,target=null,waitUntil=0;
     function chooseWander(enemy){const angle=Math.random()*Math.PI*2,distance=FIELD.toWorldDistance(random(1,2));target={x:Math.max(EDGE,Math.min(FIELD.WORLD_SIZE-EDGE,enemy.x+Math.cos(angle)*distance)),y:Math.max(EDGE,Math.min(FIELD.WORLD_SIZE-EDGE,enemy.y+Math.sin(angle)*distance))}}
-    function updatePerception(enemy,player){const d=Math.hypot(player.x-enemy.x,player.y-enemy.y),aware=RUNTIME.getPerception(enemyId);if(!aware&&d<=START)RUNTIME.setPerception(enemyId,true);else if(aware&&d>RELEASE){RUNTIME.setPerception(enemyId,false);target=null;waitUntil=performance.now()+random(800,1500)}return RUNTIME.getPerception(enemyId)}
+    function updatePerception(enemy,player){const config=RUNTIME.getEnemyConfig(),start=FIELD.toWorldDistance(config.perceptionStartTiles),release=FIELD.toWorldDistance(config.perceptionReleaseTiles),d=Math.hypot(player.x-enemy.x,player.y-enemy.y),aware=RUNTIME.getPerception(enemyId);if(!aware&&d<=start)RUNTIME.setPerception(enemyId,true);else if(aware&&d>release){RUNTIME.setPerception(enemyId,false);target=null;waitUntil=performance.now()+random(800,1500)}return RUNTIME.getPerception(enemyId)}
     function shouldChase(enemy,player){const policy=RUNTIME.getEnemyConfig().chasePolicy;if(policy===RUNTIME.CHASE_POLICY.ALWAYS_WHILE_AWARE)return true;if(policy===RUNTIME.CHASE_POLICY.STOP_IN_ATTACK_RANGE){const attackRange=FIELD.toWorldDistance(RUNTIME.getPattern().maxRangeTiles);return Math.hypot(player.x-enemy.x,player.y-enemy.y)>attackRange}return false}
     function canStart(){const e=ENEMY.getEnemy(enemyId);return !!e&&!e.isDefeated}
     function start(){active=true;return true}
