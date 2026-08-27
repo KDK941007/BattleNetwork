@@ -3,20 +3,27 @@
   if(!DEFAULTS)throw new Error('BattleNetworkEnemy1Runtime: combat defaults are not loaded.');
   const attackLocks=new Set();
   const perception=new Map();
+  const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',STOP_IN_ATTACK_RANGE:'STOP_IN_ATTACK_RANGE'});
-  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.STOP_IN_ATTACK_RANGE});
+  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.STOP_IN_ATTACK_RANGE,perceptionStartTiles:5,perceptionReleaseTiles:6});
   let patternIndex=0;
-  // Current confirmed enemy1 values. The PATTERN UI is kept as temporary test infrastructure for the next tuning item.
+  let debugState={enabled:false,showPerception:true,showAttackGlow:true};
+  // Current confirmed enemy1 values. Additional comparison patterns can be added again when a new tuning item is tested.
   const patterns=Object.freeze([
     Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:1250,projectileSpeed:520,maxRangeTiles:5})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
   function getEnemyConfig(){return enemyConfig}
+  function getDebugState(){return Object.freeze({...debugState})}
+  function emitDebug(){const snapshot=getDebugState();debugListeners.forEach(fn=>{try{fn(snapshot)}catch(error){console.error('BattleNetworkEnemy1Runtime debug listener failed.',error)}});return snapshot}
+  function setDebugEnabled(value){debugState={...debugState,enabled:value===true};return emitDebug()}
+  function setDebugOption(name,value){if(name!=='showPerception'&&name!=='showAttackGlow')return getDebugState();debugState={...debugState,[name]:value===true};return emitDebug()}
+  function subscribeDebug(fn){if(typeof fn!=='function')return()=>{};debugListeners.add(fn);fn(getDebugState());return()=>debugListeners.delete(fn)}
   function isAttackLocked(enemyId){return attackLocks.has(enemyId)}
   function setAttackLocked(enemyId,locked){locked?attackLocks.add(enemyId):attackLocks.delete(enemyId)}
   function getPerception(enemyId){return perception.get(enemyId)===true}
   function setPerception(enemyId,value){perception.set(enemyId,value===true)}
   function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId)}
-  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,patterns,getPattern,cyclePattern,getEnemyConfig,isAttackLocked,setAttackLocked,getPerception,setPerception,clearEnemy});
+  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,patterns,getPattern,cyclePattern,getEnemyConfig,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,clearEnemy});
 })();
