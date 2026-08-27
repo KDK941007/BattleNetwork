@@ -1,6 +1,9 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
+  const MODULES=['./js/combat/enemy1-runtime.js?v=106','./js/combat/enemy1-movement.js?v=106','./js/combat/enemy1-shockwave.js?v=106','./js/ui/enemy1-pattern-test-ui.js?v=106'];
+  function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
+  const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({testOnly:true,enemyMaxHp:40,attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',movementBehaviorId:'ENEMY1_MOVEMENT',clearNoticeMs:1500,startNoticeMs:1500,spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})])});
   const listeners=new Set(),notice=document.createElement('div');notice.className='waveStatusNotice';notice.setAttribute('aria-live','polite');battle.appendChild(notice);
   let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[]},transitionToken=0;
@@ -14,6 +17,6 @@
   function spawnWave(n){const enemyIds=TEST_CONFIG.spawnTiles.map(spawnEnemy);state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds};render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v}
   function openNextWaveCustom(){if(state.status!=='CLEARING')return getSnapshot();state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();return getSnapshot()}
   function onEnemyState(e){if(state.status!=='ACTIVE'||!e.allDefeated)return;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();state={...state,pendingWaveNumber:state.waveNumber+1,status:'CLEARING'};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,openNextWaveCustom)}
-  function startNextWave(){if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();const n=state.pendingWaveNumber;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[]};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status==='STARTING'&&state.pendingWaveNumber===n)spawnWave(n)});return getSnapshot()}
+  function startNextWave(){if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();const n=state.pendingWaveNumber;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[]};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()}
   window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);render();
 })();
