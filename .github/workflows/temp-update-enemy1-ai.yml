@@ -1,0 +1,38 @@
+name: One-time enemy1 AI design update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/temp-update-enemy1-ai.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Update GAME_DESIGN and remove helper
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('GAME_DESIGN.md')
+          s = p.read_text(encoding='utf-8')
+          old = "- 移動はあり。常時プレイヤーを追い回すのではなく、待機を挟みながら上下方向を主体に短距離だけ位置を変える断続的な移動とする。\n- 移動距離は1マス前後を基本イメージとし、実装時の速度・停止時間・正確な距離は操作感を見ながら調整する。"
+          new = "- 移動はあり。プレイヤーを知覚していない間は、プレイヤーを直接追跡せずフィールド内を自由移動する。未知覚時の具体的な移動方向・移動範囲・速度・停止時間は後続設計で確定する。\n- プレイヤーを知覚した後は、プレイヤーへ近づく追跡移動を行う。追跡時の移動速度・距離調整・停止条件、および追跡限界距離を使用するかどうかは後続設計で確定する。"
+          if old not in s:
+              raise SystemExit('target text not found; aborting without guessing')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          Path('.github/workflows/temp-update-enemy1-ai.yml').unlink()
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add GAME_DESIGN.md .github/workflows/temp-update-enemy1-ai.yml
+          git commit -m "Define enemy1 perception-based movement"
+          git push origin main
