@@ -1,7 +1,7 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/combat-defaults.js?v=134','./js/combat/enemy1-runtime.js?v=134','./js/combat/enemy1-movement.js?v=134','./js/combat/enemy1-shockwave.js?v=134','./js/ui/enemy1-pattern-test-ui.js?v=134'];
+  const MODULES=['./js/combat/combat-defaults.js?v=135','./js/combat/enemy1-runtime.js?v=135','./js/combat/enemy1-movement.js?v=135','./js/combat/enemy1-shockwave.js?v=135','./js/ui/enemy1-pattern-test-ui.js?v=135'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({testOnly:true,enemyMaxHp:40,attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',movementBehaviorId:'ENEMY1_MOVEMENT',clearNoticeMs:1500,startNoticeMs:1500,spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})])});
@@ -10,7 +10,7 @@
   function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
   function render(){notice.dataset.status=state.status;if(state.status==='CLEARING'||(state.status==='WAITING_CUSTOM'&&state.waveNumber>0)){notice.textContent='WAVE CLEAR';return}if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}notice.textContent=`WAVE ${state.status==='ACTIVE'?state.waveNumber:state.pendingWaveNumber}`}
   function emit(){const v=getSnapshot();listeners.forEach(fn=>{try{fn(v)}catch(e){console.error('BattleNetworkWave listener failed.',e)}});return v}
-  function subscribe(fn){if(typeof fn!==='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(fn)}
+  function subscribe(fn){if(typeof fn!=='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(fn)}
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function spawnEnemy(tile){const r=Math.floor(FIELD.GRID_ROWS/2),c=Math.floor(FIELD.GRID_COLS/2),p=FIELD.tileToWorldCenter(r+tile.rowOffset,c+tile.colOffset);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const id=ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:TEST_CONFIG.enemyMaxHp}});const m=AI.assignBehavior(id,TEST_CONFIG.movementBehaviorId);if(!m.ok)throw new Error(`BattleNetworkWave: movement assign failed: ${m.reason}`);const a=AI.assignBehavior(id,TEST_CONFIG.attackBehaviorId);if(!a.ok)throw new Error(`BattleNetworkWave: attack assign failed: ${a.reason}`);return id}
