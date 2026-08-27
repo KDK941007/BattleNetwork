@@ -8,7 +8,18 @@
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
   const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
   const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
-  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,chaseDistanceMode:CHASE_DISTANCE_MODE.APPROACH,perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8,approachStopTiles:DEFAULTS.enemyApproachStopTiles,keepDistanceMinTiles:null,keepDistanceMaxTiles:null});
+  const ENEMY1_OVERRIDES=Object.freeze({perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
+  const useOrDefault=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
+  const enemyConfig=Object.freeze({
+    chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,
+    chaseDistanceMode:CHASE_DISTANCE_MODE.APPROACH,
+    perceptionStartTiles:useOrDefault(ENEMY1_OVERRIDES.perceptionStartTiles,DEFAULTS.enemyPerceptionStartTiles),
+    perceptionReleaseTiles:useOrDefault(ENEMY1_OVERRIDES.perceptionReleaseTiles,DEFAULTS.enemyPerceptionReleaseTiles),
+    chaseRangeTiles:useOrDefault(ENEMY1_OVERRIDES.chaseRangeTiles,DEFAULTS.enemyChaseRangeTiles),
+    approachStopTiles:DEFAULTS.enemyApproachStopTiles,
+    keepDistanceMinTiles:null,
+    keepDistanceMaxTiles:null
+  });
   let patternIndex=0;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
   const patterns=Object.freeze([
@@ -31,5 +42,5 @@
   function getNextAttackAt(enemyId){return nextAttackAt.get(enemyId)||0}
   function isAttackReady(enemyId,now=performance.now()){return now>=getNextAttackAt(enemyId)}
   function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId);nextAttackAt.delete(enemyId)}
-  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,ATTACK_DEFAULTS,patterns,getPattern,cyclePattern,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
+  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,ATTACK_DEFAULTS,ENEMY1_OVERRIDES,patterns,getPattern,cyclePattern,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
 })();
