@@ -7,7 +7,7 @@
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
   const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
-  const ENEMY1_DEFAULTS=Object.freeze({maxHp:40});
+  const ENEMY1_DEFAULTS=Object.freeze({maxHp:40,hitBoxWidthTiles:1.32,hitBoxHeightTiles:1.32,hitBoxOffsetXTiles:0,hitBoxOffsetYTiles:0});
   const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
   const ENEMY1_OVERRIDES=Object.freeze({perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
   const useOrDefault=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
