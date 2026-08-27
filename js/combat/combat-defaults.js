@@ -1,9 +1,13 @@
 (()=>{
+  const PARAMS=window.BattleNetworkParameters;
+  if(!PARAMS)throw new Error('BattleNetworkCombatDefaults: parameter system is not loaded.');
+  const enemy=PARAMS.getBase('enemy');
   const DEFAULTS=Object.freeze({
-    fullSyncWindowMs:180,
-    enemyAttackRecoveryMs:250,
-    attackCooldownMs:3000,
-    enemyApproachStopTiles:1
+    fullSyncWindowMs:enemy.fullSyncWindowMs,
+    enemyAttackRecoveryMs:enemy.attackRecoveryMs,
+    attackCooldownMs:enemy.attackCooldownMs,
+    enemyApproachStopTiles:enemy.approachStopTiles,
+    enemyMoveSpeed:enemy.moveSpeed
   });
   window.BattleNetworkCombatDefaults=DEFAULTS;
 })();
