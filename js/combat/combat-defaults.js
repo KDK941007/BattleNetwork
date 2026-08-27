@@ -5,6 +5,7 @@
   const DEFAULTS=Object.freeze({
     fullSyncWindowMs:enemy.fullSyncWindowMs,
     enemyAttackRecoveryMs:enemy.attackRecoveryMs,
+    enemyAttackTelegraphMs:enemy.attackTelegraphMs,
     attackCooldownMs:enemy.attackCooldownMs,
     enemyApproachStopTiles:enemy.approachStopTiles,
     enemyMoveSpeed:enemy.moveSpeed
