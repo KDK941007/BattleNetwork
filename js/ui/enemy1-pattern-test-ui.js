@@ -7,7 +7,7 @@
   button.type='button';button.style.cssText='min-width:126px;min-height:34px;border:1px solid #ffe27a;border-radius:6px;background:#30270d;color:#fff7c9;font-weight:900;font-variant-numeric:tabular-nums;';
   detail.style.cssText='white-space:nowrap;font-variant-numeric:tabular-nums;';
   function sec(ms){return `${(ms/1000).toFixed(2)}s`}
-  function render(){const p=RUNTIME.getPattern();button.textContent=`PATTERN ${p.id} FS ${sec(p.fullSyncWindowMs)}`;detail.textContent=`FS ${sec(p.fullSyncWindowMs)} / 予兆 ${sec(p.telegraphMs)} / 波速 ${p.projectileSpeed}`}
+  function render(){const p=RUNTIME.getPattern();button.textContent=`PATTERN ${p.id} 硬直 ${sec(p.recoveryMs)}`;detail.textContent=`硬直 ${sec(p.recoveryMs)} / FS ${sec(p.fullSyncWindowMs)} / 予兆 ${sec(p.telegraphMs)} / 波速 ${p.projectileSpeed}`}
   button.addEventListener('click',()=>{RUNTIME.cyclePattern();render()});
   wrap.append(button,detail);battle.appendChild(wrap);render();
 })();
