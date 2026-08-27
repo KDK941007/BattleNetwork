@@ -6,10 +6,13 @@
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',STOP_IN_ATTACK_RANGE:'STOP_IN_ATTACK_RANGE'});
   const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.STOP_IN_ATTACK_RANGE,perceptionStartTiles:5,perceptionReleaseTiles:8});
-  let patternIndex=0;
+  let patternIndex=1;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
+  // Temporary device-test patterns: vary only attack range. Confirmed values remain fixed.
   const patterns=Object.freeze([
-    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:5})
+    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:4}),
+    Object.freeze({id:'B',label:'B',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:5}),
+    Object.freeze({id:'C',label:'C',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:6})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
