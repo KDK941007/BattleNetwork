@@ -25,5 +25,6 @@
   function removeAdditive(scope,sourceId){scopeMap(scope).delete(String(sourceId||''));return resolve(scope)}
   function clearAdditives(scope){scopeMap(scope).clear();return resolve(scope)}
   function getAdditives(scope){const out={};for(const [sourceId,values] of scopeMap(scope))out[sourceId]={...values};return Object.freeze(out)}
+  setAdditive('player','TEST_DASH_STOCK',{dashConsecutiveCount:1});
   window.BattleNetworkParameters=Object.freeze({BASE,getBase,resolve,getEffective:resolve,setAdditive,removeAdditive,clearAdditives,getAdditives});
 })();
