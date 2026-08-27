@@ -11,7 +11,7 @@
   document.head.appendChild(style);
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
   function findEnemyElement(enemyId){const enemies=ENEMY.getEnemies(),index=enemies.findIndex(enemy=>enemy.id===enemyId);return index>=0?document.querySelectorAll('.enemyPrototype')[index]||null:null}
-  function setGlow(enemyId,mode){const el=findEnemyElement(enemyId);if(!el)return;el.classList.toggle('enemy1TelegraphTest',mode==='TELEGRAPH');el.classList.toggle('enemy1FullSyncTest',mode==='FULL_SYNC')}
+  function setGlow(enemyId,mode){const el=findEnemyElement(enemyId);if(!el)return;const debug=RUNTIME.getDebugState();const visible=debug.enabled&&debug.showAttackGlow;el.classList.toggle('enemy1TelegraphTest',visible&&mode==='TELEGRAPH');el.classList.toggle('enemy1FullSyncTest',visible&&mode==='FULL_SYNC')}
   function createController({enemyId}){
     const telegraphEl=LAYER.createTelegraph(),projectileEl=LAYER.createProjectile();
     let phase='IDLE',direction=null,projectile=null,fireAt=0,fullSyncAt=0,recoveryUntil=0,nextAttackAt=performance.now();
