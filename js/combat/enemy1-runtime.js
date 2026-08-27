@@ -11,7 +11,7 @@
   let patternIndex=0;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
   const patterns=Object.freeze([
-    Object.freeze({id:'D',label:'D',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles})
+    Object.freeze({id:'D',label:'D',moveSpeedWorld:DEFAULTS.enemyMoveSpeed,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles})
   ]);
   function getPattern(){return patterns[patternIndex]}
   function cyclePattern(){patternIndex=(patternIndex+1)%patterns.length;return getPattern()}
