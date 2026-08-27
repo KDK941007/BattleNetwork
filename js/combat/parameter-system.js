@@ -11,6 +11,7 @@
       moveSpeed:95,
       attackCooldownMs:3000,
       attackRecoveryMs:250,
+      attackTelegraphMs:850,
       fullSyncWindowMs:180,
       approachStopTiles:1
     })
