@@ -1,7 +1,7 @@
 (()=>{
   const AI=window.BattleNetworkEnemyAI,FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,PLAYER=window.BattleNetworkPlayer,PLAYER_DAMAGE=window.BattleNetworkPlayerDamage,LAYER=window.BattleNetworkEnemyAttackLayer,RUNTIME=window.BattleNetworkEnemy1Runtime;
   if(!AI||!FIELD||!ENEMY||!PLAYER||!PLAYER_DAMAGE||!LAYER||!RUNTIME)throw new Error('BattleNetworkEnemy1Shockwave: required dependency is missing.');
-  const BEHAVIOR_ID='ENEMY1_GROUND_SHOCKWAVE',DAMAGE=10;
+  const BEHAVIOR_ID='ENEMY1_GROUND_SHOCKWAVE',DAMAGE=RUNTIME.getAttackDefaults().damage;
   const style=document.createElement('style');
   style.dataset.testOnly='enemy1-telegraph-glow';
   style.textContent=`
