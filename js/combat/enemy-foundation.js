@@ -28,6 +28,9 @@
       offsetY:finite(hitBox?.offsetY)
     });
   }
+  function normalizeCollision(collision){
+    return Object.freeze({allowPlayerOverlap:collision?.allowPlayerOverlap===true});
+  }
   function normalizeHealth(health){
     const maxHp=positive(health?.maxHp,null);
     if(maxHp===null)return Object.freeze({maxHp:null,hp:null});
@@ -54,11 +57,13 @@
     listener(getBattleState());
     return()=>listeners.delete(listener);
   }
-  function getBounds(enemy){
-    const centerX=enemy.x+enemy.hitBox.offsetX,centerY=enemy.y+enemy.hitBox.offsetY;
+  function getBoundsAt(enemy,x=enemy.x,y=enemy.y){
+    const centerX=x+enemy.hitBox.offsetX,centerY=y+enemy.hitBox.offsetY;
     const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
     return Object.freeze({left:centerX-halfW,right:centerX+halfW,top:centerY-halfH,bottom:centerY+halfH,width:enemy.hitBox.width,height:enemy.hitBox.height,centerX,centerY});
   }
+  function getBounds(enemy){return getBoundsAt(enemy)}
+  function boundsOverlap(a,b){return !!a&&!!b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top}
   function render(enemy){
     const p=project(enemy.x,enemy.y),v=enemy.visual;
     enemy.el.style.width=v.width+'px';
@@ -113,12 +118,12 @@
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0};
     scene.appendChild(el);enemies.push(enemy);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
-  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,visual:enemy.visual,hitBox:enemy.hitBox,maxHp:enemy.maxHp,hp:enemy.hp,isDefeated:isDefeatedRaw(enemy),bounds:getBounds(enemy)}):null}
+  function getSnapshot(enemy){return enemy?Object.freeze({id:enemy.id,x:enemy.x,y:enemy.y,visual:enemy.visual,hitBox:enemy.hitBox,collision:enemy.collision,maxHp:enemy.maxHp,hp:enemy.hp,isDefeated:isDefeatedRaw(enemy),bounds:getBounds(enemy)}):null}
   function getEnemy(id){return getSnapshot(getById(id))}
   function getEnemies(){return Object.freeze(enemies.map(getSnapshot))}
   function getActiveEnemies(){return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)).map(getSnapshot))}
@@ -163,39 +168,56 @@
     const halfW=enemy.hitBox.width/2,halfH=enemy.hitBox.height/2;
     return x>=centerX-halfW&&x<=centerX+halfW&&y>=centerY-halfH&&y<=centerY+halfH;
   }
-  function containsPoint(id,x,y){
-    return containsPointRaw(getById(id),x,y);
-  }
+  function containsPoint(id,x,y){return containsPointRaw(getById(id),x,y)}
   function findEnemyIdAtPoint(x,y){
     if(!Number.isFinite(x)||!Number.isFinite(y))return null;
-    for(const enemy of enemies){
-      if(!isDefeatedRaw(enemy)&&containsPointRaw(enemy,x,y))return enemy.id;
-    }
+    for(const enemy of enemies){if(!isDefeatedRaw(enemy)&&containsPointRaw(enemy,x,y))return enemy.id}
     return null;
   }
-  function intersectsRange(id,shape){
-    const enemy=getById(id);return !!enemy&&!isDefeatedRaw(enemy)&&RANGE.intersectsBounds(shape,getBounds(enemy));
+  function intersectsRange(id,shape){const enemy=getById(id);return !!enemy&&!isDefeatedRaw(enemy)&&RANGE.intersectsBounds(shape,getBounds(enemy))}
+  function getHitEnemies(shape){if(!shape)return Object.freeze([]);return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)&&RANGE.intersectsBounds(shape,getBounds(enemy))).map(getSnapshot))}
+  function isPlayerBoundsBlocked(bounds){
+    if(!bounds)return false;
+    return enemies.some(enemy=>!isDefeatedRaw(enemy)&&!enemy.collision.allowPlayerOverlap&&boundsOverlap(getBounds(enemy),bounds));
   }
-  function getHitEnemies(shape){
-    if(!shape)return Object.freeze([]);
-    return Object.freeze(enemies.filter(enemy=>!isDefeatedRaw(enemy)&&RANGE.intersectsBounds(shape,getBounds(enemy))).map(getSnapshot));
+  function wouldOverlapBounds(id,x,y,bounds){
+    const enemy=getById(id);
+    return !!enemy&&!isDefeatedRaw(enemy)&&!enemy.collision.allowPlayerOverlap&&boundsOverlap(getBoundsAt(enemy,Number(x),Number(y)),bounds);
+  }
+  function pushBlockingEnemiesFromBounds(bounds,direction={x:0,y:0}){
+    if(!bounds)return Object.freeze([]);
+    const pushed=[];
+    const dx=finite(direction?.x),dy=finite(direction?.y),dl=Math.hypot(dx,dy),ux=dl>0?dx/dl:0,uy=dl>0?dy/dl:0;
+    for(const enemy of enemies){
+      if(isDefeatedRaw(enemy)||enemy.collision.allowPlayerOverlap)continue;
+      const eb=getBounds(enemy);if(!boundsOverlap(eb,bounds))continue;
+      const candidates=[
+        {x:bounds.left-enemy.hitBox.width/2-enemy.hitBox.offsetX,y:enemy.y},
+        {x:bounds.right+enemy.hitBox.width/2-enemy.hitBox.offsetX,y:enemy.y},
+        {x:enemy.x,y:bounds.top-enemy.hitBox.height/2-enemy.hitBox.offsetY},
+        {x:enemy.x,y:bounds.bottom+enemy.hitBox.height/2-enemy.hitBox.offsetY}
+      ].map(c=>({x:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.x)),y:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.y))}))
+       .filter(c=>!boundsOverlap(getBoundsAt(enemy,c.x,c.y),bounds));
+      if(!candidates.length)continue;
+      candidates.sort((a,b)=>{
+        const adx=a.x-enemy.x,ady=a.y-enemy.y,bdx=b.x-enemy.x,bdy=b.y-enemy.y;
+        const da=Math.hypot(adx,ady),db=Math.hypot(bdx,bdy);if(Math.abs(da-db)>.001)return da-db;
+        return (bdx*ux+bdy*uy)-(adx*ux+ady*uy);
+      });
+      const chosen=candidates[0];setPosition(enemy.id,chosen.x,chosen.y);pushed.push(enemy.id);
+    }
+    return Object.freeze(pushed);
   }
   function debugFlash(id){
     const enemy=getById(id);if(!enemy||isDefeatedRaw(enemy)||!enemy.hitFlashEl)return;
-    const el=enemy.hitFlashEl;
-    enemy.flashToken++;
-    enemy.hitFlashAnimation?.cancel?.();
+    const el=enemy.hitFlashEl;enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();
     if(typeof el.animate==='function'){
-      const animation=el.animate([{opacity:.88},{opacity:0}],{duration:140,easing:'ease-out'});
-      enemy.hitFlashAnimation=animation;
+      const animation=el.animate([{opacity:.88},{opacity:0}],{duration:140,easing:'ease-out'});enemy.hitFlashAnimation=animation;
       animation.onfinish=()=>{if(enemy.hitFlashAnimation===animation){enemy.hitFlashAnimation=null;el.style.opacity='0'}};
-      animation.oncancel=()=>{if(enemy.hitFlashAnimation===animation)enemy.hitFlashAnimation=null};
-      return;
+      animation.oncancel=()=>{if(enemy.hitFlashAnimation===animation)enemy.hitFlashAnimation=null};return;
     }
-    const token=enemy.flashToken;
-    el.style.opacity='.88';
-    setTimeout(()=>{if(enemy.flashToken===token)el.style.opacity='0'},140);
+    const token=enemy.flashToken;el.style.opacity='.88';setTimeout(()=>{if(enemy.flashToken===token)el.style.opacity='0'},140);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,isPlayerBoundsBlocked,wouldOverlapBounds,pushBlockingEnemiesFromBounds,debugFlash});
 })();
