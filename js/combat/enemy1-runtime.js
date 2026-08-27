@@ -6,14 +6,13 @@
   const nextAttackAt=new Map();
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
-  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
-  let patternIndex=1;
+  const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
+  // KEEP_BAND is a common movement setting for future enemies: approach above max, retreat below min, hold inside the band.
+  // Enemy1 uses normal approach chasing, so keepDistanceMinTiles/MaxTiles are intentionally null.
+  const enemyConfig=Object.freeze({chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,chaseDistanceMode:CHASE_DISTANCE_MODE.APPROACH,perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8,keepDistanceMinTiles:null,keepDistanceMaxTiles:null});
+  let patternIndex=0;
   let debugState={enabled:false,showPerception:true,showAttackGlow:true};
-  // Temporary device-test patterns: vary only attack cooldown. In attack/chase overlap, attack wins when ready; chase wins during cooldown.
   const patterns=Object.freeze([
-    Object.freeze({id:'A',label:'A',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:1500,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles}),
-    Object.freeze({id:'B',label:'B',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:2000,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles}),
-    Object.freeze({id:'C',label:'C',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:2500,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles}),
     Object.freeze({id:'D',label:'D',moveSpeedWorld:95,telegraphMs:850,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:3000,projectileSpeed:520,maxRangeTiles:enemyConfig.perceptionReleaseTiles})
   ]);
   function getPattern(){return patterns[patternIndex]}
@@ -32,5 +31,5 @@
   function getNextAttackAt(enemyId){return nextAttackAt.get(enemyId)||0}
   function isAttackReady(enemyId,now=performance.now()){return now>=getNextAttackAt(enemyId)}
   function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId);nextAttackAt.delete(enemyId)}
-  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,patterns,getPattern,cyclePattern,getEnemyConfig,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
+  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,patterns,getPattern,cyclePattern,getEnemyConfig,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
 })();
