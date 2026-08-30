@@ -5,6 +5,7 @@
   const CANNON_BASE=Object.freeze({rangeTiles:5,projectileSpeed:900,actionLockSec:.25});
   const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:100,max:2000,step:100}),actionLockSec:Object.freeze({min:.25,max:3.25,step:.5})});
   let airShotSettings={rangeTiles:CANNON_BASE.rangeTiles,projectileSpeed:CANNON_BASE.projectileSpeed,actionLockSec:CANNON_BASE.actionLockSec};
+  let settingsOpen=false;
   const airShotListeners=new Set();
   function getAirShotSettings(){return Object.freeze({...airShotSettings})}
   function emitAirShotSettings(){const snapshot=getAirShotSettings();airShotListeners.forEach(listener=>{try{listener(snapshot)}catch(error){console.error('BattleNetworkTestSettings listener failed.',error)}});return snapshot}
@@ -14,10 +15,10 @@
   function subscribeAirShot(listener){if(typeof listener!=='function')return()=>{};airShotListeners.add(listener);listener(getAirShotSettings());return()=>airShotListeners.delete(listener)}
   window.BattleNetworkTestSettings=Object.freeze({CANNON_BASE,AIRSHOT_LIMITS,getAirShotSettings,setAirShotSetting,adjustAirShotSetting,subscribeAirShot});
 
-  const wrap=document.createElement('div'),toggle=document.createElement('button'),tools=document.createElement('div'),patternButton=document.createElement('button'),rangeButton=document.createElement('button'),glowButton=document.createElement('button'),attackButton=document.createElement('button'),movementButton=document.createElement('button'),detail=document.createElement('span'),airShotPanel=document.createElement('div');
+  const wrap=document.createElement('div'),toggle=document.createElement('button'),tools=document.createElement('div'),modeButton=document.createElement('button'),patternButton=document.createElement('button'),rangeButton=document.createElement('button'),glowButton=document.createElement('button'),attackButton=document.createElement('button'),movementButton=document.createElement('button'),detail=document.createElement('span'),airShotPanel=document.createElement('div');
   wrap.dataset.testOnly='enemy-debug-tools';
   wrap.style.cssText='position:absolute;right:10px;top:10px;z-index:70;display:flex;align-items:flex-start;gap:6px;padding:5px 7px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(8,12,20,.88);color:#fff;font:700 11px/1.2 system-ui,sans-serif;pointer-events:auto;max-width:calc(100% - 20px);';
-  [toggle,patternButton,rangeButton,glowButton,attackButton,movementButton].forEach(button=>{button.type='button';button.style.cssText='min-height:32px;border:1px solid #ffe27a;border-radius:6px;background:#30270d;color:#fff7c9;font-weight:900;font-variant-numeric:tabular-nums;padding:4px 8px;'});
+  [toggle,modeButton,patternButton,rangeButton,glowButton,attackButton,movementButton].forEach(button=>{button.type='button';button.style.cssText='min-height:32px;border:1px solid #ffe27a;border-radius:6px;background:#30270d;color:#fff7c9;font-weight:900;font-variant-numeric:tabular-nums;padding:4px 8px;'});
   toggle.style.minWidth='108px';patternButton.style.minWidth='146px';patternButton.disabled=true;patternButton.style.opacity='.72';tools.style.cssText='display:none;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;';detail.style.cssText='white-space:nowrap;font-variant-numeric:tabular-nums;';
   airShotPanel.style.cssText='display:flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid rgba(112,222,255,.55);border-radius:7px;background:rgba(6,35,48,.78);font-variant-numeric:tabular-nums;';
 
@@ -55,19 +56,19 @@
   function stopRangeUpdates(){if(animationFrame!==null){cancelAnimationFrame(animationFrame);animationFrame=null}hideRings()}
   function startRangeUpdates(){refreshRadii();updateRingSizes();showRings();if(animationFrame===null)animationFrame=requestAnimationFrame(drawFrame)}
   function syncRangeUpdates(){const debug=RUNTIME.getDebugState();debug.enabled&&debug.showPerception?startRangeUpdates():stopRangeUpdates()}
-  function setTestOpen(open){
-    const next=open===true;
-    if(next){
+  function setSettingsOpen(open){
+    settingsOpen=open===true;
+    if(settingsOpen){
       playerApi()?.pauseForWaveTransition?.();
       AI.pause('TEST_SETTINGS');
-      RUNTIME.setDebugEnabled(true);
     }else{
-      RUNTIME.setDebugEnabled(false);
       AI.resume('TEST_SETTINGS');
       playerApi()?.resumeAfterWaveTransition?.();
     }
+    render();
   }
-  function render(){const debug=RUNTIME.getDebugState(),p=RUNTIME.getPattern(),config=RUNTIME.getEnemyConfig(),playerParams=playerApi()?.getParameters?.(),moveSpeed=playerParams?.moveSpeed??300,attackEnabled=AI.isChannelEnabled('ATTACK'),movementEnabled=AI.isChannelEnabled('MOVEMENT');toggle.textContent=`テスト設定 ${debug.enabled?'ON':'OFF'}`;toggle.style.background=debug.enabled?'#14532d':'#30270d';tools.style.display=debug.enabled?'flex':'none';rangeButton.textContent=`知覚 ${debug.showPerception?'ON':'OFF'}`;glowButton.textContent=`発光 ${debug.showAttackGlow?'ON':'OFF'}`;attackButton.textContent=`敵攻撃 ${attackEnabled?'ON':'OFF'}`;movementButton.textContent=`敵移動 ${movementEnabled?'ON':'OFF'}`;attackButton.style.background=attackEnabled?'#14532d':'#30270d';movementButton.style.background=movementEnabled?'#14532d':'#30270d';patternButton.textContent=`予兆 ${sec(p.telegraphMs)} 固定`;detail.textContent=`予兆 ${sec(p.telegraphMs)} / CT ${sec(p.cooldownMs)} / P速度 ${moveSpeed} / 追跡 ${config.chaseRangeTiles} / 攻撃開始 ${p.attackStartRangeTiles} / 到達 ${p.projectileMaxRangeTiles} / 知覚 ${config.perceptionStartTiles} / 解除 ${config.perceptionReleaseTiles}`;rangeStepper.refresh();speedStepper.refresh();lockStepper.refresh();syncRangeUpdates()}
-  toggle.addEventListener('click',()=>setTestOpen(!RUNTIME.getDebugState().enabled));rangeButton.addEventListener('click',()=>RUNTIME.setDebugOption('showPerception',!RUNTIME.getDebugState().showPerception));glowButton.addEventListener('click',()=>RUNTIME.setDebugOption('showAttackGlow',!RUNTIME.getDebugState().showAttackGlow));attackButton.addEventListener('click',()=>{AI.setChannelEnabled('ATTACK',!AI.isChannelEnabled('ATTACK'));render()});movementButton.addEventListener('click',()=>{AI.setChannelEnabled('MOVEMENT',!AI.isChannelEnabled('MOVEMENT'));render()});
-  tools.append(patternButton,rangeButton,glowButton,attackButton,movementButton,airShotPanel,detail);wrap.append(toggle,tools);battle.appendChild(wrap);RUNTIME.subscribeDebug(render);render();
+  function toggleTestMode(){RUNTIME.setDebugEnabled(!RUNTIME.getDebugState().enabled)}
+  function render(){const debug=RUNTIME.getDebugState(),p=RUNTIME.getPattern(),config=RUNTIME.getEnemyConfig(),playerParams=playerApi()?.getParameters?.(),moveSpeed=playerParams?.moveSpeed??300,attackEnabled=AI.isChannelEnabled('ATTACK'),movementEnabled=AI.isChannelEnabled('MOVEMENT');toggle.textContent=settingsOpen?'テスト設定 閉じる':'テスト設定';toggle.style.background=settingsOpen?'#14532d':'#30270d';tools.style.display=settingsOpen?'flex':'none';modeButton.textContent=`テストモード ${debug.enabled?'ON':'OFF'}`;modeButton.style.background=debug.enabled?'#14532d':'#30270d';rangeButton.textContent=`知覚 ${debug.showPerception?'ON':'OFF'}`;glowButton.textContent=`発光 ${debug.showAttackGlow?'ON':'OFF'}`;attackButton.textContent=`敵攻撃 ${attackEnabled?'ON':'OFF'}`;movementButton.textContent=`敵移動 ${movementEnabled?'ON':'OFF'}`;attackButton.style.background=attackEnabled?'#14532d':'#30270d';movementButton.style.background=movementEnabled?'#14532d':'#30270d';patternButton.textContent=`予兆 ${sec(p.telegraphMs)} 固定`;detail.textContent=`予兆 ${sec(p.telegraphMs)} / CT ${sec(p.cooldownMs)} / P速度 ${moveSpeed} / 追跡 ${config.chaseRangeTiles} / 攻撃開始 ${p.attackStartRangeTiles} / 到達 ${p.projectileMaxRangeTiles} / 知覚 ${config.perceptionStartTiles} / 解除 ${config.perceptionReleaseTiles}`;rangeStepper.refresh();speedStepper.refresh();lockStepper.refresh();syncRangeUpdates()}
+  toggle.addEventListener('click',()=>setSettingsOpen(!settingsOpen));modeButton.addEventListener('click',toggleTestMode);rangeButton.addEventListener('click',()=>RUNTIME.setDebugOption('showPerception',!RUNTIME.getDebugState().showPerception));glowButton.addEventListener('click',()=>RUNTIME.setDebugOption('showAttackGlow',!RUNTIME.getDebugState().showAttackGlow));attackButton.addEventListener('click',()=>{AI.setChannelEnabled('ATTACK',!AI.isChannelEnabled('ATTACK'));render()});movementButton.addEventListener('click',()=>{AI.setChannelEnabled('MOVEMENT',!AI.isChannelEnabled('MOVEMENT'));render()});
+  tools.append(modeButton,patternButton,rangeButton,glowButton,attackButton,movementButton,airShotPanel,detail);wrap.append(toggle,tools);battle.appendChild(wrap);RUNTIME.subscribeDebug(render);render();
 })();
