@@ -7,7 +7,7 @@
   const CANNON_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40});
   const AIRSHOT_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:2500,actionLockSec:TIMING.actionLockSec,startupDelaySec:TIMING.startupDelaySec});
   const CANNON_LIMITS=Object.freeze({projectileSpeed:Object.freeze({min:100,max:3000,step:100}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
-  const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:100,max:3000,step:100}),actionLockSec:Object.freeze({min:.25,max:3.25,step:.5}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
+  const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:2500,max:4000,step:100}),actionLockSec:Object.freeze({min:.25,max:3.25,step:.5}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
   let cannonSettings={...CANNON_BASE},airShotSettings={...AIRSHOT_BASE},settingsOpen=false;
   const airShotListeners=new Set(),cannonListeners=new Set();
   function clampStep(value,limit){const n=Math.max(limit.min,Math.min(limit.max,Number(value)));const steps=Math.round((n-limit.min)/limit.step);return Number((limit.min+steps*limit.step).toFixed(2))}
