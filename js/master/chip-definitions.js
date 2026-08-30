@@ -30,6 +30,7 @@
     {valueTypeId:'BARRIER_HP',valueName:'バリア耐久',displayLabel:'耐久値',unit:null},
     {valueTypeId:'ADD_DAMAGE',valueName:'攻撃力加算',displayLabel:'加算値',unit:null}
   ];
+  const SHOOTING_RANGE_DEFAULT_TILES=7;
   const RANGE_TYPE_MASTER=[
     {rangeTypeId:'LINE',rangeName:'直線',displayCategory:'射撃',displayDirection:'自由方向',sortOrder:1},
     {rangeTypeId:'RECT',rangeName:'矩形',displayCategory:'近接',displayDirection:'自由方向',sortOrder:2},
@@ -40,7 +41,7 @@
     {rangeTypeId:'THROW_AOE',rangeName:'投擲範囲（互換）',displayCategory:'投擲',displayDirection:'前方',sortOrder:90,legacyFlg:true}
   ];
   const RANGE_PARAM_MASTER=[
-    {rangeTypeId:'LINE',paramId:'LENGTH_TILES',paramName:'射程マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
+    {rangeTypeId:'LINE',paramId:'LENGTH_TILES',paramName:'射程マス数',dataType:'number',defaultValue:SHOOTING_RANGE_DEFAULT_TILES,requiredFlg:true,displayLabel:'射程',displayOrder:1},
     {rangeTypeId:'LINE',paramId:'WIDTH_TILES',paramName:'幅マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'幅',displayOrder:2},
     {rangeTypeId:'RECT',paramId:'LENGTH_TILES',paramName:'長さマス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
     {rangeTypeId:'RECT',paramId:'WIDTH_TILES',paramName:'幅マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:2},
@@ -62,7 +63,7 @@
   const BEHAVIOR_PARAM_MASTER=[
     {behaviorId:'CANNON_SHOT',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
     {behaviorId:'CANNON_SHOT',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
-    {behaviorId:'CANNON_SHOT',paramId:'PROJECTILE_SPEED',paramName:'弾速',dataType:'number',defaultValue:900,requiredFlg:true},
+    {behaviorId:'CANNON_SHOT',paramId:'PROJECTILE_SPEED',paramName:'弾速',dataType:'number',defaultValue:2000,requiredFlg:true},
     {behaviorId:'SWORD_SLASH',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
     {behaviorId:'SWORD_SLASH',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
@@ -73,5 +74,5 @@
     {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true}
   ];
 
-  Object.assign(root,{CHIP_ATTRIBUTE_MASTER,CHIP_CODE_MASTER,CHIP_CLASS_MASTER,CHIP_SPECIAL_TYPE_MASTER,VALUE_TYPE_MASTER,RANGE_TYPE_MASTER,RANGE_PARAM_MASTER,CHIP_TIMING_DEFAULTS,BEHAVIOR_MASTER,BEHAVIOR_PARAM_MASTER});
+  Object.assign(root,{CHIP_ATTRIBUTE_MASTER,CHIP_CODE_MASTER,CHIP_CLASS_MASTER,CHIP_SPECIAL_TYPE_MASTER,VALUE_TYPE_MASTER,SHOOTING_RANGE_DEFAULT_TILES,RANGE_TYPE_MASTER,RANGE_PARAM_MASTER,CHIP_TIMING_DEFAULTS,BEHAVIOR_MASTER,BEHAVIOR_PARAM_MASTER});
 })();
