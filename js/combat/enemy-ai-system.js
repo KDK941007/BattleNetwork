@@ -7,6 +7,7 @@
   const registry=new Map();
   const assignments=new Map();
   const pauseReasons=new Set(['WAVE_TRANSITION']);
+  const disabledChannels=new Set();
   const customModal=document.getElementById('customModal');
   const settingsModal=document.getElementById('settingsModal');
   const chipDetailModal=document.getElementById('chipDetailModal');
@@ -56,6 +57,12 @@
     for(const assignment of assignments.values())if(cancelAssignment(assignment,now))cancelled++;
     return cancelled;
   }
+  function cancelChannel(channel,now=performance.now()){
+    const normalized=normalizeChannel(channel);
+    let cancelled=0;
+    for(const assignment of assignments.values())if(assignment.channel===normalized&&cancelAssignment(assignment,now))cancelled++;
+    return cancelled;
+  }
   function registerBehavior(behaviorId,factory,options={}){
     const id=normalizeId(behaviorId);
     if(!id)throw new Error('BattleNetworkEnemyAI: behaviorId is required.');
@@ -96,6 +103,13 @@
     pauseReasons.delete(key);
     return getSnapshot();
   }
+  function setChannelEnabled(channel,enabled=true){
+    const key=normalizeChannel(channel);
+    if(enabled)disabledChannels.delete(key);
+    else{disabledChannels.add(key);cancelChannel(key)}
+    return getSnapshot();
+  }
+  function isChannelEnabled(channel){return !disabledChannels.has(normalizeChannel(channel))}
   function getSnapshot(){
     const activeEnemyIds=new Set();
     const activeChannels=[];
@@ -109,6 +123,7 @@
       running,
       paused:isSystemPaused(),
       pauseReasons:Object.freeze([...pauseReasons]),
+      disabledChannels:Object.freeze([...disabledChannels]),
       activeEnemyIds:Object.freeze([...activeEnemyIds]),
       activeChannels:Object.freeze(activeChannels),
       assignments:Object.freeze([...assignments.values()].map(item=>Object.freeze({enemyId:item.enemyId,behaviorId:item.behaviorId,channel:item.channel}))),
@@ -118,6 +133,10 @@
   function updateAssignment(assignment,now,dt){
     const enemy=ENEMY.getEnemy(assignment.enemyId);
     if(!enemy){destroyByKey(assignmentKey(assignment.enemyId,assignment.channel));return}
+    if(disabledChannels.has(assignment.channel)){
+      cancelAssignment(assignment,now);
+      return;
+    }
 
     // Already-started work owns its channel update cycle. Attack source-death
     // handling remains behavior-specific; movement behavior stops itself on defeat.
@@ -153,6 +172,8 @@
     clearAssignments,
     pause,
     resume,
+    setChannelEnabled,
+    isChannelEnabled,
     getSnapshot,
     start,
     stop
