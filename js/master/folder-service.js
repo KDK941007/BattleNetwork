@@ -1,6 +1,8 @@
 (()=>{
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
+  const TEST_ONLY_AIRSHOT=true;
+  const AIRSHOT_CODES=Object.freeze(['A','S','V','*']);
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
     CHIP_0001:'CANNON',
     CHIP_0002:'SWORD',
@@ -44,7 +46,19 @@
     return getFolder(folderId);
   }
 
+  function buildAirShotTestCards(folderId){
+    return Array.from({length:30},(_,index)=>({
+      id:index,
+      type:'AIRSHOT',
+      code:AIRSHOT_CODES[index%AIRSHOT_CODES.length],
+      chipId:'CHIP_EXE4_S004',
+      folderId,
+      slotNo:index+1
+    }));
+  }
+
   function toLegacyCards(folderId=getEquippedFolderId()){
+    if(TEST_ONLY_AIRSHOT)return buildAirShotTestCards(folderId);
     return getFolderEntries(folderId).map((entry,index)=>({
       id:index,
       type:LEGACY_TYPE_BY_CHIP_ID[entry.chipId]||`CHIP_${entry.chipId}`,
