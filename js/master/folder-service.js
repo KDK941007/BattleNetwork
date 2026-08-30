@@ -1,8 +1,8 @@
 (()=>{
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
-  const TEST_ONLY_AIRSHOT=true;
-  const AIRSHOT_CODES=Object.freeze(['A','S','V','*']);
+  const TEST_ONLY_CANNON=true;
+  const CANNON_CODES=Object.freeze(['A','B','C']);
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
     CHIP_0001:'CANNON',
     CHIP_0002:'SWORD',
@@ -46,19 +46,19 @@
     return getFolder(folderId);
   }
 
-  function buildAirShotTestCards(folderId){
+  function buildCannonTestCards(folderId){
     return Array.from({length:30},(_,index)=>({
       id:index,
-      type:'AIRSHOT',
-      code:AIRSHOT_CODES[index%AIRSHOT_CODES.length],
-      chipId:'CHIP_EXE4_S004',
+      type:'CANNON',
+      code:CANNON_CODES[index%CANNON_CODES.length],
+      chipId:'CHIP_0001',
       folderId,
       slotNo:index+1
     }));
   }
 
   function toLegacyCards(folderId=getEquippedFolderId()){
-    if(TEST_ONLY_AIRSHOT)return buildAirShotTestCards(folderId);
+    if(TEST_ONLY_CANNON)return buildCannonTestCards(folderId);
     return getFolderEntries(folderId).map((entry,index)=>({
       id:index,
       type:LEGACY_TYPE_BY_CHIP_ID[entry.chipId]||`CHIP_${entry.chipId}`,
