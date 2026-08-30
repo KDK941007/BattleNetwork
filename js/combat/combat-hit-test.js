@@ -2,9 +2,11 @@
   const RANGE=window.BattleNetworkRangeGeometry;
   const ENEMY=window.BattleNetworkEnemy;
   const DATA=window.BattleNetworkData;
+  const FIELD=window.BattleNetworkField;
   if(!RANGE)throw new Error('BattleNetworkCombatHitTest: range geometry is not loaded.');
   if(!ENEMY)throw new Error('BattleNetworkCombatHitTest: enemy foundation is not loaded.');
   if(!DATA)throw new Error('BattleNetworkCombatHitTest: master data is not loaded.');
+  if(!FIELD)throw new Error('BattleNetworkCombatHitTest: field grid is not loaded.');
 
   let lastObservedAttack=null;
 
@@ -18,8 +20,9 @@
 
   function damageAndFlash(enemy,damage){
     const value=Number(damage);
-    if(Number.isFinite(value)&&value>0)ENEMY.applyDamage(enemy.id,value);
+    const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;
     ENEMY.debugFlash(enemy.id);
+    return result;
   }
 
   function flashHits(shape,damage=null){
@@ -54,12 +57,32 @@
     return first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;
   }
 
+  function isAirShot(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S004'}
+
+  function airShotSpeed(){
+    const value=Number(window.BattleNetworkTestSettings?.getAirShotSettings?.().projectileSpeed);
+    return Number.isFinite(value)&&value>0?value:900;
+  }
+
+  function pushAirShotEnemy(enemyId,direction){
+    const enemy=ENEMY.getEnemy(enemyId);
+    if(!enemy||enemy.isDefeated)return false;
+    const dir=RANGE.normalizeDirection(direction);
+    const distance=FIELD.toWorldDistance(1);
+    const result=ENEMY.setPosition(enemyId,enemy.x+dir.x*distance,enemy.y+dir.y*distance);
+    return result?.applied===true;
+  }
+
   function scheduleCannon(attack){
-    const speed=behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',900);
+    const airShot=isAirShot(attack);
+    const speed=airShot?airShotSpeed():behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',900);
     if(!(speed>0))return;
     const first=getFirstCannonHit(attack);
     if(!first)return;
-    setTimeout(()=>damageAndFlash(first.enemy,attack.damage),first.distance/speed*1000);
+    setTimeout(()=>{
+      const result=damageAndFlash(first.enemy,attack.damage);
+      if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);
+    },first.distance/speed*1000);
   }
 
   function scheduleBomb(attack){
