@@ -40,10 +40,15 @@
 
   const CONFIRMED_EXISTING={
     1:{chipId:'CHIP_0001',rarity:1,rangeTypeId:'LINE',behaviorId:'CANNON_SHOT',description:'前方へ砲弾を発射する射撃チップ。直線上を長距離まで攻撃する。',rangeDescription:'前方・直線／長距離'},
+    4:{rarity:2,description:'正面に空気の弾を発射し、直線上の敵1体に20ダメージを与える。ヒットした敵を1マス後方へ吹き飛ばす。',rangeDescription:'前方・直線／敵1体'},
+    5:{rarity:1,description:'正面へ攻撃力10の弾を3連射する。ヒット時、直後のパネルにも誘爆する。',rangeDescription:'前方・直線／3連射・着弾地点の直後1マスへ誘爆'},
     44:{chipId:'CHIP_0004',rarity:1,rangeTypeId:'CIRCLE',behaviorId:'BOMB_THROW',description:'前方へボムを投げ、着弾地点の周囲を爆発で攻撃する。',rangeDescription:'前方へ投擲／着弾地点を中心に範囲攻撃'},
     54:{chipId:'CHIP_0002',rarity:1,rangeTypeId:'RECT',behaviorId:'SWORD_SLASH',description:'前方の近距離を斬るソード系チップ。正面の敵を素早く攻撃する。',rangeDescription:'前方・近距離／狭い'},
     55:{chipId:'CHIP_0003',rarity:2,rangeTypeId:'RECT',behaviorId:'SWORD_SLASH',description:'前方の近距離を横に広く薙ぎ払うソード系チップ。ソードより広い範囲をカバーする。',rangeDescription:'前方・近距離／横に広い'},
-    109:{chipId:'CHIP_0005',rarity:1,rangeTypeId:'SELF',behaviorId:'RECOVER_HP',description:'自分のHPを10回復する回復チップ。',rangeDescription:'自分自身'}
+    106:{rarity:1,description:'正面1マスのパネルを穴パネルに変更する。敵や置き物がある場合は穴にせずヒビ割れパネルに変更する。',rangeDescription:'正面1マス'},
+    109:{chipId:'CHIP_0005',rarity:1,rangeTypeId:'SELF',behaviorId:'RECOVER_HP',description:'自分のHPを10回復する回復チップ。',rangeDescription:'自分自身'},
+    119:{rarity:1,description:'敵エリアの最前列にある縦3パネルを自分のエリアへ変更する。敵や置き物があるパネルは奪えず、10ダメージを与える。',rangeDescription:'敵エリア最前列・縦3パネル'},
+    148:{rarity:1,description:'直前に選択した攻撃チップの攻撃力を10上げる。複数枚を続けて使用することもできる。',rangeDescription:'直前に選択した攻撃チップへ付加'}
   };
 
   const CHIP_MASTER=STANDARD_CHIP_CATALOG.map(([libraryNo,chipName,capacityMb])=>Object.assign(
