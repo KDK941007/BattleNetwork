@@ -10,6 +10,7 @@
     return window.BattleNetworkField?.toWorldDistance?window.BattleNetworkField.toWorldDistance(n):undefined;
   };
   const timingDefaults=data.CHIP_TIMING_DEFAULTS||Object.freeze({startupDelaySec:.10,actionLockSec:.25});
+  const shootingRangeDefault=Number(data.SHOOTING_RANGE_DEFAULT_TILES)||7;
 
   const ATTR_IMAGE={};
   const ATTR_LABEL={};
@@ -27,7 +28,7 @@
     const recovery=values.find(row=>row.valueTypeId==='RECOVERY');
     const range=service.getRangeParams(chipId);
     const behavior=service.getBehaviorParams(chipId);
-    const lengthTiles=range.LENGTH_TILES;
+    const lengthTiles=range.LENGTH_TILES??(chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined);
     const widthTiles=range.WIDTH_TILES;
     const radiusTiles=range.RADIUS_TILES;
     const throwDistanceTiles=behavior.THROW_DISTANCE_TILES;
@@ -62,7 +63,7 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:6,projectileSpeed:900,actionLockSec:.25,startupDelaySec:timingDefaults.startupDelaySec});
+    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40});
     const settings=()=>window.BattleNetworkTestSettings?.getCannonSettings?.()||fallback;
     const runtime={
       chipId,
@@ -84,8 +85,8 @@
       viz:'cannon'
     };
     Object.defineProperties(runtime,{
-      rangeTiles:{enumerable:true,get:()=>6},
-      range:{enumerable:true,get:()=>tileDistanceToWorld(6)},
+      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
+      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
       projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
       lock:{enumerable:true,get:()=>.25},
       startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
@@ -107,11 +108,11 @@
       power:damage?.value,
       heal:recovery?.value,
       rangeTypeId:chip?.rangeTypeId||null,
-      rangeTiles:undefined,
+      rangeTiles:chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined,
       widthTiles:undefined,
       radiusTiles:undefined,
       throwDistanceTiles:undefined,
-      range:undefined,
+      range:chip?.rangeTypeId==='LINE'?tileDistanceToWorld(shootingRangeDefault):undefined,
       width:undefined,
       radius:undefined,
       lock:timingDefaults.actionLockSec,
@@ -130,7 +131,7 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:6,projectileSpeed:2500,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
+    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2500,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
     const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
     const runtime={
       chipId,
@@ -152,8 +153,8 @@
       viz:'cannon'
     };
     Object.defineProperties(runtime,{
-      rangeTiles:{enumerable:true,get:()=>settings().rangeTiles},
-      range:{enumerable:true,get:()=>tileDistanceToWorld(settings().rangeTiles)},
+      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
+      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
       projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
       lock:{enumerable:true,get:()=>settings().actionLockSec},
       startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
