@@ -17,29 +17,19 @@
     {attributeId:'BREAK',attributeType:'SYSTEM',attributeName:'ブレイク',iconPath:'./assets/attributes/13_break.png',sortOrder:13}
   ];
 
-  const CHIP_CODE_MASTER=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ','*'].map((codeValue,index)=>({
-    codeId:codeValue,
-    codeValue,
-    sortOrder:index+1
-  }));
-
+  const CHIP_CODE_MASTER=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ','*'].map((codeValue,index)=>({codeId:codeValue,codeValue,sortOrder:index+1}));
   const CHIP_CLASS_MASTER=[
     {classId:'STANDARD',className:'スタンダード',classInitial:'S',sortOrder:1},
     {classId:'MEGA',className:'メガ',classInitial:'M',sortOrder:2},
     {classId:'GIGA',className:'ギガ',classInitial:'G',sortOrder:3}
   ];
-
-  const CHIP_SPECIAL_TYPE_MASTER=[
-    {specialTypeId:'DARK',specialTypeName:'ダークチップ'}
-  ];
-
+  const CHIP_SPECIAL_TYPE_MASTER=[{specialTypeId:'DARK',specialTypeName:'ダークチップ'}];
   const VALUE_TYPE_MASTER=[
     {valueTypeId:'DAMAGE',valueName:'ダメージ',displayLabel:'攻撃力',unit:null},
     {valueTypeId:'RECOVERY',valueName:'HP回復',displayLabel:'回復量',unit:null},
     {valueTypeId:'BARRIER_HP',valueName:'バリア耐久',displayLabel:'耐久値',unit:null},
     {valueTypeId:'ADD_DAMAGE',valueName:'攻撃力加算',displayLabel:'加算値',unit:null}
   ];
-
   const RANGE_TYPE_MASTER=[
     {rangeTypeId:'LINE',rangeName:'直線',displayCategory:'射撃',displayDirection:'自由方向',sortOrder:1},
     {rangeTypeId:'RECT',rangeName:'矩形',displayCategory:'近接',displayDirection:'自由方向',sortOrder:2},
@@ -49,7 +39,6 @@
     {rangeTypeId:'SELF',rangeName:'自分自身',displayCategory:'回復',displayDirection:'自分中心',sortOrder:6},
     {rangeTypeId:'THROW_AOE',rangeName:'投擲範囲（互換）',displayCategory:'投擲',displayDirection:'前方',sortOrder:90,legacyFlg:true}
   ];
-
   const RANGE_PARAM_MASTER=[
     {rangeTypeId:'LINE',paramId:'LENGTH_TILES',paramName:'射程マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'射程',displayOrder:1},
     {rangeTypeId:'LINE',paramId:'WIDTH_TILES',paramName:'幅マス数',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'幅',displayOrder:2},
@@ -63,32 +52,26 @@
     {rangeTypeId:'THROW_AOE',paramId:'RADIUS',paramName:'爆発半径（互換world units）',dataType:'number',defaultValue:null,requiredFlg:true,displayLabel:'範囲',displayOrder:1}
   ];
 
+  const CHIP_TIMING_DEFAULTS=Object.freeze({startupDelaySec:.10,actionLockSec:.25});
   const BEHAVIOR_MASTER=[
     {behaviorId:'CANNON_SHOT',behaviorName:'キャノン射撃',handlerKey:'CANNON_SHOT'},
     {behaviorId:'SWORD_SLASH',behaviorName:'ソード攻撃',handlerKey:'SWORD_SLASH'},
     {behaviorId:'BOMB_THROW',behaviorName:'ボム投擲',handlerKey:'BOMB_THROW'},
     {behaviorId:'RECOVER_HP',behaviorName:'HP回復',handlerKey:'RECOVER_HP'}
   ];
-
   const BEHAVIOR_PARAM_MASTER=[
-    {behaviorId:'CANNON_SHOT',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true},
+    {behaviorId:'CANNON_SHOT',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
+    {behaviorId:'CANNON_SHOT',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
     {behaviorId:'CANNON_SHOT',paramId:'PROJECTILE_SPEED',paramName:'弾速',dataType:'number',defaultValue:900,requiredFlg:true},
-    {behaviorId:'SWORD_SLASH',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true},
-    {behaviorId:'BOMB_THROW',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.30,requiredFlg:true},
+    {behaviorId:'SWORD_SLASH',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
+    {behaviorId:'SWORD_SLASH',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
+    {behaviorId:'BOMB_THROW',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
+    {behaviorId:'BOMB_THROW',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'EXPLOSION_DELAY',paramName:'爆発遅延',dataType:'number',defaultValue:.28,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'THROW_DISTANCE_TILES',paramName:'投擲距離マス数',dataType:'number',defaultValue:3,requiredFlg:true},
-    {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'行動硬直',dataType:'number',defaultValue:.25,requiredFlg:true}
+    {behaviorId:'RECOVER_HP',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
+    {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true}
   ];
 
-  Object.assign(root,{
-    CHIP_ATTRIBUTE_MASTER,
-    CHIP_CODE_MASTER,
-    CHIP_CLASS_MASTER,
-    CHIP_SPECIAL_TYPE_MASTER,
-    VALUE_TYPE_MASTER,
-    RANGE_TYPE_MASTER,
-    RANGE_PARAM_MASTER,
-    BEHAVIOR_MASTER,
-    BEHAVIOR_PARAM_MASTER
-  });
+  Object.assign(root,{CHIP_ATTRIBUTE_MASTER,CHIP_CODE_MASTER,CHIP_CLASS_MASTER,CHIP_SPECIAL_TYPE_MASTER,VALUE_TYPE_MASTER,RANGE_TYPE_MASTER,RANGE_PARAM_MASTER,CHIP_TIMING_DEFAULTS,BEHAVIOR_MASTER,BEHAVIOR_PARAM_MASTER});
 })();
