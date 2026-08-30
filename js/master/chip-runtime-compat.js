@@ -46,6 +46,7 @@
       width:widthTiles!=null?tileDistanceToWorld(widthTiles):undefined,
       radius:radiusTiles!=null?tileDistanceToWorld(radiusTiles):undefined,
       lock:behavior.ACTION_LOCK,
+      startupDelay:behavior.STARTUP_DELAY,
       projectileSpeed:behavior.PROJECTILE_SPEED,
       explosionDelay:behavior.EXPLOSION_DELAY,
       image:service.getChipImagePath(chipId),
@@ -77,6 +78,7 @@
       width:undefined,
       radius:undefined,
       lock:.25,
+      startupDelay:0,
       projectileSpeed:undefined,
       explosionDelay:undefined,
       image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),
@@ -91,7 +93,7 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:5,projectileSpeed:900,actionLockSec:.25});
+    const fallback=Object.freeze({rangeTiles:5,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:0});
     const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
     const runtime={
       chipId,
@@ -116,7 +118,8 @@
       rangeTiles:{enumerable:true,get:()=>settings().rangeTiles},
       range:{enumerable:true,get:()=>tileDistanceToWorld(settings().rangeTiles)},
       projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
-      lock:{enumerable:true,get:()=>settings().actionLockSec}
+      lock:{enumerable:true,get:()=>settings().actionLockSec},
+      startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
     });
     return ['AIRSHOT',runtime];
   };
