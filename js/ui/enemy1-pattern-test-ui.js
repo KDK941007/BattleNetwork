@@ -18,10 +18,10 @@
 
   const wrap=document.createElement('div'),toggle=document.createElement('button'),tools=document.createElement('div'),modeButton=document.createElement('button'),patternButton=document.createElement('button'),rangeButton=document.createElement('button'),glowButton=document.createElement('button'),attackButton=document.createElement('button'),movementButton=document.createElement('button'),detail=document.createElement('span'),airShotPanel=document.createElement('div');
   wrap.dataset.testOnly='enemy-debug-tools';
-  wrap.style.cssText='position:absolute;right:10px;top:10px;z-index:70;display:flex;align-items:flex-start;gap:6px;padding:5px 7px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(8,12,20,.88);color:#fff;font:700 11px/1.2 system-ui,sans-serif;pointer-events:auto;max-width:calc(100% - 20px);';
+  wrap.style.cssText='position:absolute;right:10px;top:10px;z-index:70;display:flex;align-items:flex-start;gap:6px;padding:5px 7px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(8,12,20,.88);color:#fff;font:700 11px/1.2 system-ui,sans-serif;pointer-events:auto;max-width:calc(100% - 20px);box-sizing:border-box;';
   [toggle,modeButton,patternButton,rangeButton,glowButton,attackButton,movementButton].forEach(button=>{button.type='button';button.style.cssText='min-height:32px;border:1px solid #ffe27a;border-radius:6px;background:#30270d;color:#fff7c9;font-weight:900;font-variant-numeric:tabular-nums;padding:4px 8px;'});
-  toggle.style.minWidth='108px';patternButton.style.minWidth='146px';patternButton.disabled=true;patternButton.style.opacity='.72';tools.style.cssText='display:none;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;';detail.style.cssText='white-space:nowrap;font-variant-numeric:tabular-nums;';
-  airShotPanel.style.cssText='display:flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid rgba(112,222,255,.55);border-radius:7px;background:rgba(6,35,48,.78);font-variant-numeric:tabular-nums;';
+  toggle.style.minWidth='108px';patternButton.style.minWidth='146px';patternButton.disabled=true;patternButton.style.opacity='.72';tools.style.cssText='display:none;align-items:center;gap:8px;flex-wrap:wrap;align-content:flex-start;justify-content:flex-start;overflow:auto;min-width:0;';detail.style.cssText='white-space:normal;font-variant-numeric:tabular-nums;';
+  airShotPanel.style.cssText='display:flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid rgba(112,222,255,.55);border-radius:7px;background:rgba(6,35,48,.78);font-variant-numeric:tabular-nums;flex-wrap:wrap;max-width:100%;box-sizing:border-box;';
 
   function makeStepper(label,key,unit,formatValue){
     const box=document.createElement('span'),name=document.createElement('span'),prev=document.createElement('button'),value=document.createElement('strong'),next=document.createElement('button');
@@ -60,8 +60,15 @@
   function syncRangeUpdates(){const debug=RUNTIME.getDebugState();debug.enabled&&debug.showPerception?startRangeUpdates():stopRangeUpdates()}
   function setSettingsOpen(open){
     settingsOpen=open===true;
-    if(settingsOpen){playerApi()?.pauseForWaveTransition?.();AI.pause('TEST_SETTINGS')}
-    else{AI.resume('TEST_SETTINGS');playerApi()?.resumeAfterWaveTransition?.()}
+    if(settingsOpen){
+      playerApi()?.pauseForWaveTransition?.();AI.pause('TEST_SETTINGS');
+      wrap.style.cssText+='left:0;right:0;top:0;bottom:0;width:100%;height:100%;max-width:none;border-radius:0;padding:10px;display:flex;flex-direction:column;align-items:stretch;overflow:hidden;';
+      toggle.style.alignSelf='flex-start';tools.style.flex='1 1 auto';
+    }else{
+      AI.resume('TEST_SETTINGS');playerApi()?.resumeAfterWaveTransition?.();
+      wrap.style.cssText='position:absolute;right:10px;top:10px;z-index:70;display:flex;align-items:flex-start;gap:6px;padding:5px 7px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(8,12,20,.88);color:#fff;font:700 11px/1.2 system-ui,sans-serif;pointer-events:auto;max-width:calc(100% - 20px);box-sizing:border-box;';
+      toggle.style.alignSelf='auto';tools.style.flex='';
+    }
     render();
   }
   function toggleTestMode(){RUNTIME.setDebugEnabled(!RUNTIME.getDebugState().enabled)}
