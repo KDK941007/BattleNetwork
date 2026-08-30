@@ -3,7 +3,7 @@
   if(!RUNTIME||!FIELD||!ENEMY||!battle||!scene)throw new Error('BattleNetworkEnemy1PatternTestUI: required dependency is missing.');
   const PX=.72,PY=.36;
   const CANNON_BASE=Object.freeze({rangeTiles:5,projectileSpeed:900,actionLockSec:.25});
-  const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:100,max:2000,step:100}),actionLockSec:Object.freeze({min:0,max:3,step:.5})});
+  const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:100,max:2000,step:100}),actionLockSec:Object.freeze({min:.25,max:3.25,step:.5})});
   let airShotSettings={rangeTiles:CANNON_BASE.rangeTiles,projectileSpeed:CANNON_BASE.projectileSpeed,actionLockSec:CANNON_BASE.actionLockSec};
   const airShotListeners=new Set();
   function getAirShotSettings(){return Object.freeze({...airShotSettings})}
