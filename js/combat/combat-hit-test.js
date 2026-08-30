@@ -61,7 +61,7 @@
 
   function airShotSpeed(){
     const value=Number(window.BattleNetworkTestSettings?.getAirShotSettings?.().projectileSpeed);
-    return Number.isFinite(value)&&value>0?value:900;
+    return Number.isFinite(value)&&value>0?value:2000;
   }
 
   function pushAirShotEnemy(enemyId,direction){
