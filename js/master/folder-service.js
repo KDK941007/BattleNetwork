@@ -77,4 +77,6 @@
     toLegacyCards,
     installCurrentBattleBridge
   };
+
+  installCurrentBattleBridge();
 })();
