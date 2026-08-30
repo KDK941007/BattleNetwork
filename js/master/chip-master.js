@@ -1,104 +1,49 @@
 (()=>{
   const root=window.BattleNetworkData=window.BattleNetworkData||{};
 
-  const CHIP_MASTER=[
-    {
-      chipId:'CHIP_0001',
-      libraryNo:1,
-      chipName:'キャノン',
-      capacityMb:8,
-      classId:'STANDARD',
-      rarity:1,
-      rangeTypeId:'LINE',
-      behaviorId:'CANNON_SHOT',
-      description:'前方へ砲弾を発射する射撃チップ。直線上を長距離まで攻撃する。',
-      rangeDescription:'前方・直線／長距離'
-    },
-    {
-      chipId:'CHIP_0002',
-      libraryNo:54,
-      chipName:'ソード',
-      capacityMb:9,
-      classId:'STANDARD',
-      rarity:1,
-      rangeTypeId:'RECT',
-      behaviorId:'SWORD_SLASH',
-      description:'前方の近距離を斬るソード系チップ。正面の敵を素早く攻撃する。',
-      rangeDescription:'前方・近距離／狭い'
-    },
-    {
-      chipId:'CHIP_0003',
-      libraryNo:55,
-      chipName:'ワイドソード',
-      capacityMb:16,
-      classId:'STANDARD',
-      rarity:2,
-      rangeTypeId:'RECT',
-      behaviorId:'SWORD_SLASH',
-      description:'前方の近距離を横に広く薙ぎ払うソード系チップ。ソードより広い範囲をカバーする。',
-      rangeDescription:'前方・近距離／横に広い'
-    },
-    {
-      chipId:'CHIP_0004',
-      libraryNo:44,
-      chipName:'ミニボム',
-      capacityMb:5,
-      classId:'STANDARD',
-      rarity:1,
-      rangeTypeId:'CIRCLE',
-      behaviorId:'BOMB_THROW',
-      description:'前方へボムを投げ、着弾地点の周囲を爆発で攻撃する。',
-      rangeDescription:'前方へ投擲／着弾地点を中心に範囲攻撃'
-    },
-    {
-      chipId:'CHIP_0005',
-      libraryNo:109,
-      chipName:'リカバリー10',
-      capacityMb:8,
-      classId:'STANDARD',
-      rarity:1,
-      rangeTypeId:'SELF',
-      behaviorId:'RECOVER_HP',
-      description:'自分のHPを10回復する回復チップ。',
-      rangeDescription:'自分自身'
-    },
-    {
-      chipId:'TEST_9001',
-      libraryNo:9001,
-      chipName:'テストメガ',
-      capacityMb:50,
-      classId:'MEGA',
-      rarity:3,
-      rangeTypeId:'RECT',
-      behaviorId:'SWORD_SLASH',
-      description:'Megaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
-      rangeDescription:'テスト用／前方・近距離'
-    },
-    {
-      chipId:'TEST_9002',
-      libraryNo:9002,
-      chipName:'テストギガ',
-      capacityMb:60,
-      classId:'GIGA',
-      rarity:5,
-      rangeTypeId:'LINE',
-      behaviorId:'CANNON_SHOT',
-      description:'Gigaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',
-      rangeDescription:'テスト用／前方・直線・長距離'
-    },
-    {
-      chipId:'TEST_9003',
-      libraryNo:9003,
-      chipName:'テストダーク',
-      capacityMb:70,
-      classId:'STANDARD',
-      rarity:4,
-      rangeTypeId:'CIRCLE',
-      behaviorId:'BOMB_THROW',
-      description:'Dark特殊種別の色・特別感・詳細画面を確認するための動作確認用チップ。',
-      rangeDescription:'テスト用／前方へ投擲・着弾地点周囲'
-    }
+  // Source catalog: Rockman EXE4 standard chip list.
+  // Fields not confirmed here are intentionally left null and can be completed later.
+  const STANDARD_CHIP_CATALOG=[
+    [1,'キャノン',8],[2,'ハイキャノン',24],[3,'メガキャノン',40],[4,'エアシュート',6],[5,'バルカン1',6],[6,'バルカン2',18],[7,'バルカン3',30],[8,'スプレッドガン',10],
+    [9,'ヒートショット',8],[10,'ヒートブイ',22],[11,'ヒートサイド',44],[12,'バブルショット',12],[13,'バブルブイ',22],[14,'バブルサイド',44],[15,'サンダーボール1',7],[16,'サンダーボール2',18],[17,'サンダーボール3',33],
+    [18,'ワイドショット1',10],[19,'ワイドショット2',30],[20,'ワイドショット3',50],[21,'フレイムライン1',18],[22,'フレイムライン2',26],[23,'フレイムライン3',54],[24,'ガンデルソル1',15],[25,'ガンデルソル2',25],[26,'ガンデルソル3',35],
+    [27,'ブリザード',26],[28,'ヒートブレス',30],[29,'エレキショック',40],[30,'ウッディパウダー',40],[31,'サンドリング',8],[32,'ツインファング1',13],[33,'ツインファング2',26],[34,'ツインファング3',39],[35,'エレメントフレア',24],[36,'エレメントアイス',24],[37,'エレメントリーフ',24],[38,'エレメントサンド',24],
+    [39,'マグボルト1',18],[40,'マグボルト2',28],[41,'マグボルト3',38],[42,'トルネード',22],[43,'ノイズストーム',30],[44,'ミニボム',5],[45,'エナジーボム',11],[46,'メガエナジーボム',30],[47,'ホウガン',30],[48,'ブラックボム',55],[49,'カンケツセン',38],[50,'バグボム',30],
+    [51,'バウンドノート1',10],[52,'バウンドノート2',17],[53,'バウンドノート3',24],[54,'ソード',9],[55,'ワイドソード',16],[56,'ロングソード',25],[57,'ワイドブレード',38],[58,'ロングブレード',40],[59,'カスタムソード',20],[60,'バリアブルソード',60],[61,'イアイフォーム',18],[62,'フウジンラケット',23],
+    [63,'エアホッケー1',20],[64,'エアホッケー2',30],[65,'エアホッケー3',40],[66,'カウンター1',14],[67,'カウンター2',28],[68,'カウンター3',42],[69,'ブーメラン1',16],[70,'ブーメラン2',28],[71,'ブーメラン3',40],[72,'サイドバンブー1',14],[73,'サイドバンブー2',22],[74,'サイドバンブー3',30],[75,'バンブーランス',42],
+    [76,'ホワイトウェブ1',26],[77,'ホワイトウェブ2',36],[78,'ホワイトウェブ3',46],[79,'モコラッシュ1',14],[80,'モコラッシュ2',28],[81,'モコラッシュ3',42],[82,'サークルガン1',28],[83,'サークルガン2',40],[84,'サークルガン3',52],[85,'カモンスネーク',60],[86,'マグナム',52],
+    [87,'ビッグハンマー1',22],[88,'ビッグハンマー2',33],[89,'ビッグハンマー3',44],[90,'ボーイズボム1',30],[91,'ボーイズボム2',40],[92,'ボーイズボム3',50],[93,'カウントボム',55],[94,'ステルスマイン',42],[95,'ストーンキューブ',6],[96,'トップウ',10],[97,'スイコミ',10],[98,'オウエンカ',20],[99,'ディスコード',20],[100,'ティンパニー',20],
+    [101,'サイレンス',20],[102,'ワラニンギョウ',58],[103,'メットガード1',4],[104,'メットガード2',10],[105,'メットガード3',16],[106,'クラックアウト',4],[107,'ダブルクラック',7],[108,'トリプルクラック',10],[109,'リカバリー10',8],[110,'リカバリー30',16],[111,'リカバリー50',24],[112,'リカバリー80',32],[113,'リカバリー120',40],[114,'リカバリー150',48],[115,'リカバリー200',56],[116,'リカバリー300',64],
+    [117,'リペアー',5],[118,'パネルスチール',6],[119,'エリアスチール',8],[120,'スチールゼリー',52],[121,'スチールパニシュ',24],[122,'スチールリベンジ',48],[123,'パネルリターン',14],[124,'デスマッチ1',34],[125,'デスマッチ2',47],[126,'デスマッチ3',62],[127,'ヘビーゲージ',22],[128,'クイックゲージ',32],[129,'ブラインド',9],[130,'スーパーキタカゼ',33],
+    [131,'ホーリーパネル',24],[132,'ダークホール',23],[133,'インビジブル',12],[134,'ユカシタ',21],[135,'バリア',7],[136,'バリア100',27],[137,'バリア200',47],[138,'カキゲンキン',58],[139,'ダイコウズイ',54],[140,'ヒライシン',59],[141,'マヨイノモリ',55],[142,'カワリミ',31],[143,'シラハドリ',43],[144,'ナビスカウト',44],[145,'バッドメディスン',37],[146,'コピーダメージ',12],[147,'ライフシンクロ',12],[148,'アタック+10',6],[149,'ナビ+20',36],[150,'カラーポイント',25]
   ];
+
+  const CONFIRMED_EXISTING={
+    1:{chipId:'CHIP_0001',rarity:1,rangeTypeId:'LINE',behaviorId:'CANNON_SHOT',description:'前方へ砲弾を発射する射撃チップ。直線上を長距離まで攻撃する。',rangeDescription:'前方・直線／長距離'},
+    44:{chipId:'CHIP_0004',rarity:1,rangeTypeId:'CIRCLE',behaviorId:'BOMB_THROW',description:'前方へボムを投げ、着弾地点の周囲を爆発で攻撃する。',rangeDescription:'前方へ投擲／着弾地点を中心に範囲攻撃'},
+    54:{chipId:'CHIP_0002',rarity:1,rangeTypeId:'RECT',behaviorId:'SWORD_SLASH',description:'前方の近距離を斬るソード系チップ。正面の敵を素早く攻撃する。',rangeDescription:'前方・近距離／狭い'},
+    55:{chipId:'CHIP_0003',rarity:2,rangeTypeId:'RECT',behaviorId:'SWORD_SLASH',description:'前方の近距離を横に広く薙ぎ払うソード系チップ。ソードより広い範囲をカバーする。',rangeDescription:'前方・近距離／横に広い'},
+    109:{chipId:'CHIP_0005',rarity:1,rangeTypeId:'SELF',behaviorId:'RECOVER_HP',description:'自分のHPを10回復する回復チップ。',rangeDescription:'自分自身'}
+  };
+
+  const CHIP_MASTER=STANDARD_CHIP_CATALOG.map(([libraryNo,chipName,capacityMb])=>Object.assign({
+    chipId:`CHIP_EXE4_S${String(libraryNo).padStart(3,'0')}`,
+    libraryNo,
+    chipName,
+    capacityMb,
+    classId:'STANDARD',
+    rarity:null,
+    rangeTypeId:null,
+    behaviorId:null,
+    description:null,
+    rangeDescription:null
+  },CONFIRMED_EXISTING[libraryNo]||{}));
+
+  CHIP_MASTER.push(
+    {chipId:'TEST_9001',libraryNo:9001,chipName:'テストメガ',capacityMb:50,classId:'MEGA',rarity:3,rangeTypeId:'RECT',behaviorId:'SWORD_SLASH',description:'Megaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',rangeDescription:'テスト用／前方・近距離'},
+    {chipId:'TEST_9002',libraryNo:9002,chipName:'テストギガ',capacityMb:60,classId:'GIGA',rarity:5,rangeTypeId:'LINE',behaviorId:'CANNON_SHOT',description:'Gigaクラスの色・ヘッダー・詳細画面を確認するための動作確認用チップ。',rangeDescription:'テスト用／前方・直線・長距離'},
+    {chipId:'TEST_9003',libraryNo:9003,chipName:'テストダーク',capacityMb:70,classId:'STANDARD',rarity:4,rangeTypeId:'CIRCLE',behaviorId:'BOMB_THROW',description:'Dark特殊種別の色・特別感・詳細画面を確認するための動作確認用チップ。',rangeDescription:'テスト用／前方へ投擲・着弾地点周囲'}
+  );
 
   root.CHIP_MASTER=CHIP_MASTER;
 })();
