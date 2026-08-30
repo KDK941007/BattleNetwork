@@ -86,6 +86,41 @@
     }];
   };
 
+  const buildAirShot=()=>{
+    const chipId='CHIP_EXE4_S004';
+    const chip=service.getChip(chipId);
+    const primary=service.getPrimaryAttribute(chipId);
+    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
+    const fallback=Object.freeze({rangeTiles:5,projectileSpeed:900,actionLockSec:.25});
+    const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
+    const runtime={
+      chipId,
+      name:chip?.chipName||'エアシュート',
+      type:'cannon',
+      attr:(primary?.attributeId||'WIND').toLowerCase(),
+      power:damage?.value??20,
+      heal:undefined,
+      rangeTypeId:'LINE',
+      widthTiles:.75,
+      radiusTiles:undefined,
+      throwDistanceTiles:undefined,
+      width:tileDistanceToWorld(.75),
+      radius:undefined,
+      explosionDelay:undefined,
+      image:'./assets/chips/エアシュート.png',
+      detail:chip?.description||'',
+      rangeText:chip?.rangeDescription||'',
+      viz:'cannon'
+    };
+    Object.defineProperties(runtime,{
+      rangeTiles:{enumerable:true,get:()=>settings().rangeTiles},
+      range:{enumerable:true,get:()=>tileDistanceToWorld(settings().rangeTiles)},
+      projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
+      lock:{enumerable:true,get:()=>settings().actionLockSec}
+    });
+    return ['AIRSHOT',runtime];
+  };
+
   service.createGameCompatibilityData=()=>{
     const CHIP=Object.fromEntries([
       buildImplemented('CANNON','CHIP_0001','cannon','cannon'),
@@ -93,7 +128,7 @@
       buildImplemented('WIDE','CHIP_0003','wide','wide'),
       buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
       buildImplemented('RECOVER','CHIP_0005','recover','recover'),
-      displayOnly('AIRSHOT','CHIP_EXE4_S004','エアシュート'),
+      buildAirShot(),
       displayOnly('VULCAN1','CHIP_EXE4_S005','バルカン1'),
       displayOnly('CRACKOUT','CHIP_EXE4_S106'),
       displayOnly('AREASTEAL','CHIP_EXE4_S119'),
