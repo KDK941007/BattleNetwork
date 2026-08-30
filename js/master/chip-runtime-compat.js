@@ -57,6 +57,42 @@
     }];
   };
 
+  const buildCannon=()=>{
+    const chipId='CHIP_0001';
+    const chip=service.getChip(chipId);
+    const primary=service.getPrimaryAttribute(chipId);
+    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
+    const fallback=Object.freeze({rangeTiles:6,projectileSpeed:900,actionLockSec:.25,startupDelaySec:timingDefaults.startupDelaySec});
+    const settings=()=>window.BattleNetworkTestSettings?.getCannonSettings?.()||fallback;
+    const runtime={
+      chipId,
+      name:chip?.chipName||'キャノン',
+      type:'cannon',
+      attr:(primary?.attributeId||'NORMAL').toLowerCase(),
+      power:damage?.value??40,
+      heal:undefined,
+      rangeTypeId:'LINE',
+      widthTiles:.75,
+      radiusTiles:undefined,
+      throwDistanceTiles:undefined,
+      width:tileDistanceToWorld(.75),
+      radius:undefined,
+      explosionDelay:undefined,
+      image:service.getChipImagePath(chipId),
+      detail:chip?.description||'',
+      rangeText:chip?.rangeDescription||'',
+      viz:'cannon'
+    };
+    Object.defineProperties(runtime,{
+      rangeTiles:{enumerable:true,get:()=>6},
+      range:{enumerable:true,get:()=>tileDistanceToWorld(6)},
+      projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
+      lock:{enumerable:true,get:()=>.25},
+      startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
+    });
+    return ['CANNON',runtime];
+  };
+
   const displayOnly=(legacyKey,chipId,imageName=null)=>{
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
@@ -127,7 +163,7 @@
 
   service.createGameCompatibilityData=()=>{
     const CHIP=Object.fromEntries([
-      buildImplemented('CANNON','CHIP_0001','cannon','cannon'),
+      buildCannon(),
       buildImplemented('SWORD','CHIP_0002','sword','sword'),
       buildImplemented('WIDE','CHIP_0003','wide','wide'),
       buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
