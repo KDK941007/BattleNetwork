@@ -7,7 +7,7 @@
   const registry=new Map();
   const assignments=new Map();
   const pauseReasons=new Set(['WAVE_TRANSITION']);
-  const disabledChannels=new Set();
+  const disabledChannels=new Set(['ATTACK','MOVEMENT']);
   const customModal=document.getElementById('customModal');
   const settingsModal=document.getElementById('settingsModal');
   const chipDetailModal=document.getElementById('chipDetailModal');
@@ -138,8 +138,6 @@
       return;
     }
 
-    // Already-started work owns its channel update cycle. Attack source-death
-    // handling remains behavior-specific; movement behavior stops itself on defeat.
     if(isBusy(assignment)){
       call(assignment.controller,'update',now,dt);
       return;
