@@ -22,41 +22,17 @@
   ];
 
   const CHIP_CODE_RELATION=[
-    {chipId:'CHIP_0001',codeId:'A'},
-    {chipId:'CHIP_0001',codeId:'B'},
-    {chipId:'CHIP_0001',codeId:'C'},
-    {chipId:'CHIP_0001',codeId:'*'},
-    {chipId:'CHIP_0002',codeId:'E'},
-    {chipId:'CHIP_0002',codeId:'L'},
-    {chipId:'CHIP_0002',codeId:'S'},
-    {chipId:'CHIP_0003',codeId:'E'},
-    {chipId:'CHIP_0003',codeId:'L'},
-    {chipId:'CHIP_0003',codeId:'S'},
-    {chipId:'CHIP_0004',codeId:'B'},
-    {chipId:'CHIP_0004',codeId:'L'},
-    {chipId:'CHIP_0004',codeId:'T'},
-    {chipId:'CHIP_0004',codeId:'*'},
-    {chipId:'CHIP_0005',codeId:'A'},
-    {chipId:'CHIP_0005',codeId:'L'},
-    {chipId:'CHIP_0005',codeId:'N'},
-    {chipId:'CHIP_0005',codeId:'*'},
-    {chipId:'CHIP_EXE4_S004',codeId:'A'},
-    {chipId:'CHIP_EXE4_S004',codeId:'S'},
-    {chipId:'CHIP_EXE4_S004',codeId:'V'},
-    {chipId:'CHIP_EXE4_S004',codeId:'*'},
-    {chipId:'CHIP_EXE4_S005',codeId:'E'},
-    {chipId:'CHIP_EXE4_S005',codeId:'S'},
-    {chipId:'CHIP_EXE4_S005',codeId:'V'},
-    {chipId:'CHIP_EXE4_S005',codeId:'*'},
+    {chipId:'CHIP_0001',codeId:'A'},{chipId:'CHIP_0001',codeId:'B'},{chipId:'CHIP_0001',codeId:'C'},{chipId:'CHIP_0001',codeId:'*'},
+    {chipId:'CHIP_0002',codeId:'E'},{chipId:'CHIP_0002',codeId:'L'},{chipId:'CHIP_0002',codeId:'S'},
+    {chipId:'CHIP_0003',codeId:'E'},{chipId:'CHIP_0003',codeId:'L'},{chipId:'CHIP_0003',codeId:'S'},
+    {chipId:'CHIP_0004',codeId:'B'},{chipId:'CHIP_0004',codeId:'L'},{chipId:'CHIP_0004',codeId:'T'},{chipId:'CHIP_0004',codeId:'*'},
+    {chipId:'CHIP_0005',codeId:'A'},{chipId:'CHIP_0005',codeId:'L'},{chipId:'CHIP_0005',codeId:'N'},{chipId:'CHIP_0005',codeId:'*'},
+    {chipId:'CHIP_EXE4_S004',codeId:'A'},{chipId:'CHIP_EXE4_S004',codeId:'S'},{chipId:'CHIP_EXE4_S004',codeId:'V'},{chipId:'CHIP_EXE4_S004',codeId:'*'},
+    {chipId:'CHIP_EXE4_S005',codeId:'E'},{chipId:'CHIP_EXE4_S005',codeId:'S'},{chipId:'CHIP_EXE4_S005',codeId:'V'},{chipId:'CHIP_EXE4_S005',codeId:'*'},
     {chipId:'CHIP_EXE4_S106',codeId:'*'},
-    {chipId:'CHIP_EXE4_S119',codeId:'E'},
-    {chipId:'CHIP_EXE4_S119',codeId:'M'},
-    {chipId:'CHIP_EXE4_S119',codeId:'S'},
-    {chipId:'CHIP_EXE4_S119',codeId:'*'},
+    {chipId:'CHIP_EXE4_S119',codeId:'E'},{chipId:'CHIP_EXE4_S119',codeId:'M'},{chipId:'CHIP_EXE4_S119',codeId:'S'},{chipId:'CHIP_EXE4_S119',codeId:'*'},
     {chipId:'CHIP_EXE4_S148',codeId:'*'},
-    {chipId:'TEST_9001',codeId:'M'},
-    {chipId:'TEST_9002',codeId:'G'},
-    {chipId:'TEST_9003',codeId:'D'}
+    {chipId:'TEST_9001',codeId:'M'},{chipId:'TEST_9002',codeId:'G'},{chipId:'TEST_9003',codeId:'D'}
   ];
 
   const CHIP_VALUE_RELATION=[
@@ -74,28 +50,327 @@
     {chipId:'TEST_9003',valueNo:1,valueTypeId:'DAMAGE',value:150,valueMode:'FIXED',displayOrder:1,displayFlg:true,labelOverride:null}
   ];
 
-  const CHIP_SPECIAL_TYPE_RELATION=[
-    {chipId:'TEST_9003',specialTypeId:'DARK'}
-  ];
+  const CHIP_SPECIAL_TYPE_RELATION=[{chipId:'TEST_9003',specialTypeId:'DARK'}];
 
   const CHIP_RANGE_PARAM_RELATION=[
-    {chipId:'CHIP_0001',paramId:'LENGTH_TILES',paramValue:5},
-    {chipId:'CHIP_0001',paramId:'WIDTH_TILES',paramValue:.75},
-    {chipId:'CHIP_0002',paramId:'LENGTH_TILES',paramValue:1},
-    {chipId:'CHIP_0002',paramId:'WIDTH_TILES',paramValue:1},
-    {chipId:'CHIP_0003',paramId:'LENGTH_TILES',paramValue:1},
-    {chipId:'CHIP_0003',paramId:'WIDTH_TILES',paramValue:3},
+    {chipId:'CHIP_0001',paramId:'LENGTH_TILES',paramValue:5},{chipId:'CHIP_0001',paramId:'WIDTH_TILES',paramValue:.75},
+    {chipId:'CHIP_0002',paramId:'LENGTH_TILES',paramValue:1},{chipId:'CHIP_0002',paramId:'WIDTH_TILES',paramValue:1},
+    {chipId:'CHIP_0003',paramId:'LENGTH_TILES',paramValue:1},{chipId:'CHIP_0003',paramId:'WIDTH_TILES',paramValue:3},
     {chipId:'CHIP_0004',paramId:'RADIUS_TILES',paramValue:.75},
-    {chipId:'TEST_9001',paramId:'LENGTH_TILES',paramValue:1},
-    {chipId:'TEST_9001',paramId:'WIDTH_TILES',paramValue:1},
-    {chipId:'TEST_9002',paramId:'LENGTH_TILES',paramValue:5},
-    {chipId:'TEST_9002',paramId:'WIDTH_TILES',paramValue:.25},
+    {chipId:'TEST_9001',paramId:'LENGTH_TILES',paramValue:1},{chipId:'TEST_9001',paramId:'WIDTH_TILES',paramValue:1},
+    {chipId:'TEST_9002',paramId:'LENGTH_TILES',paramValue:5},{chipId:'TEST_9002',paramId:'WIDTH_TILES',paramValue:.25},
     {chipId:'TEST_9003',paramId:'RADIUS_TILES',paramValue:.75}
   ];
+  const CHIP_BEHAVIOR_PARAM_RELATION=[{chipId:'CHIP_0003',paramId:'ACTION_LOCK',paramValue:.28}];
 
-  const CHIP_BEHAVIOR_PARAM_RELATION=[
-    {chipId:'CHIP_0003',paramId:'ACTION_LOCK',paramValue:.28}
-  ];
+  // Raw source metadata collected from the two reference sites. This is deliberately kept
+  // separate from executable behavior/range parameters: variable values and source conflicts
+  // must not be converted into battle constants without confirmation.
+  const SOURCE_TSV=`
+キャノン|40|無|ABC*|-
+ハイキャノン|80|無|CDE|-
+メガキャノン|120|無|EFG|-
+エアシュート|20|風|ASV*|-
+バルカン1|10|無|ESV*|-
+バルカン2|10|無|BHO|-
+バルカン3|10|無|OTW|-
+スプレッドガン|30|無|LMN*|-
+ヒートショット|40|炎|BCD|-
+ヒートブイ|70|炎|CDE|-
+ヒートサイド|100|炎|DEF|-
+バブルショット|50|水|PQR|-
+バブルブイ|80|水|CDF|-
+バブルサイド|110|水|DEF|-
+サンダーボール1|40|電気|BLP*|-
+サンダーボール2|60|電気|HPS|-
+サンダーボール3|80|電気|ITW|-
+ワイドショット1|60|水|CDE*|-
+ワイドショット2|80|水|LMN|-
+ワイドショット3|100|水|STU|-
+フレイムライン1|70|炎|FGH*|-
+フレイムライン2|120|炎|DEF|-
+フレイムライン3|170|炎|JKL|-
+ガンデルソル1|1～120|無|AGM*|非暗黒
+ガンデルソル2|1～180|無|BGS|非暗黒
+ガンデルソル3|1～240|無|CGT|非暗黒
+ブリザード|100|水|HJV*|-
+ヒートブレス|90|炎|DKO*|-
+エレキショック|80|電気|JLS*|-
+ウッディパウダー|100|木|FTW*|-
+サンドリング|-|無|CRS*|-
+ツインファング1|70|無|ABC|-
+ツインファング2|100|無|OPQ|-
+ツインファング3|130|無|FGH|-
+エレメントフレア|100|炎|KNP|-
+エレメントアイス|100|水|HQV|-
+エレメントリーフ|80|木|CDI|-
+エレメントサンド|120|無|ALS*|-
+マグボルト1|90|電気|BCD*|-
+マグボルト2|110|電気|EFG|-
+マグボルト3|130|電気|ABC|-
+トルネード|20|風|ELT|-
+ノイズストーム|20|無|BGZ*|暗黒
+ミニボム|50|無|BLT*|-
+エナジーボム|40|無|ENT*|-
+メガエナジーボム|60|無|DJ|-
+ホウガン|140|ブレイク|BTV*|-
+ブラックボム|210|炎|DHZ|-
+カンケツセン|200|水|BLV|-
+バグボム|-|無|BGZ*|-
+バウンドノート1|60|無|COS*|-
+バウンドノート2|80|無|ATY|-
+バウンドノート3|100|無|EIO|-
+ソード|80|ソード|ELS|-
+ワイドソード|80|ソード|ELS|-
+ロングソード|80|ソード|ELS|-
+ワイドブレード|130|ソード|CKS|-
+ロングブレード|130|ソード|GRS|-
+カスタムソード|?|ソード|BPS|-
+バリアブルソード|150|ソード|CJV|-
+イアイフォーム|240|ソード|FHR|-
+フウジンラケット|100|風|ALR*|-
+エアホッケー1|50|ブレイク|DEF|-
+エアホッケー2|60|ブレイク|IJK|-
+エアホッケー3|70|ブレイク|UVW|-
+カウンター1|70|無|FMT*|-
+カウンター2|110|無|BHL|-
+カウンター3|150|無|ANV|-
+ブーメラン1|60|木|LMN|-
+ブーメラン2|80|木|LMN|-
+ブーメラン3|100|木|STU|-
+サイドバンブー1|80|木|BIR*|-
+サイドバンブー2|110|木|HOS|-
+サイドバンブー3|140|木|AFU|-
+バンブーランス|130|木|AGR*|-
+ホワイトウェブ1|40|木|DLR*|-
+ホワイトウェブ2|40|木|CEY*|-
+ホワイトウェブ3|40|木|KOV*|-
+モコラッシュ1|60|無|CIM|-
+モコラッシュ2|90|無|GKU|-
+モコラッシュ3|120|無|OTY|-
+サークルガン1|80|無|HTZ|-
+サークルガン2|100|無|DGT|-
+サークルガン3|120|無|JMR|-
+カモンスネーク|20|無|DMR|-
+マグナム|130|地形破壊|HQV|-
+ビッグハンマー1|160|ブレイク|BOR|-
+ビッグハンマー2|220|ブレイク|GJW|-
+ビッグハンマー3|280|ブレイク|DVZ|-
+ボーイズボム1|220|置き物|EJM|-
+ボーイズボム2|250|置き物|ISW|-
+ボーイズボム3|280|置き物|GTV|-
+カウントボム|150|置き物|JKL|-
+ステルスマイン|300|置き物|CHZ|-
+ストーンキューブ|-|置き物|*|-
+トップウ|-|風|*|-
+スイコミ|-|風|*|-
+オウエンカ|-|置き物|EGN*|-
+ディスコード|-|置き物|DTV*|-
+ティンパニー|-|置き物|PTZ*|-
+サイレンス|-|置き物|CMR*|-
+ワラニンギョウ|?|置き物|IOY|-
+メットガード1|50|無|ALV*|-
+メットガード2|80|無|CGP*|-
+メットガード3|110|無|FRT*|-
+クラックアウト|-|地形破壊|*|-
+ダブルクラック|-|地形破壊|BLR*|-
+トリプルクラック|-|地形破壊|BLR*|-
+リカバリー10|-|回復|ALN*|-
+リカバリー30|-|回復|FH|-
+リカバリー50|-|回復|ELS*|-
+リカバリー80|-|回復|BJO*|-
+リカバリー120|-|回復|FJQ*|-
+リカバリー150|-|回復|CTZ|-
+リカバリー200|-|回復|HMW|-
+リカバリー300|-|回復|JNY|-
+リペアー|-|無|IPR|-
+パネルスチール|-|無|KOY*|-
+エリアスチール|-|無|EMS*|-
+スチールゼリー|120|水|KTZ|-
+スチールパニシュ|-|無|EKP|-
+スチールリベンジ|-|無|DJN|-
+パネルリターン|-|無|*|-
+デスマッチ1|-|地形破壊|JKW|-
+デスマッチ2|-|地形破壊|NTY|-
+デスマッチ3|-|地形破壊|HQU|-
+ヘビーゲージ|-|無|EHV*|-
+クイックゲージ|-|無|IQU*|-
+ブラインド|-|無|*|-
+スーパーキタカゼ|-|風|ENT*|-
+ホーリーパネル|-|無|*|-
+ダークホール|-|無|*|暗黒
+インビジブル|-|インビジ|*|-
+ユカシタ|-|インビジ|JPY*|-
+バリア|-|無|ADZ*|-
+バリア100|-|無|PQW|-
+バリア200|-|無|IOU|-
+カキゲンキン|200|炎|K|-
+ダイコウズイ|200|水|D|-
+ヒライシン|200|電気|H|-
+マヨイノモリ|200|木|M|-
+カワリミ|120|無|KMR|-
+シラハドリ|100|ソード|CIN|-
+ナビスカウト|-|無|JMT|-
+バッドメディスン|-|無|BDG*|-
+コピーダメージ|-|無|*|-
+ライフシンクロ|-|無|NQY|-
+アタック+10|-|数値付加|*|-
+ナビ+20|-|数値付加|*|-
+カラーポイント|-|数値付加|*|-
+スーパーバルカン|10×12|無|V|-
+ネオバリアブル|240|ソード|N|-
+リュウセイグン|40×30|炎|R|-
+ゴッドハンマー|250|置き物|G|-
+オジゾウサン|200|置き物|O|-
+ジェラシー|80|無|J|-
+バグチェーン|-|無|C*|-
+バグシュウセイ|-|無|B*|非暗黒
+フルカスタム|-|無|*|-
+ドリームオーラ|-|無|D|-
+サンクチュアリ|-|無|S|非暗黒
+アタック＋30|-|数値付加|*|-
+ダブルポイント|-|数値付加|*|-
+ムラマサブレード|0～999|ソード|M|暗黒
+ポイズンアヌビス|-|置き物|A|暗黒
+エレメントダーク|220|無|E|暗黒
+ブラックウィング|20|無|W|暗黒
+ダークライン|-|無|L*|暗黒
+ブルース|100|ソード|B|非暗黒
+ブルースSP|240|ソード|B|非暗黒
+ブルースDS|240|ソード|B|暗黒
+ナンバーマン|30×?|数値付加|N|非暗黒
+ナンバーマンSP|90×?|数値付加|N|非暗黒
+ナンバーマンDS|90×?|数値付加|N|暗黒
+メタルマン|160|ブレイク|M|非暗黒
+メタルマンSP|300|ブレイク|M|非暗黒
+メタルマンDS|300|ブレイク|M|暗黒
+ジャンクマン|100×?|置き物|J|非暗黒
+ジャンクマンSP|200×?|置き物|J|非暗黒
+ジャンクマンDS|200×?|置き物|J|暗黒
+アクアマン|70|水|A|非暗黒
+アクアマンSP|180|水|A|非暗黒
+アクアマンDS|180|水|A|暗黒
+ウッドマン|130|木|W|非暗黒
+ウッドマンSP|250|木|W|非暗黒
+ウッドマンDS|250|木|W|暗黒
+ロール|20|回復|R|非暗黒
+ロールSP|80×3|回復|R|非暗黒
+ロールDS|80×3|回復|R|暗黒
+ガッツマン|80|地形破壊|G|非暗黒
+ガッツマンSP|200|地形破壊|G|非暗黒
+ガッツマンDS|200|地形破壊|G|暗黒
+ウインドマン|40×3|風|W|非暗黒
+ウインドマンSP|100×3|風|W|非暗黒
+ウインドマンDS|100×3|風|W|暗黒
+サーチマン|20×5|インビジ|S|非暗黒
+サーチマンSP|75×5|インビジ|S|非暗黒
+サーチマンDS|75×5|インビジ|S|暗黒
+ファイアマン|100|炎|F|非暗黒
+ファイアマンSP|250|炎|F|非暗黒
+ファイアマンDS|250|炎|F|暗黒
+サンダーマン|90|電気|T|非暗黒
+サンダーマンSP|220|電気|T|非暗黒
+サンダーマンDS|220|電気|T|暗黒
+タップマン|20|ブレイク|T|非暗黒
+タップマンSP|80|ブレイク|T|非暗黒
+タップマンDS|80|ブレイク|T|暗黒
+バーナーマン|60|炎|B|非暗黒
+バーナーマンSP|120|炎|B|非暗黒
+バーナーマンDS|120|炎|B|暗黒
+コールドマン|100|水|C|非暗黒
+コールドマンSP|230|水|C|非暗黒
+コールドマンDS|230|水|C|暗黒
+スパークマン|70|電気|S|非暗黒
+スパークマンSP|200|電気|S|非暗黒
+スパークマンDS|200|電気|S|暗黒
+シェードマン|120|無|X|非暗黒
+シェードマンSP|240|無|X|非暗黒
+シェードマンDS|240|無|X|暗黒
+レーザーマン|100|無|L|非暗黒
+レーザーマンSP|220|無|L|非暗黒
+レーザーマンDS|220|無|L|暗黒
+ケンドーマン|70|無|K|非暗黒
+ケンドーマンSP|130|無|K|非暗黒
+ケンドーマンDS|130|無|L|暗黒
+ビデオマン|25|無|V|非暗黒
+ビデオマンSP|80|無|V|非暗黒
+ビデオマンDS|80|無|V|暗黒
+ブルームーンレイ|200|無|B|-
+シグナルレッド|-|置き物|S|-
+フォルテアナザー|160|無|X|-
+カースオブバグ|-|無|C|暗黒
+デルタレイエッジ|260×3|ソード|Z|非暗黒
+メテオレッドサン|?|無|R|-
+ホーリードリーム|50|無|H|非暗黒
+フォルテ|60|無|X|-
+バグチャージ|-|無|C|暗黒
+ブラックバリア|-|無|A|暗黒
+ロールアロー1|50|無|AFT|-
+ロールアロー2|70|無|DRW|-
+ロールアロー3|90|無|QYZ|-
+ガッツパンチ1|100|無|BEN|-
+ガッツパンチ2|140|無|GPY|-
+ガッツパンチ3|180|無|MQT|-
+プロペラボム1|120|無|EGP*|-
+プロペラボム2|160|無|FVZ*|-
+プロペラボム3|200|無|HJQ|-
+サーチボム1|80|無|BRS*|-
+サーチボム2|110|無|CIO|-
+サーチボム3|140|無|MUW|-
+メテオレイン1|50|炎|GLS*|-
+メテオレイン2|60|炎|MQT|-
+メテオレイン3|70|炎|CRZ|-
+ライトニング1|100|電気|LTW*|-
+ライトニング2|130|電気|AEV|-
+ライトニング3|160|電気|HJQ|-
+ハヤブサギリ1|80|ソード|HNO|-
+ハヤブサギリ2|90|ソード|FSV|-
+ハヤブサギリ3|100|ソード|INZ|-
+ナンバーボール1|?|無|ELW|-
+ナンバーボール2|?|無|AEP|-
+ナンバーボール3|?|無|LTY|-
+メタルギア1|100|ブレイク|AMP*|-
+メタルギア2|130|ブレイク|CEG*|-
+メタルギア3|160|ブレイク|ILQ*|-
+パネルシュート1|100|地形破壊|AHS*|-
+パネルシュート2|60|地形破壊|CGT*|-
+パネルシュート3|80|地形破壊|FJN*|-
+アクアアッパー1|110|水|BSZ|-
+アクアアッパー2|140|水|IPU|-
+アクアアッパー3|170|水|FKW|-
+グリーンウッド1|120|木|GJY|-
+グリーンウッド2|140|木|DKP|-
+グリーンウッド3|160|木|ENP|-
+ガンデルソルEX|1～240|無|G|非暗黒
+Zセイバー|100×3|ソード|Z|-
+グランプリパワー|200×2|無|G|-
+デューオ|200×?|無|D|-
+`.trim();
+
+  const chipByName=new Map((root.CHIP_MASTER||[]).map(chip=>[chip.chipName,chip]));
+  const CHIP_SOURCE_INFO=[];
+  SOURCE_TSV.split('\n').forEach(line=>{
+    const [chipName,powerText,systemName,codesText,usageRestriction]=line.split('|');
+    const chip=chipByName.get(chipName);
+    if(!chip)return;
+    CHIP_SOURCE_INFO.push({
+      chipId:chip.chipId,
+      chipName,
+      powerText,
+      systemName,
+      codesText,
+      usageRestriction:usageRestriction==='-'?null:usageRestriction,
+      sourceId:'WAREWAREGUIDE_CHIP_LIST'
+    });
+  });
+
+  // Known discrepancies between the two user-specified references. Do not resolve by guess.
+  const CHIP_SOURCE_CONFLICT=[
+    {chipName:'バルカン3',field:'codes',warewareguide:'OTW',game8:'OWY'},
+    {chipName:'バブルブイ',field:'codes',warewareguide:'CDF',game8:'CDE'},
+    {chipName:'メガエナジーボム',field:'codes',warewareguide:'DJ',game8:'DJW'},
+    {chipName:'ヒートショット',field:'codes',warewareguide:'BCD',game8:'BCD*'}
+  ].map(row=>({...row,chipId:chipByName.get(row.chipName)?.chipId||null}));
 
   Object.assign(root,{
     CHIP_ATTRIBUTE_RELATION,
@@ -103,6 +378,8 @@
     CHIP_VALUE_RELATION,
     CHIP_SPECIAL_TYPE_RELATION,
     CHIP_RANGE_PARAM_RELATION,
-    CHIP_BEHAVIOR_PARAM_RELATION
+    CHIP_BEHAVIOR_PARAM_RELATION,
+    CHIP_SOURCE_INFO,
+    CHIP_SOURCE_CONFLICT
   });
 })();
