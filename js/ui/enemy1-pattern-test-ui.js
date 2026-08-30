@@ -27,14 +27,14 @@
   const wrap=document.createElement('div'),toggle=document.createElement('button'),tools=document.createElement('div'),modeButton=document.createElement('button'),patternButton=document.createElement('button'),rangeButton=document.createElement('button'),glowButton=document.createElement('button'),attackButton=document.createElement('button'),movementButton=document.createElement('button'),detail=document.createElement('span'),airShotPanel=document.createElement('div'),cannonPanel=document.createElement('div'),modePanel=document.createElement('div');
   wrap.dataset.testOnly='enemy-debug-tools';
   const closedStyle='position:absolute;right:10px;top:10px;z-index:70;display:flex;align-items:flex-start;gap:6px;padding:5px 7px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(8,12,20,.88);color:#fff;font:700 11px/1.2 system-ui,sans-serif;pointer-events:auto;max-width:calc(100% - 20px);box-sizing:border-box;';
-  const openStyle='position:absolute;left:0;right:0;top:0;bottom:0;width:100%;height:100%;z-index:70;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.5);border-radius:0;background:rgba(8,12,20,.96);color:#fff;font:700 11px/1.25 system-ui,sans-serif;pointer-events:auto;box-sizing:border-box;overflow:hidden;';
+  const openStyle='position:absolute;left:0;right:0;top:0;bottom:0;width:100%;height:100%;z-index:70;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.5);border-radius:0;background:rgba(8,12,20,.96);color:#fff;font:700 11px/1.25 system-ui,sans-serif;pointer-events:auto;box-sizing:border-box;overflow:hidden;touch-action:none;';
   wrap.style.cssText=closedStyle;
   [toggle,modeButton,patternButton,rangeButton,glowButton,attackButton,movementButton].forEach(button=>{button.type='button';button.style.cssText='min-height:36px;border:1px solid #ffe27a;border-radius:6px;background:#30270d;color:#fff7c9;font-weight:900;font-variant-numeric:tabular-nums;padding:6px 10px;'});
   toggle.style.minWidth='108px';patternButton.disabled=true;patternButton.style.opacity='.72';
-  tools.style.cssText='display:none;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;flex-direction:column;align-items:stretch;gap:10px;padding-right:4px;';
-  modePanel.style.cssText='display:flex;flex-direction:column;align-items:stretch;gap:8px;';
-  detail.style.cssText='display:block;white-space:normal;font-variant-numeric:tabular-nums;padding:8px 2px 16px;';
-  const chipPanelStyle='display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid rgba(112,222,255,.55);border-radius:7px;background:rgba(6,35,48,.78);font-variant-numeric:tabular-nums;box-sizing:border-box;';
+  tools.style.cssText='display:none;flex:1 1 0;min-height:0;height:0;overflow-y:scroll;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;flex-direction:column;align-items:stretch;gap:10px;padding-right:4px;padding-bottom:24px;box-sizing:border-box;';
+  modePanel.style.cssText='display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:8px;';
+  detail.style.cssText='display:block;flex:0 0 auto;white-space:normal;font-variant-numeric:tabular-nums;padding:8px 2px 24px;';
+  const chipPanelStyle='display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid rgba(112,222,255,.55);border-radius:7px;background:rgba(6,35,48,.78);font-variant-numeric:tabular-nums;box-sizing:border-box;';
   airShotPanel.style.cssText=chipPanelStyle;cannonPanel.style.cssText=chipPanelStyle;
 
   function makeStepper(label,key,unit,formatValue,target,adjust){
