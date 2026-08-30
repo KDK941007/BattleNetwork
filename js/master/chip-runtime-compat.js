@@ -9,6 +9,7 @@
     if(!Number.isFinite(n))return undefined;
     return window.BattleNetworkField?.toWorldDistance?window.BattleNetworkField.toWorldDistance(n):undefined;
   };
+  const timingDefaults=data.CHIP_TIMING_DEFAULTS||Object.freeze({startupDelaySec:.10,actionLockSec:.25});
 
   const ATTR_IMAGE={};
   const ATTR_LABEL={};
@@ -45,8 +46,8 @@
       range:lengthTiles!=null?tileDistanceToWorld(lengthTiles):throwDistanceTiles!=null?tileDistanceToWorld(throwDistanceTiles):undefined,
       width:widthTiles!=null?tileDistanceToWorld(widthTiles):undefined,
       radius:radiusTiles!=null?tileDistanceToWorld(radiusTiles):undefined,
-      lock:behavior.ACTION_LOCK,
-      startupDelay:behavior.STARTUP_DELAY,
+      lock:Number.isFinite(Number(behavior.ACTION_LOCK))?Number(behavior.ACTION_LOCK):timingDefaults.actionLockSec,
+      startupDelay:Number.isFinite(Number(behavior.STARTUP_DELAY))?Number(behavior.STARTUP_DELAY):timingDefaults.startupDelaySec,
       projectileSpeed:behavior.PROJECTILE_SPEED,
       explosionDelay:behavior.EXPLOSION_DELAY,
       image:service.getChipImagePath(chipId),
@@ -77,8 +78,8 @@
       range:undefined,
       width:undefined,
       radius:undefined,
-      lock:.25,
-      startupDelay:0,
+      lock:timingDefaults.actionLockSec,
+      startupDelay:timingDefaults.startupDelaySec,
       projectileSpeed:undefined,
       explosionDelay:undefined,
       image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),
@@ -93,7 +94,7 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:5,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:0});
+    const fallback=Object.freeze({rangeTiles:6,projectileSpeed:2500,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
     const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
     const runtime={
       chipId,
