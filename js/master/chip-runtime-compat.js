@@ -55,16 +55,20 @@
     }];
   };
 
-  const displayOnly=(legacyKey,chipId,attr='normal',imageName=null)=>{
+  const displayOnly=(legacyKey,chipId,imageName=null)=>{
     const chip=service.getChip(chipId);
+    const primary=service.getPrimaryAttribute(chipId);
+    const values=service.getChipValues(chipId);
+    const damage=values.find(row=>row.valueTypeId==='DAMAGE');
+    const recovery=values.find(row=>row.valueTypeId==='RECOVERY');
     return [legacyKey,{
       chipId,
       name:chip?.chipName||legacyKey,
       type:'unsupported',
-      attr,
-      power:undefined,
-      heal:undefined,
-      rangeTypeId:null,
+      attr:(primary?.attributeId||'NORMAL').toLowerCase(),
+      power:damage?.value,
+      heal:recovery?.value,
+      rangeTypeId:chip?.rangeTypeId||null,
       rangeTiles:undefined,
       widthTiles:undefined,
       radiusTiles:undefined,
@@ -75,9 +79,9 @@
       lock:.25,
       projectileSpeed:undefined,
       explosionDelay:undefined,
-      image:imageName?`./assets/chips/${imageName}.png`:null,
-      detail:'現在の開発版ではチップ情報のみ登録済み。バトル挙動は未実装。',
-      rangeText:'未実装',
+      image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),
+      detail:chip?.description||'バトル挙動は未実装。',
+      rangeText:chip?.rangeDescription||'未確定',
       viz:''
     }];
   };
@@ -89,8 +93,8 @@
       buildImplemented('WIDE','CHIP_0003','wide','wide'),
       buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
       buildImplemented('RECOVER','CHIP_0005','recover','recover'),
-      displayOnly('AIRSHOT','CHIP_EXE4_S004','wind','エアシュート'),
-      displayOnly('VULCAN1','CHIP_EXE4_S005','normal','バルカン1'),
+      displayOnly('AIRSHOT','CHIP_EXE4_S004','エアシュート'),
+      displayOnly('VULCAN1','CHIP_EXE4_S005','バルカン1'),
       displayOnly('CRACKOUT','CHIP_EXE4_S106'),
       displayOnly('AREASTEAL','CHIP_EXE4_S119'),
       displayOnly('ATTACK10','CHIP_EXE4_S148')
