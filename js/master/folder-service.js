@@ -7,9 +7,9 @@
   // Change only this target when moving to the next chip-detail test.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'VULCAN1',
-    chipId:'CHIP_EXE4_S005',
-    codes:Object.freeze(['E','S','V','*'])
+    type:'SPREADGUN',
+    chipId:'CHIP_EXE4_S008',
+    codes:Object.freeze(['L','M','N','*'])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
@@ -22,6 +22,7 @@
     CHIP_EXE4_S005:'VULCAN1',
     CHIP_EXE4_S006:'VULCAN2',
     CHIP_EXE4_S007:'VULCAN3',
+    CHIP_EXE4_S008:'SPREADGUN',
     CHIP_EXE4_S106:'CRACKOUT',
     CHIP_EXE4_S119:'AREASTEAL',
     CHIP_EXE4_S148:'ATTACK10'
