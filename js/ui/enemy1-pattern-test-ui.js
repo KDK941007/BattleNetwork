@@ -8,7 +8,7 @@
   const AIRSHOT_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:4000,actionLockSec:TIMING.actionLockSec,startupDelaySec:TIMING.startupDelaySec});
   const VULCAN1_BASE=Object.freeze({burstIntervalSec:.05});
   const CANNON_LIMITS=Object.freeze({projectileSpeed:Object.freeze({min:100,max:3000,step:100}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
-  const VULCAN1_LIMITS=Object.freeze({burstIntervalSec:Object.freeze({min:.05,max:.30,step:.05})});
+  const VULCAN1_LIMITS=Object.freeze({burstIntervalSec:Object.freeze({min:.05,max:1.00,step:.05})});
   let cannonSettings={...CANNON_BASE},vulcan1Settings={...VULCAN1_BASE},settingsOpen=false;
   const cannonListeners=new Set(),vulcan1Listeners=new Set();
   function clampStep(value,limit){const n=Math.max(limit.min,Math.min(limit.max,Number(value)));const steps=Math.round((n-limit.min)/limit.step);return Number((limit.min+steps*limit.step).toFixed(2))}
