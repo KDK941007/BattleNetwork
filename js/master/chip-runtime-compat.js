@@ -131,7 +131,7 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2500,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
+    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:4000,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
     const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
     const runtime={
       chipId,
