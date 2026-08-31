@@ -57,10 +57,11 @@
   }
 
   // iPhone Safariで連続タップ時に再描画負荷が高くなりやすい発光・filterを
-  // B攻撃だけ軽量表現へ置き換える。戦闘仕様・当たり判定には影響しない。
+  // B攻撃と短間隔で3連射するバルカンだけ軽量表現へ置き換える。
+  // 戦闘仕様・弾速・当たり判定・連射間隔には影響しない。
   const performanceStyle=document.createElement('style');
   performanceStyle.textContent=`
-    .bullet.normal,.bullet.charged{
+    .bullet.normal,.bullet.charged,.bullet.vulcan{
       box-shadow:none!important;
       filter:none!important;
       will-change:transform;
@@ -73,6 +74,10 @@
     .bullet.charged{
       border:2px solid rgba(255,220,210,.92);
       background:#ff514e!important;
+    }
+    .bullet.vulcan{
+      border:2px solid rgba(255,250,190,.92);
+      background:#ffe97a!important;
     }
     #B.pressed{
       filter:none!important;
