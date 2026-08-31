@@ -65,25 +65,7 @@
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
     const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40});
     const settings=()=>window.BattleNetworkTestSettings?.getCannonSettings?.()||fallback;
-    const runtime={
-      chipId,
-      name:chip?.chipName||'キャノン',
-      type:'cannon',
-      attr:(primary?.attributeId||'NORMAL').toLowerCase(),
-      power:damage?.value??40,
-      heal:undefined,
-      rangeTypeId:'LINE',
-      widthTiles:.75,
-      radiusTiles:undefined,
-      throwDistanceTiles:undefined,
-      width:tileDistanceToWorld(.75),
-      radius:undefined,
-      explosionDelay:undefined,
-      image:service.getChipImagePath(chipId),
-      detail:chip?.description||'',
-      rangeText:chip?.rangeDescription||'',
-      viz:'cannon'
-    };
+    const runtime={chipId,name:chip?.chipName||'キャノン',type:'cannon',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??40,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};
     Object.defineProperties(runtime,{
       rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
       range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
@@ -100,30 +82,7 @@
     const values=service.getChipValues(chipId);
     const damage=values.find(row=>row.valueTypeId==='DAMAGE');
     const recovery=values.find(row=>row.valueTypeId==='RECOVERY');
-    return [legacyKey,{
-      chipId,
-      name:chip?.chipName||legacyKey,
-      type:'unsupported',
-      attr:(primary?.attributeId||'NORMAL').toLowerCase(),
-      power:damage?.value,
-      heal:recovery?.value,
-      rangeTypeId:chip?.rangeTypeId||null,
-      rangeTiles:chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined,
-      widthTiles:undefined,
-      radiusTiles:undefined,
-      throwDistanceTiles:undefined,
-      range:chip?.rangeTypeId==='LINE'?tileDistanceToWorld(shootingRangeDefault):undefined,
-      width:undefined,
-      radius:undefined,
-      lock:timingDefaults.actionLockSec,
-      startupDelay:timingDefaults.startupDelaySec,
-      projectileSpeed:undefined,
-      explosionDelay:undefined,
-      image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),
-      detail:chip?.description||'バトル挙動は未実装。',
-      rangeText:chip?.rangeDescription||'未確定',
-      viz:''
-    }];
+    return [legacyKey,{chipId,name:chip?.chipName||legacyKey,type:'unsupported',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value,heal:recovery?.value,rangeTypeId:chip?.rangeTypeId||null,rangeTiles:chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined,widthTiles:undefined,radiusTiles:undefined,throwDistanceTiles:undefined,range:chip?.rangeTypeId==='LINE'?tileDistanceToWorld(shootingRangeDefault):undefined,width:undefined,radius:undefined,lock:timingDefaults.actionLockSec,startupDelay:timingDefaults.startupDelaySec,projectileSpeed:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'バトル挙動は未実装。',rangeText:chip?.rangeDescription||'未確定',viz:''}];
   };
 
   const buildAirShot=()=>{
@@ -131,35 +90,34 @@
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:4000,actionLockSec:timingDefaults.actionLockSec,startupDelaySec:timingDefaults.startupDelaySec});
-    const settings=()=>window.BattleNetworkTestSettings?.getAirShotSettings?.()||fallback;
-    const runtime={
-      chipId,
-      name:chip?.chipName||'エアシュート',
-      type:'cannon',
-      attr:(primary?.attributeId||'WIND').toLowerCase(),
-      power:damage?.value??20,
-      heal:undefined,
-      rangeTypeId:'LINE',
-      widthTiles:.75,
-      radiusTiles:undefined,
-      throwDistanceTiles:undefined,
-      width:tileDistanceToWorld(.75),
-      radius:undefined,
-      explosionDelay:undefined,
-      image:'./assets/chips/エアシュート.png',
-      detail:chip?.description||'',
-      rangeText:chip?.rangeDescription||'',
-      viz:'cannon'
-    };
+    const runtime={chipId,name:chip?.chipName||'エアシュート',type:'cannon',attr:(primary?.attributeId||'WIND').toLowerCase(),power:damage?.value??20,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:'./assets/chips/エアシュート.png',detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};
     Object.defineProperties(runtime,{
       rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
       range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
-      projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
-      lock:{enumerable:true,get:()=>settings().actionLockSec},
-      startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
+      projectileSpeed:{enumerable:true,get:()=>4000},
+      lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},
+      startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec}
     });
     return ['AIRSHOT',runtime];
+  };
+
+  const buildVulcan1=()=>{
+    const chipId='CHIP_EXE4_S005';
+    const chip=service.getChip(chipId);
+    const primary=service.getPrimaryAttribute(chipId);
+    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
+    const fallback=Object.freeze({burstIntervalSec:.05});
+    const settings=()=>window.BattleNetworkTestSettings?.getVulcan1Settings?.()||fallback;
+    const runtime={chipId,name:chip?.chipName||'バルカン1',type:'vulcan',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??10,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:'./assets/chips/バルカン1.png',detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon',burstCount:3};
+    Object.defineProperties(runtime,{
+      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
+      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
+      projectileSpeed:{enumerable:true,get:()=>4000},
+      lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},
+      startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec},
+      burstIntervalSec:{enumerable:true,get:()=>settings().burstIntervalSec}
+    });
+    return ['VULCAN1',runtime];
   };
 
   service.createGameCompatibilityData=()=>{
@@ -170,7 +128,7 @@
       buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
       buildImplemented('RECOVER','CHIP_0005','recover','recover'),
       buildAirShot(),
-      displayOnly('VULCAN1','CHIP_EXE4_S005','バルカン1'),
+      buildVulcan1(),
       displayOnly('CRACKOUT','CHIP_EXE4_S106'),
       displayOnly('AREASTEAL','CHIP_EXE4_S119'),
       displayOnly('ATTACK10','CHIP_EXE4_S148')
