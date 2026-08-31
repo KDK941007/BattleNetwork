@@ -5,7 +5,7 @@
   const TIMING=window.BattleNetworkData?.CHIP_TIMING_DEFAULTS||Object.freeze({startupDelaySec:.10,actionLockSec:.25});
   const SHOOTING_RANGE=Number(window.BattleNetworkData?.SHOOTING_RANGE_DEFAULT_TILES)||7;
   const CANNON_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40});
-  const AIRSHOT_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:2500,actionLockSec:TIMING.actionLockSec,startupDelaySec:TIMING.startupDelaySec});
+  const AIRSHOT_BASE=Object.freeze({rangeTiles:SHOOTING_RANGE,projectileSpeed:4000,actionLockSec:TIMING.actionLockSec,startupDelaySec:TIMING.startupDelaySec});
   const CANNON_LIMITS=Object.freeze({projectileSpeed:Object.freeze({min:100,max:3000,step:100}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
   const AIRSHOT_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:1,max:12,step:1}),projectileSpeed:Object.freeze({min:2500,max:4000,step:100}),actionLockSec:Object.freeze({min:.25,max:3.25,step:.5}),startupDelaySec:Object.freeze({min:0,max:2,step:.05})});
   let cannonSettings={...CANNON_BASE},airShotSettings={...AIRSHOT_BASE},settingsOpen=false;
@@ -57,7 +57,7 @@
   const cannonStartupStepper=makeStepper('発動前','startupDelaySec','秒',value=>Number(value).toFixed(2),cannonSettings,adjustCannonSetting);
   const airShotTitle=document.createElement('strong');airShotTitle.textContent='エアシュート';airShotTitle.style.cssText='font-size:14px;color:#eaffff;';
   const cannonTitle=document.createElement('strong');cannonTitle.textContent='キャノン';cannonTitle.style.cssText='font-size:14px;color:#eaffff;';
-  const airShotFixed=document.createElement('span');airShotFixed.style.cssText='display:block;color:#ffe9a6;font-weight:900;padding-top:4px;';airShotFixed.textContent=`確定値：射程 ${SHOOTING_RANGE} / 弾速 2500 / 発動前 0.10秒 / 発動後 0.25秒`;
+  const airShotFixed=document.createElement('span');airShotFixed.style.cssText='display:block;color:#ffe9a6;font-weight:900;padding-top:4px;';airShotFixed.textContent=`確定値：射程 ${SHOOTING_RANGE} / 弾速 4000 / 発動前 0.10秒 / 発動後 0.25秒`;
   const cannonFixed=document.createElement('span');cannonFixed.style.cssText='display:block;color:#ffe9a6;font-weight:900;padding-top:4px;';cannonFixed.textContent=`固定値：射程 ${SHOOTING_RANGE} / 発動後 0.25秒`;
   airShotPanel.append(airShotTitle,rangeStepper,speedStepper,startupStepper,lockStepper,airShotFixed);
   cannonPanel.append(cannonTitle,cannonSpeedStepper,cannonStartupStepper,cannonFixed);
