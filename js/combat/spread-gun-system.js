@@ -2,14 +2,11 @@
   const RANGE=window.BattleNetworkRangeGeometry;
   const ENEMY=window.BattleNetworkEnemy;
   const RELATIVE=window.BattleNetworkRelativeCellRange;
-  const HIT_TEST=window.BattleNetworkCombatHitTest;
   const FIELD=window.BattleNetworkField;
   const scene=document.getElementById('scene');
-  const A=document.getElementById('A');
-  if(!RANGE||!ENEMY||!RELATIVE||!HIT_TEST||!FIELD||!scene||!A)throw new Error('BattleNetworkSpreadGun: required dependency is missing.');
+  if(!RANGE||!ENEMY||!RELATIVE||!FIELD||!scene)throw new Error('BattleNetworkSpreadGun: required dependency is missing.');
 
   const CHIP_ID='CHIP_EXE4_S008';
-  const PROJECTILE_SPEED=4000;
   const VISUAL_MS=450;
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
   const OFFSETS=Object.freeze([
@@ -22,7 +19,6 @@
     Object.freeze({forward:1,lateral:0}),
     Object.freeze({forward:1,lateral:1})
   ]);
-  const handledTokens=new Set();
 
   function isSpreadAttack(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId===CHIP_ID}
   function project(point){return{x:(point.x-point.y)*PX+SW/2,y:(point.x+point.y)*PY}}
@@ -50,16 +46,16 @@
     setTimeout(()=>svg.remove(),VISUAL_MS);
   }
 
-  function applySpreadExplosion(attack,first){
-    if(!attack||!first?.enemy)return;
+  function onDirectHit(attack,directEnemy){
+    if(!isSpreadAttack(attack)||!directEnemy)return false;
     const shapes=RELATIVE.createRelativeCells({
-      center:{x:first.enemy.x,y:first.enemy.y},
+      center:{x:directEnemy.x,y:directEnemy.y},
       direction:attack.shape?.direction,
       offsets:OFFSETS,
       cellSizeTiles:1
     });
     showExplosionCells(shapes);
-    const hits=RELATIVE.getHitEnemies(shapes,{excludeIds:[first.enemy.id]});
+    const hits=RELATIVE.getHitEnemies(shapes,{excludeIds:[directEnemy.id]});
     const damage=Number(attack.damage);
     if(Number.isFinite(damage)&&damage>0){
       for(const enemy of hits){
@@ -69,48 +65,13 @@
     }
     window.BattleNetworkSpreadGun.lastExplosion=Object.freeze({
       sourceToken:attack.shotToken,
-      center:Object.freeze({x:first.enemy.x,y:first.enemy.y}),
+      center:Object.freeze({x:directEnemy.x,y:directEnemy.y}),
       direction:Object.freeze({...RANGE.normalizeDirection(attack.shape?.direction)}),
       shapes,
       hitEnemyIds:Object.freeze(hits.map(enemy=>enemy.id))
     });
-  }
-
-  function scheduleSpreadExplosion(attack){
-    const token=attack?.shotToken;
-    if(token==null||handledTokens.has(token))return false;
-    handledTokens.add(token);
-    const first=HIT_TEST.getFirstCannonHit({shape:attack.shape});
-    if(!first)return false;
-    const delayMs=Math.max(0,first.distance/PROJECTILE_SPEED*1000);
-    setTimeout(()=>applySpreadExplosion(attack,first),delayMs);
-    if(handledTokens.size>64){
-      const oldest=handledTokens.values().next().value;
-      handledTokens.delete(oldest);
-    }
     return true;
   }
 
-  function captureSpreadContext(previousToken,attempt=0){
-    const attack=window.BattleNetworkCombatRange?.getLastAttackContext?.()||null;
-    if(isSpreadAttack(attack)&&attack.shotToken!==previousToken){
-      scheduleSpreadExplosion(attack);
-      return;
-    }
-    if(attempt>=20)return;
-    setTimeout(()=>captureSpreadContext(previousToken,attempt+1),16);
-  }
-
-  A.addEventListener('pointerdown',()=>{
-    const previousToken=window.BattleNetworkCombatRange?.getLastAttackContext?.()?.shotToken??null;
-    setTimeout(()=>captureSpreadContext(previousToken,0),0);
-  });
-
-  window.BattleNetworkSpreadGun={
-    CHIP_ID,
-    PROJECTILE_SPEED,
-    OFFSETS,
-    lastExplosion:null,
-    scheduleSpreadExplosion
-  };
+  window.BattleNetworkSpreadGun={CHIP_ID,OFFSETS,lastExplosion:null,onDirectHit};
 })();
