@@ -19,12 +19,14 @@
   const config=Object.freeze({
     normal:Object.freeze({width:30,height:15,border:'2px solid rgba(205,248,255,.9)',background:'#66ddff'}),
     charged:Object.freeze({width:52,height:26,border:'2px solid rgba(255,220,210,.92)',background:'#ff514e'}),
-    vulcan:Object.freeze({width:34,height:17,border:'1px solid rgba(255,246,174,.9)',background:'#ffe97a'})
+    vulcan:Object.freeze({width:34,height:17,border:'1px solid rgba(255,246,174,.9)',background:'#ffe97a'}),
+    spread:Object.freeze({width:38,height:19,border:'1px solid rgba(205,248,255,.92)',background:'#8eeaff'})
   });
   const LEGACY_TRANSLATE_X=9;
   const LEGACY_TRANSLATE_Y=34;
   const FLOOR_CLEARANCE=20;
   const vulcanPool=[];
+  const spreadPool=[];
   let lastSceneTransform='';
 
   function syncTransform(){
@@ -46,10 +48,12 @@
     return el;
   }
 
+  function poolFor(kind){return kind==='vulcan'?vulcanPool:kind==='spread'?spreadPool:null}
   function create(kind){
     const cfg=config[kind];
     if(!cfg)return null;
-    let el=kind==='vulcan'&&vulcanPool.length?vulcanPool.pop():null;
+    const pool=poolFor(kind);
+    let el=pool&&pool.length?pool.pop():null;
     if(!el)el=createElement(kind,cfg);
     el.style.display='block';
     layer.appendChild(el);
@@ -63,11 +67,12 @@
 
   function remove(el){
     if(!el)return;
-    if(el.dataset.projectileKind==='vulcan'&&vulcanPool.length<6){
+    const pool=poolFor(el.dataset.projectileKind);
+    if(pool&&pool.length<6){
       el.style.display='none';
       el.style.transform='translate3d(-9999px,-9999px,0)';
       el.remove();
-      vulcanPool.push(el);
+      pool.push(el);
       return;
     }
     el.remove();
