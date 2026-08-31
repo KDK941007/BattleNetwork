@@ -42,14 +42,7 @@
 <main class="shell">
   <footer class="footer">
     <div class="chipHud"><span class="chipNow" id="chipNow">チップ</span><div class="queue" id="queue"></div></div>
-    <button class="gear" id="gear" type="button" aria-label="設定">
-      <svg class="cyberGear" viewBox="0 0 32 32" aria-hidden="true">
-        <path class="outer" d="M13 2h6l1.2 4.1 3.1 1.3 3.8-2.1 4.2 4.2-2.1 3.8 1.3 3.1L34 17v6l-3.5.6-1.3 3.1 2.1 3.8-4.2 4.2-3.8-2.1-3.1 1.3L19 38h-6l-1.2-4.1-3.1-1.3-3.8 2.1-4.2-4.2 2.1-3.8-1.3-3.1L-2 23v-6l3.5-.6 1.3-3.1-2.1-3.8 4.2-4.2 3.8 2.1 3.1-1.3z" transform="scale(.78) translate(4.7 1.7)"/>
-        <path class="inner" d="M16 10l5 3v6l-5 3-5-3v-6z"/>
-        <path class="circuit" d="M16 5v5M27 16h-6M16 27v-5M5 16h6"/>
-        <circle class="node" cx="16" cy="5" r="1.3"/><circle class="node" cx="27" cy="16" r="1.3"/><circle class="node" cx="16" cy="27" r="1.3"/><circle class="node" cx="5" cy="16" r="1.3"/>
-      </svg>
-    </button>
+    <button class="gear" id="gear" type="button" aria-label="設定"><svg class="cyberGear" viewBox="0 0 32 32" aria-hidden="true"><path class="outer" d="M13 2h6l1.2 4.1 3.1 1.3 3.8-2.1 4.2 4.2-2.1 3.8 1.3 3.1L34 17v6l-3.5.6-1.3 3.1 2.1 3.8-4.2 4.2-3.8-2.1-3.1 1.3L19 38h-6l-1.2-4.1-3.1-1.3-3.8 2.1-4.2-4.2 2.1-3.8-1.3-3.1L-2 23v-6l3.5-.6 1.3-3.1-2.1-3.8 4.2-4.2 3.8 2.1 3.1-1.3z" transform="scale(.78) translate(4.7 1.7)"/><path class="inner" d="M16 10l5 3v6l-5 3-5-3v-6z"/><path class="circuit" d="M16 5v5M27 16h-6M16 27v-5M5 16h6"/><circle class="node" cx="16" cy="5" r="1.3"/><circle class="node" cx="27" cy="16" r="1.3"/><circle class="node" cx="16" cy="27" r="1.3"/><circle class="node" cx="5" cy="16" r="1.3"/></svg></button>
   </footer>
   <button class="customGauge" id="customGauge" type="button" aria-label="CUSTOM" style="padding:0;-webkit-appearance:none;appearance:none"><span class="customFill" id="customFill"></span><span class="customLabel" id="customLabel"></span></button>
   <section class="battle" id="battle">
@@ -71,36 +64,16 @@
 <script src="./js/master/chip-master.js?v=71"></script>
 <script src="./js/master/chip-relations.js?v=60"></script>
 <script src="./js/master/chip-service.js?v=69"></script>
-<script src="./js/master/chip-runtime-compat.js?v=10"></script>
+<script src="./js/master/chip-runtime-compat.js?v=11"></script>
 <script src="./js/master/folder-master.js?v=1"></script>
 <script src="./js/master/folder-service.js?v=6"></script>
-<script src="./js/data/database.js"></script>
-<script src="./js/data/save-data.js"></script>
-<script src="./js/ui/chip-detail-ui.js?v=71"></script>
-<script src="./js/ui/chip-theme-ui.js?v=31"></script>
-<script src="./js/field/field-grid.js?v=38"></script>
-<script src="./js/field/field-grid-renderer.js?v=39"></script>
-<script src="./js/combat/range-geometry.js?v=53"></script>
-<script src="./js/combat/range-preview-renderer.js?v=51"></script>
-<script src="./js/combat/bomb-preview-renderer.js?v=51"></script>
-<script src="./js/combat/enemy-foundation.js?v=104"></script>
-<script src="./js/combat/player-health.js?v=90"></script>
-<script src="./js/ui/player-hud.js?v=82"></script>
-<script src="./js/combat/projectile-shadow-renderer.js?v=78"></script>
-<script src="./js/combat/buster-projectile-layer.js?v=79"></script>
-<script src="./js/combat/b-attack-system.js?v=73"></script>
-<script src="./js/combat/parameter-system.js?v=1"></script>
-<script src="./js/game.js?v=105"></script>
-<script src="./js/combat/player-damage-system.js?v=92"></script>
-<script src="./js/combat/enemy-attack-layer.js?v=105"></script>
-<script src="./js/combat/enemy-ai-system.js?v=105"></script>
-<script src="./js/combat/enemy-behavior-straight-shot.js?v=104"></script>
-<script src="./js/combat/enemy-behavior-target-area.js?v=105"></script>
-<script src="./js/combat/enemy-behavior-oscillate-movement.js?v=104"></script>
-<script src="./js/combat/wave-system.js?v=115"></script>
-<script src="./js/ui/camera-zoom-settings.js?v=66"></script>
-<script src="./js/combat/combat-hit-test.js?v=96"></script>
-<script src="./js/ui/test-chip-ui.js?v=70"></script>
-<script src="./js/service-worker-register.js"></script>
+<script src="./js/data/database.js"></script><script src="./js/data/save-data.js"></script>
+<script src="./js/ui/chip-detail-ui.js?v=71"></script><script src="./js/ui/chip-theme-ui.js?v=31"></script>
+<script src="./js/field/field-grid.js?v=38"></script><script src="./js/field/field-grid-renderer.js?v=39"></script>
+<script src="./js/combat/range-geometry.js?v=53"></script><script src="./js/combat/range-preview-renderer.js?v=51"></script><script src="./js/combat/bomb-preview-renderer.js?v=51"></script>
+<script src="./js/combat/enemy-foundation.js?v=104"></script><script src="./js/combat/player-health.js?v=90"></script><script src="./js/ui/player-hud.js?v=82"></script>
+<script src="./js/combat/projectile-shadow-renderer.js?v=78"></script><script src="./js/combat/buster-projectile-layer.js?v=79"></script><script src="./js/combat/b-attack-system.js?v=73"></script><script src="./js/combat/parameter-system.js?v=1"></script>
+<script src="./js/game.js?v=105"></script><script src="./js/combat/player-damage-system.js?v=92"></script><script src="./js/combat/enemy-attack-layer.js?v=105"></script><script src="./js/combat/enemy-ai-system.js?v=105"></script><script src="./js/combat/enemy-behavior-straight-shot.js?v=104"></script><script src="./js/combat/enemy-behavior-target-area.js?v=105"></script><script src="./js/combat/enemy-behavior-oscillate-movement.js?v=104"></script>
+<script src="./js/combat/wave-system.js?v=115"></script><script src="./js/ui/camera-zoom-settings.js?v=66"></script><script src="./js/combat/combat-hit-test.js?v=96"></script><script src="./js/ui/test-chip-ui.js?v=70"></script><script src="./js/service-worker-register.js"></script>
 </body>
 </html>
