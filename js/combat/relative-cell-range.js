@@ -1,10 +1,8 @@
 (()=>{
   const RANGE=window.BattleNetworkRangeGeometry;
   const FIELD=window.BattleNetworkField;
-  const ENEMY=window.BattleNetworkEnemy;
   if(!RANGE)throw new Error('BattleNetworkRelativeCellRange: range geometry is not loaded.');
   if(!FIELD)throw new Error('BattleNetworkRelativeCellRange: field grid is not loaded.');
-  if(!ENEMY)throw new Error('BattleNetworkRelativeCellRange: enemy foundation is not loaded.');
 
   function createCellShape(center,direction,sizeTiles=1){
     const dir=RANGE.normalizeDirection(direction);
@@ -51,6 +49,8 @@
 
   function getHitEnemies(shapes,{excludeIds=[]}={}){
     if(!Array.isArray(shapes)||!shapes.length)return Object.freeze([]);
+    const ENEMY=window.BattleNetworkEnemy;
+    if(!ENEMY)return Object.freeze([]);
     const excluded=new Set(excludeIds);
     const hits=[];
     for(const enemy of ENEMY.getEnemies()){
