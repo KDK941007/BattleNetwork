@@ -12,19 +12,17 @@
   const WORLD=FIELD.WORLD_SIZE;
   const TILE=FIELD.TILE_SIZE;
   const SW=WORLD*PX*2;
-  const PATTERNS=Object.freeze(['A','B','C']);
+  const PATTERNS=Object.freeze(['C','D']);
   const LABELS=Object.freeze({
-    A:'A：境界越え',
-    B:'B：1マス先座標',
-    C:'C：照準プレビュー'
+    C:'C：境界越え＋照準',
+    D:'D：1マス先座標＋照準'
   });
   const DESCRIPTIONS=Object.freeze({
-    A:'現在マスから向き方向へ進み、最初に入る隣接マスを対象',
-    B:'プレイヤー座標＋向き×1マスの座標が属するマスを対象',
-    C:'Aと同じ対象マスを使用前から常時プレビュー'
+    C:'現在マスから向き方向へ進み、最初に入る隣接マスを使用前から常時プレビュー',
+    D:'プレイヤー座標＋向き×1マスの座標が属するマスを使用前から常時プレビュー'
   });
 
-  let pattern='A';
+  let pattern='C';
   let hideTimer=null;
   let lastTileKey='';
 
@@ -60,7 +58,7 @@
 
   function inWorld(x,y){return x>=0&&x<WORLD&&y>=0&&y<WORLD}
 
-  function targetA(position,direction){
+  function targetC(position,direction){
     const tile=FIELD.getTileAtWorld(position.x,position.y);
     if(!tile)return null;
     const bounds=FIELD.tileToWorldBounds(tile.row,tile.col);
@@ -73,7 +71,7 @@
     return inWorld(x,y)?FIELD.getTileAtWorld(x,y):null;
   }
 
-  function targetB(position,direction){
+  function targetD(position,direction){
     const d=normalizeDirection(direction);
     const x=position.x+d.x*TILE,y=position.y+d.y*TILE;
     return inWorld(x,y)?FIELD.getTileAtWorld(x,y):null;
@@ -82,7 +80,7 @@
   function getTarget(){
     const position=PLAYER.getPosition();
     const facing=PLAYER.getFacing();
-    return pattern==='B'?targetB(position,facing):targetA(position,facing);
+    return pattern==='D'?targetD(position,facing):targetC(position,facing);
   }
 
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
@@ -106,16 +104,12 @@
     svg.style.opacity='1';
   }
 
-  function updatePreview(){
-    if(pattern!=='C')return;
-    place(getTarget(),false);
-  }
+  function updatePreview(){place(getTarget(),false)}
 
   function render(){
     button.textContent=`クラックアウト ${LABELS[pattern]}　▶`;
     detail.textContent=DESCRIPTIONS[pattern];
-    if(pattern==='C')updatePreview();
-    else{svg.style.opacity='0';lastTileKey=''}
+    updatePreview();
   }
 
   function cyclePattern(){
@@ -132,16 +126,16 @@
     if(hideTimer)clearTimeout(hideTimer);
     hideTimer=setTimeout(()=>{
       hideTimer=null;
-      if(pattern==='C'){updatePreview();detail.textContent=DESCRIPTIONS[pattern]}
-      else{svg.style.opacity='0';lastTileKey='';detail.textContent=DESCRIPTIONS[pattern]}
+      updatePreview();
+      detail.textContent=DESCRIPTIONS[pattern];
     },650);
   }
 
-  const observer=new MutationObserver(()=>{if(pattern==='C')updatePreview()});
+  const observer=new MutationObserver(updatePreview);
   observer.observe(playerEl,{attributes:true,attributeFilter:['style']});
   observer.observe(arrowEl,{attributes:true,attributeFilter:['style']});
   button.addEventListener('click',cyclePattern);
-  aButton.addEventListener('pointerdown',()=>showUsedTarget());
+  aButton.addEventListener('pointerdown',showUsedTarget);
 
   window.BattleNetworkCrackOutPatternTest=Object.freeze({
     getPattern:()=>pattern,
