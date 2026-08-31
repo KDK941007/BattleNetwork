@@ -1,8 +1,17 @@
 (()=>{
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
-  const TEST_ONLY_VULCAN1=true;
-  const VULCAN1_CODES=Object.freeze(['E','S','V','*']);
+
+  // Chip-detail test rule:
+  // while testing one chip, the Custom screen exposes only that target chip.
+  // Change only this target when moving to the next chip-detail test.
+  const TEST_TARGET=Object.freeze({
+    enabled:true,
+    type:'VULCAN1',
+    chipId:'CHIP_EXE4_S005',
+    codes:Object.freeze(['E','S','V','*'])
+  });
+
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
     CHIP_0001:'CANNON',
     CHIP_0002:'SWORD',
@@ -25,12 +34,21 @@
   function getFolderEntries(folderId=getEquippedFolderId()){return (data.FOLDER_CHIP_RELATION||[]).filter(row=>row.folderId===folderId).sort((a,b)=>a.slotNo-b.slotNo).map(row=>({...row}))}
   function equipFolder(folderId){if(!folderById.has(folderId))throw new Error(`BattleNetwork folder: unknown folderId ${folderId}`);try{localStorage.setItem(STORAGE_KEY,folderId)}catch{}return getFolder(folderId)}
 
-  function buildVulcan1TestCards(folderId){
-    return Array.from({length:30},(_,index)=>({id:index,type:'VULCAN1',code:VULCAN1_CODES[index%VULCAN1_CODES.length],chipId:'CHIP_EXE4_S005',folderId,slotNo:index+1}));
+  function buildTestCards(folderId){
+    const codes=TEST_TARGET.codes;
+    if(!codes.length)throw new Error('BattleNetwork folder: test target has no chip codes.');
+    return Array.from({length:30},(_,index)=>({
+      id:index,
+      type:TEST_TARGET.type,
+      code:codes[index%codes.length],
+      chipId:TEST_TARGET.chipId,
+      folderId,
+      slotNo:index+1
+    }));
   }
 
   function toLegacyCards(folderId=getEquippedFolderId()){
-    if(TEST_ONLY_VULCAN1)return buildVulcan1TestCards(folderId);
+    if(TEST_TARGET.enabled)return buildTestCards(folderId);
     return getFolderEntries(folderId).map((entry,index)=>({id:index,type:LEGACY_TYPE_BY_CHIP_ID[entry.chipId]||`CHIP_${entry.chipId}`,code:entry.codeId,chipId:entry.chipId,folderId:entry.folderId,slotNo:entry.slotNo}));
   }
 
