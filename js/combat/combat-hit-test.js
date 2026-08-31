@@ -10,6 +10,7 @@
 
   let lastObservedAttack=null;
   const firstLineHitCache=new WeakMap();
+  function perf(name,fn){const p=window.BattleNetworkPerfTest;return p?.measure?p.measure(name,fn):fn()}
   function behaviorParam(behaviorId,paramId,fallback){const row=DATA.BEHAVIOR_PARAM_MASTER?.find(item=>item.behaviorId===behaviorId&&item.paramId===paramId);const value=Number(row?.defaultValue);return Number.isFinite(value)?value:fallback}
   function testRange(shape){return ENEMY.getHitEnemies(shape)}
   function damageAndFlash(enemy,damage){const value=Number(damage);const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;ENEMY.debugFlash(enemy.id);return result}
@@ -20,11 +21,13 @@
     const shape=attack.shape;
     if(!shape||shape.rangeTypeId!=='LINE')return null;
     if(firstLineHitCache.has(shape))return firstLineHitCache.get(shape);
-    let first=null;
-    testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});
-    const result=first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;
-    firstLineHitCache.set(shape,result);
-    return result;
+    return perf('firstHit',()=>{
+      let first=null;
+      testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});
+      const result=first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;
+      firstLineHitCache.set(shape,result);
+      return result;
+    });
   }
   function isAirShot(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S004'}
   function isVulcan1(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S005'}
