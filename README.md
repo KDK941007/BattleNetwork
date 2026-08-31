@@ -30,6 +30,7 @@ BattleNetwork/
 ├─ MASTER_DATA_DESIGN.md
 ├─ DEVELOPMENT_STATUS.md
 ├─ DESIGN_NOTES.md
+├─ PERFORMANCE_GUIDELINES.md
 └─ GAME_DESIGN.md
 ```
 
@@ -58,4 +59,5 @@ BattleNetwork/
 - [MASTER_DATA_DESIGN.md](./MASTER_DATA_DESIGN.md) - チップマスタ・Range/Behavior・IndexedDBのSource of Truth
 - [DEVELOPMENT_STATUS.md](./DEVELOPMENT_STATUS.md) - 現在の実装状況と次に進める作業
 - [DESIGN_NOTES.md](./DESIGN_NOTES.md) - 現行プロトタイプの詳細設計・実装メモ
+- [PERFORMANCE_GUIDELINES.md](./PERFORMANCE_GUIDELINES.md) - リアルタイム処理の停止・カクつきを再発させないための実装規約
 - [GAME_DESIGN.md](./GAME_DESIGN.md) - ゲーム全体の企画・基本方針
