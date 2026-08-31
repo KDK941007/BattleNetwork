@@ -9,12 +9,23 @@
   if(!FIELD)throw new Error('BattleNetworkCombatHitTest: field grid is not loaded.');
 
   let lastObservedAttack=null;
+  const firstLineHitCache=new WeakMap();
   function behaviorParam(behaviorId,paramId,fallback){const row=DATA.BEHAVIOR_PARAM_MASTER?.find(item=>item.behaviorId===behaviorId&&item.paramId===paramId);const value=Number(row?.defaultValue);return Number.isFinite(value)?value:fallback}
   function testRange(shape){return ENEMY.getHitEnemies(shape)}
   function damageAndFlash(enemy,damage){const value=Number(damage);const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;ENEMY.debugFlash(enemy.id);return result}
   function flashHits(shape,damage=null){const hits=testRange(shape);hits.forEach(enemy=>damageAndFlash(enemy,damage));return hits}
   function rayEntryDistance(origin,direction,bounds,padding=0){const left=bounds.left-padding,right=bounds.right+padding,top=bounds.top-padding,bottom=bounds.bottom+padding;let near=0,far=Infinity;for(const [o,d,min,max] of [[origin.x,direction.x,left,right],[origin.y,direction.y,top,bottom]]){if(Math.abs(d)<1e-9){if(o<min||o>max)return null;continue}let a=(min-o)/d,b=(max-o)/d;if(a>b)[a,b]=[b,a];near=Math.max(near,a);far=Math.min(far,b);if(near>far)return null}return far>=0?Math.max(0,near):null}
-  function getFirstCannonHit(input){const attack=input?.shape?input:{shape:input};const shape=attack.shape;if(!shape||shape.rangeTypeId!=='LINE')return null;let first=null;testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});return first?Object.freeze({enemy:first.enemy,distance:first.distance}):null}
+  function getFirstCannonHit(input){
+    const attack=input?.shape?input:{shape:input};
+    const shape=attack.shape;
+    if(!shape||shape.rangeTypeId!=='LINE')return null;
+    if(firstLineHitCache.has(shape))return firstLineHitCache.get(shape);
+    let first=null;
+    testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});
+    const result=first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;
+    firstLineHitCache.set(shape,result);
+    return result;
+  }
   function isAirShot(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S004'}
   function isVulcan1(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S005'}
   function isSpreadGun(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S008'}
