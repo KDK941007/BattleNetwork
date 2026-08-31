@@ -7,12 +7,12 @@
   const pendingFrameMarks=[];
   const panel=document.createElement('div');
   panel.dataset.testOnly='performance-monitor';
-  panel.style.cssText="position:absolute;left:8px;top:54px;z-index:9999;min-width:315px;max-width:420px;padding:6px 8px;border:1px solid rgba(120,235,255,.75);border-radius:5px;background:rgba(0,12,20,.86);color:#dffaff;font:700 11px/1.32 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;pointer-events:none;";
-  panel.textContent='PERF TEST\nwaiting for SpreadGun...';battle.appendChild(panel);
+  panel.style.cssText="position:absolute;left:8px;top:54px;z-index:9999;min-width:360px;max-width:520px;padding:8px 10px;border:1px solid rgba(120,235,255,.75);border-radius:5px;background:rgba(0,12,20,.9);color:#dffaff;font:700 12px/1.34 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;pointer-events:none;";
+  panel.textContent='PERF TEST  SpreadGun only\nSHOT STALL: none';battle.appendChild(panel);
 
   function record(name,ms){if(!Number.isFinite(ms))return;const prev=values.get(name)||{last:0,max:0};prev.last=ms;prev.max=Math.max(prev.max,ms);values.set(name,prev)}
   function measure(name,fn){const t=performance.now();try{return fn()}finally{record(name,performance.now()-t)}}
-  function trace(name,detail=''){const now=performance.now();events.push({time:now,name:String(name),detail:String(detail||'')});if(events.length>50)events.splice(0,events.length-50);if(name==='SpreadGun:attack'||name==='SpreadGun:directHit'||name==='SpreadGun:explosionShown')shotWindowUntil=Math.max(shotWindowUntil,now+700)}
+  function trace(name,detail=''){const now=performance.now();events.push({time:now,name:String(name),detail:String(detail||'')});if(events.length>60)events.splice(0,events.length-60);if(name==='SpreadGun:attack'||name==='SpreadGun:directHit'||name==='SpreadGun:explosionShown')shotWindowUntil=Math.max(shotWindowUntil,now+700)}
   function markNextFrame(name){pendingFrameMarks.push({name,time:performance.now()})}
   function callbackName(cb){const raw=(cb&&cb.name)||'anonymous';if(raw==='loop')return 'raf:gameLoop';if(raw==='syncTransform')return 'raf:projSync';if(raw==='observeAttackRange')return 'raf:hitObserve';if(raw==='frame')return 'raf:otherFrame';return `raf:${raw.slice(0,18)}`}
   window.requestAnimationFrame=function(callback){if(typeof callback!=='function')return nativeRAF(callback);const name=callbackName(callback);return nativeRAF(now=>{const t=performance.now();try{return callback(now)}finally{record(name,performance.now()-t)}})};
@@ -20,17 +20,21 @@
   function isLandscape(){return innerWidth>innerHeight}
   function captureStall(now,gap){
     if(!isLandscape()||now>shotWindowUntil)return;
-    const from=now-gap-60,to=now+5;
-    const nearby=events.filter(e=>e.time>=from&&e.time<=to).slice(-14);
+    const from=now-gap-120,to=now+10;
+    const nearby=events.filter(e=>e.time>=from&&e.time<=to).slice(-18);
     lastStall={gap,time:now,events:nearby};
   }
   function render(now){
-    if(now-lastRender<250)return;lastRender=now;
-    const fixed=['A task','A nextFrame','firstHit','directHit','hit nextFrame','spreadCalc','spreadDamage','spreadVisual','spread nextFrame','shotFrameGap'];
-    const rafNames=[...values.keys()].filter(name=>name.startsWith('raf:')).sort();
+    if(now-lastRender<200)return;lastRender=now;
     const lines=['PERF TEST  SpreadGun only'];
-    for(const name of [...fixed,...rafNames]){const v=values.get(name);if(v)lines.push(`${name.padEnd(16)} ${v.last.toFixed(1).padStart(6)} / ${v.max.toFixed(1).padStart(6)}`)}
-    if(lastStall){lines.push('',`SHOT STALL ${lastStall.gap.toFixed(1)}ms:`);if(!lastStall.events.length)lines.push('  (no traced event in shot window)');else for(const e of lastStall.events){const delta=e.time-lastStall.time;lines.push(`${delta.toFixed(0).padStart(5)}ms ${e.name}${e.detail?' '+e.detail:''}`)}}else lines.push('','SHOT STALL: none');
+    if(lastStall){
+      lines.push(`SHOT STALL ${lastStall.gap.toFixed(1)}ms:`);
+      if(!lastStall.events.length)lines.push('  (no traced event in shot window)');
+      else for(const e of lastStall.events){const delta=e.time-lastStall.time;lines.push(`${delta.toFixed(0).padStart(5)}ms ${e.name}${e.detail?' '+e.detail:''}`)}
+    }else lines.push('SHOT STALL: none');
+    lines.push('');
+    const compact=['A nextFrame','hit nextFrame','spread nextFrame','shotFrameGap'];
+    for(const name of compact){const v=values.get(name);if(v)lines.push(`${name.padEnd(16)} ${v.last.toFixed(1).padStart(6)} / ${v.max.toFixed(1).padStart(6)} ms`)}
     panel.textContent=lines.join('\n');
   }
   A.addEventListener('pointerdown',()=>{trace('A:pointerdown');shotWindowUntil=Math.max(shotWindowUntil,performance.now()+900);const t=performance.now();markNextFrame('A nextFrame');queueMicrotask(()=>record('A task',performance.now()-t))},true);
