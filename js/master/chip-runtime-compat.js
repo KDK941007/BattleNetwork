@@ -11,6 +11,7 @@
   };
   const timingDefaults=data.CHIP_TIMING_DEFAULTS||Object.freeze({startupDelaySec:.10,actionLockSec:.25});
   const shootingRangeDefault=Number(data.SHOOTING_RANGE_DEFAULT_TILES)||7;
+  const VULCAN_BURST_INTERVAL_SEC=.10;
 
   const ATTR_IMAGE={};
   const ATTR_LABEL={};
@@ -101,23 +102,20 @@
     return ['AIRSHOT',runtime];
   };
 
-  const buildVulcan1=()=>{
-    const chipId='CHIP_EXE4_S005';
+  const buildVulcan=(legacyKey,chipId,burstCount,imageName=null)=>{
     const chip=service.getChip(chipId);
     const primary=service.getPrimaryAttribute(chipId);
     const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({burstIntervalSec:.05});
-    const settings=()=>window.BattleNetworkTestSettings?.getVulcan1Settings?.()||fallback;
-    const runtime={chipId,name:chip?.chipName||'バルカン1',type:'vulcan',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??10,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:'./assets/chips/バルカン1.png',detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon',burstCount:3};
+    const runtime={chipId,name:chip?.chipName||legacyKey,type:'vulcan',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??10,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon',burstCount};
     Object.defineProperties(runtime,{
       rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
       range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
       projectileSpeed:{enumerable:true,get:()=>4000},
       lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},
       startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec},
-      burstIntervalSec:{enumerable:true,get:()=>settings().burstIntervalSec}
+      burstIntervalSec:{enumerable:true,get:()=>VULCAN_BURST_INTERVAL_SEC}
     });
-    return ['VULCAN1',runtime];
+    return [legacyKey,runtime];
   };
 
   service.createGameCompatibilityData=()=>{
@@ -128,7 +126,9 @@
       buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
       buildImplemented('RECOVER','CHIP_0005','recover','recover'),
       buildAirShot(),
-      buildVulcan1(),
+      buildVulcan('VULCAN1','CHIP_EXE4_S005',3,'バルカン1'),
+      buildVulcan('VULCAN2','CHIP_EXE4_S006',5),
+      buildVulcan('VULCAN3','CHIP_EXE4_S007',7),
       displayOnly('CRACKOUT','CHIP_EXE4_S106'),
       displayOnly('AREASTEAL','CHIP_EXE4_S119'),
       displayOnly('ATTACK10','CHIP_EXE4_S148')
