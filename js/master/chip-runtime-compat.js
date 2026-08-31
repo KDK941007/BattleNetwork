@@ -2,137 +2,16 @@
   const data=window.BattleNetworkData||{};
   const service=window.BattleNetworkMaster;
   if(!service)return;
-
-  const tileDistanceToWorld=value=>{
-    if(value==null)return undefined;
-    const n=Number(value);
-    if(!Number.isFinite(n))return undefined;
-    return window.BattleNetworkField?.toWorldDistance?window.BattleNetworkField.toWorldDistance(n):undefined;
-  };
+  const tileDistanceToWorld=value=>{if(value==null)return undefined;const n=Number(value);if(!Number.isFinite(n))return undefined;return window.BattleNetworkField?.toWorldDistance?window.BattleNetworkField.toWorldDistance(n):undefined};
   const timingDefaults=data.CHIP_TIMING_DEFAULTS||Object.freeze({startupDelaySec:.10,actionLockSec:.25});
   const shootingRangeDefault=Number(data.SHOOTING_RANGE_DEFAULT_TILES)||7;
   const VULCAN_BURST_INTERVAL_SEC=.10;
-
-  const ATTR_IMAGE={};
-  const ATTR_LABEL={};
-  (data.CHIP_ATTRIBUTE_MASTER||[]).forEach(attr=>{
-    const key=attr.attributeId.toLowerCase();
-    ATTR_IMAGE[key]=attr.iconPath;
-    ATTR_LABEL[key]=attr.attributeName;
-  });
-
-  const buildImplemented=(legacyKey,chipId,type,viz)=>{
-    const chip=service.getChip(chipId);
-    const primary=service.getPrimaryAttribute(chipId);
-    const values=service.getChipValues(chipId);
-    const damage=values.find(row=>row.valueTypeId==='DAMAGE');
-    const recovery=values.find(row=>row.valueTypeId==='RECOVERY');
-    const range=service.getRangeParams(chipId);
-    const behavior=service.getBehaviorParams(chipId);
-    const lengthTiles=range.LENGTH_TILES??(chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined);
-    const widthTiles=range.WIDTH_TILES;
-    const radiusTiles=range.RADIUS_TILES;
-    const throwDistanceTiles=behavior.THROW_DISTANCE_TILES;
-    return [legacyKey,{
-      chipId,
-      name:chip?.chipName||legacyKey,
-      type,
-      attr:(primary?.attributeId||'NORMAL').toLowerCase(),
-      power:damage?.value,
-      heal:recovery?.value,
-      rangeTypeId:chip?.rangeTypeId||null,
-      rangeTiles:lengthTiles,
-      widthTiles,
-      radiusTiles,
-      throwDistanceTiles,
-      range:lengthTiles!=null?tileDistanceToWorld(lengthTiles):throwDistanceTiles!=null?tileDistanceToWorld(throwDistanceTiles):undefined,
-      width:widthTiles!=null?tileDistanceToWorld(widthTiles):undefined,
-      radius:radiusTiles!=null?tileDistanceToWorld(radiusTiles):undefined,
-      lock:Number.isFinite(Number(behavior.ACTION_LOCK))?Number(behavior.ACTION_LOCK):timingDefaults.actionLockSec,
-      startupDelay:Number.isFinite(Number(behavior.STARTUP_DELAY))?Number(behavior.STARTUP_DELAY):timingDefaults.startupDelaySec,
-      projectileSpeed:behavior.PROJECTILE_SPEED,
-      explosionDelay:behavior.EXPLOSION_DELAY,
-      image:service.getChipImagePath(chipId),
-      detail:chip?.description||'',
-      rangeText:chip?.rangeDescription||'',
-      viz
-    }];
-  };
-
-  const buildCannon=()=>{
-    const chipId='CHIP_0001';
-    const chip=service.getChip(chipId);
-    const primary=service.getPrimaryAttribute(chipId);
-    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40});
-    const settings=()=>window.BattleNetworkTestSettings?.getCannonSettings?.()||fallback;
-    const runtime={chipId,name:chip?.chipName||'キャノン',type:'cannon',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??40,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};
-    Object.defineProperties(runtime,{
-      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
-      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
-      projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},
-      lock:{enumerable:true,get:()=>.25},
-      startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}
-    });
-    return ['CANNON',runtime];
-  };
-
-  const displayOnly=(legacyKey,chipId,imageName=null)=>{
-    const chip=service.getChip(chipId);
-    const primary=service.getPrimaryAttribute(chipId);
-    const values=service.getChipValues(chipId);
-    const damage=values.find(row=>row.valueTypeId==='DAMAGE');
-    const recovery=values.find(row=>row.valueTypeId==='RECOVERY');
-    return [legacyKey,{chipId,name:chip?.chipName||legacyKey,type:'unsupported',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value,heal:recovery?.value,rangeTypeId:chip?.rangeTypeId||null,rangeTiles:chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined,widthTiles:undefined,radiusTiles:undefined,throwDistanceTiles:undefined,range:chip?.rangeTypeId==='LINE'?tileDistanceToWorld(shootingRangeDefault):undefined,width:undefined,radius:undefined,lock:timingDefaults.actionLockSec,startupDelay:timingDefaults.startupDelaySec,projectileSpeed:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'バトル挙動は未実装。',rangeText:chip?.rangeDescription||'未確定',viz:''}];
-  };
-
-  const buildAirShot=()=>{
-    const chipId='CHIP_EXE4_S004';
-    const chip=service.getChip(chipId);
-    const primary=service.getPrimaryAttribute(chipId);
-    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const runtime={chipId,name:chip?.chipName||'エアシュート',type:'cannon',attr:(primary?.attributeId||'WIND').toLowerCase(),power:damage?.value??20,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:'./assets/chips/エアシュート.png',detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};
-    Object.defineProperties(runtime,{
-      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
-      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
-      projectileSpeed:{enumerable:true,get:()=>4000},
-      lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},
-      startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec}
-    });
-    return ['AIRSHOT',runtime];
-  };
-
-  const buildVulcan=(legacyKey,chipId,burstCount,imageName=null)=>{
-    const chip=service.getChip(chipId);
-    const primary=service.getPrimaryAttribute(chipId);
-    const damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE');
-    const runtime={chipId,name:chip?.chipName||legacyKey,type:'vulcan',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??10,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon',burstCount};
-    Object.defineProperties(runtime,{
-      rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},
-      range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},
-      projectileSpeed:{enumerable:true,get:()=>4000},
-      lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},
-      startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec},
-      burstIntervalSec:{enumerable:true,get:()=>VULCAN_BURST_INTERVAL_SEC}
-    });
-    return [legacyKey,runtime];
-  };
-
-  service.createGameCompatibilityData=()=>{
-    const CHIP=Object.fromEntries([
-      buildCannon(),
-      buildImplemented('SWORD','CHIP_0002','sword','sword'),
-      buildImplemented('WIDE','CHIP_0003','wide','wide'),
-      buildImplemented('BOMB','CHIP_0004','bomb','bomb'),
-      buildImplemented('RECOVER','CHIP_0005','recover','recover'),
-      buildAirShot(),
-      buildVulcan('VULCAN1','CHIP_EXE4_S005',3,'バルカン1'),
-      buildVulcan('VULCAN2','CHIP_EXE4_S006',5),
-      buildVulcan('VULCAN3','CHIP_EXE4_S007',7),
-      displayOnly('CRACKOUT','CHIP_EXE4_S106'),
-      displayOnly('AREASTEAL','CHIP_EXE4_S119'),
-      displayOnly('ATTACK10','CHIP_EXE4_S148')
-    ]);
-    return {CHIP,ATTR_IMAGE,ATTR_LABEL};
-  };
+  const ATTR_IMAGE={},ATTR_LABEL={};
+  (data.CHIP_ATTRIBUTE_MASTER||[]).forEach(attr=>{const key=attr.attributeId.toLowerCase();ATTR_IMAGE[key]=attr.iconPath;ATTR_LABEL[key]=attr.attributeName});
+  const buildImplemented=(legacyKey,chipId,type,viz)=>{const chip=service.getChip(chipId),primary=service.getPrimaryAttribute(chipId),values=service.getChipValues(chipId),damage=values.find(row=>row.valueTypeId==='DAMAGE'),recovery=values.find(row=>row.valueTypeId==='RECOVERY'),range=service.getRangeParams(chipId),behavior=service.getBehaviorParams(chipId),lengthTiles=range.LENGTH_TILES??(chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined),widthTiles=range.WIDTH_TILES,radiusTiles=range.RADIUS_TILES,throwDistanceTiles=behavior.THROW_DISTANCE_TILES;return [legacyKey,{chipId,name:chip?.chipName||legacyKey,type,attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value,heal:recovery?.value,rangeTypeId:chip?.rangeTypeId||null,rangeTiles:lengthTiles,widthTiles,radiusTiles,throwDistanceTiles,range:lengthTiles!=null?tileDistanceToWorld(lengthTiles):throwDistanceTiles!=null?tileDistanceToWorld(throwDistanceTiles):undefined,width:widthTiles!=null?tileDistanceToWorld(widthTiles):undefined,radius:radiusTiles!=null?tileDistanceToWorld(radiusTiles):undefined,lock:Number.isFinite(Number(behavior.ACTION_LOCK))?Number(behavior.ACTION_LOCK):timingDefaults.actionLockSec,startupDelay:Number.isFinite(Number(behavior.STARTUP_DELAY))?Number(behavior.STARTUP_DELAY):timingDefaults.startupDelaySec,projectileSpeed:behavior.PROJECTILE_SPEED,explosionDelay:behavior.EXPLOSION_DELAY,image:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz}]};
+  const buildCannon=()=>{const chipId='CHIP_0001',chip=service.getChip(chipId),primary=service.getPrimaryAttribute(chipId),damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE'),fallback=Object.freeze({rangeTiles:shootingRangeDefault,projectileSpeed:2000,actionLockSec:.25,startupDelaySec:.40}),settings=()=>window.BattleNetworkTestSettings?.getCannonSettings?.()||fallback,runtime={chipId,name:chip?.chipName||'キャノン',type:'cannon',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??40,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};Object.defineProperties(runtime,{rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},projectileSpeed:{enumerable:true,get:()=>settings().projectileSpeed},lock:{enumerable:true,get:()=>.25},startupDelay:{enumerable:true,get:()=>settings().startupDelaySec}});return ['CANNON',runtime]};
+  const displayOnly=(legacyKey,chipId,imageName=null)=>{const chip=service.getChip(chipId),primary=service.getPrimaryAttribute(chipId),values=service.getChipValues(chipId),damage=values.find(row=>row.valueTypeId==='DAMAGE'),recovery=values.find(row=>row.valueTypeId==='RECOVERY');return [legacyKey,{chipId,name:chip?.chipName||legacyKey,type:'unsupported',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value,heal:recovery?.value,rangeTypeId:chip?.rangeTypeId||null,rangeTiles:chip?.rangeTypeId==='LINE'?shootingRangeDefault:undefined,widthTiles:undefined,radiusTiles:undefined,throwDistanceTiles:undefined,range:chip?.rangeTypeId==='LINE'?tileDistanceToWorld(shootingRangeDefault):undefined,width:undefined,radius:undefined,lock:timingDefaults.actionLockSec,startupDelay:timingDefaults.startupDelaySec,projectileSpeed:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'バトル挙動は未実装。',rangeText:chip?.rangeDescription||'未確定',viz:''}]};
+  const buildAirShot=()=>{const chipId='CHIP_EXE4_S004',chip=service.getChip(chipId),primary=service.getPrimaryAttribute(chipId),damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE'),runtime={chipId,name:chip?.chipName||'エアシュート',type:'cannon',attr:(primary?.attributeId||'WIND').toLowerCase(),power:damage?.value??20,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:'./assets/chips/エアシュート.png',detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon'};Object.defineProperties(runtime,{rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},projectileSpeed:{enumerable:true,get:()=>4000},lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec}});return ['AIRSHOT',runtime]};
+  const buildVulcan=(legacyKey,chipId,burstCount,imageName=null)=>{const chip=service.getChip(chipId),primary=service.getPrimaryAttribute(chipId),damage=service.getChipValues(chipId).find(row=>row.valueTypeId==='DAMAGE'),runtime={chipId,name:chip?.chipName||legacyKey,type:'vulcan',attr:(primary?.attributeId||'NORMAL').toLowerCase(),power:damage?.value??10,heal:undefined,rangeTypeId:'LINE',widthTiles:.75,radiusTiles:undefined,throwDistanceTiles:undefined,width:tileDistanceToWorld(.75),radius:undefined,explosionDelay:undefined,image:imageName?`./assets/chips/${imageName}.png`:service.getChipImagePath(chipId),detail:chip?.description||'',rangeText:chip?.rangeDescription||'',viz:'cannon',burstCount};Object.defineProperties(runtime,{rangeTiles:{enumerable:true,get:()=>shootingRangeDefault},range:{enumerable:true,get:()=>tileDistanceToWorld(shootingRangeDefault)},projectileSpeed:{enumerable:true,get:()=>4000},lock:{enumerable:true,get:()=>timingDefaults.actionLockSec},startupDelay:{enumerable:true,get:()=>timingDefaults.startupDelaySec},burstIntervalSec:{enumerable:true,get:()=>VULCAN_BURST_INTERVAL_SEC}});return [legacyKey,runtime]};
+  service.createGameCompatibilityData=()=>{const CHIP=Object.fromEntries([buildCannon(),buildImplemented('SWORD','CHIP_0002','sword','sword'),buildImplemented('WIDE','CHIP_0003','wide','wide'),buildImplemented('BOMB','CHIP_0004','bomb','bomb'),buildImplemented('RECOVER','CHIP_0005','recover','recover'),buildAirShot(),buildVulcan('VULCAN1','CHIP_EXE4_S005',3,'バルカン1'),buildVulcan('VULCAN2','CHIP_EXE4_S006',5),buildVulcan('VULCAN3','CHIP_EXE4_S007',7),buildVulcan('SUPERVULCAN','CHIP_EXE4_M01',12),displayOnly('CRACKOUT','CHIP_EXE4_S106'),displayOnly('AREASTEAL','CHIP_EXE4_S119'),displayOnly('ATTACK10','CHIP_EXE4_S148')]);return {CHIP,ATTR_IMAGE,ATTR_LABEL}};
 })();
