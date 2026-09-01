@@ -185,6 +185,12 @@
   observer.observe(playerEl,{attributes:true,attributeFilter:['style']});
   observer.observe(arrowEl,{attributes:true,attributeFilter:['style']});
 
+  window.addEventListener('battlenetwork:terrainchange',event=>{
+    const row=Number(event.detail?.row),col=Number(event.detail?.col);
+    if(!Number.isFinite(row)||!Number.isFinite(col))return;
+    renderTerrain(FIELD.getTile(row,col));
+  });
+
   window.BattleNetworkCrackOut=Object.freeze({
     getTargetTile:()=>getTarget(),
     applyToTile:(row,col)=>applyCrackOut(FIELD.getTile(row,col)),
