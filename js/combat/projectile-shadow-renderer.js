@@ -1,6 +1,7 @@
 (()=>{
+  const battle=document.getElementById('battle');
   const scene=document.getElementById('scene');
-  if(!scene)throw new Error('BattleNetworkProjectileShadow: scene is not available.');
+  if(!battle||!scene)throw new Error('BattleNetworkProjectileShadow: battle/scene is not available.');
 
   const tracked=new Map();
   const LEGACY_TRANSLATE_X=9;
@@ -27,15 +28,11 @@
     bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
     bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
 
-    // キャノンだけ巨大scene直下から分離し、既存の投射物専用レイヤーへ移す。
-    // 座標系はbusterProjectileLayer側でscene transformと同期済みなので、
-    // game.jsの弾座標・弾速・射程・当たり判定はそのまま維持できる。
     if(resolvedKind==='cannon'){
       const projectileLayer=document.getElementById('busterProjectileLayer');
       if(projectileLayer&&bullet.parentElement!==projectileLayer)projectileLayer.appendChild(bullet);
     }
 
-    // iPhone Safariの描画停止対策として、プレイヤー弾は床影DOMを追加しない。
     tracked.set(bullet,{shadow:null,config});
     return true;
   }
@@ -54,8 +51,39 @@
     tracked.delete(bullet);
   }
 
-  // バルカンで有効だった軽量描画を、キャノンと一時チップエフェクトにも適用する。
-  // 戦闘仕様・弾速・当たり判定・硬直時間は変更しない。
+  // ソード/ワイドソード/ボム/回復の一時エフェクトを巨大scene直下へ置かない。
+  // game.jsは従来どおりscene.appendChild()を呼ぶが、この3種だけ描画分離レイヤーへ同期的に転送する。
+  // DOM削除時の再描画をこのレイヤー内に閉じ込める。
+  const effectLayer=document.createElement('div');
+  effectLayer.id='chipEffectLayer';
+  effectLayer.style.cssText=`position:absolute;left:0;top:0;width:${scene.clientWidth}px;height:${scene.clientHeight}px;transform-origin:0 0;pointer-events:none;contain:layout paint style;z-index:8;`;
+  battle.appendChild(effectLayer);
+
+  const nativeSceneAppend=scene.appendChild.bind(scene);
+  let effectSyncFrame=null,lastEffectTransform='';
+  function isTemporaryChipEffect(node){
+    return node instanceof HTMLElement&&(node.classList.contains('slash')||node.classList.contains('boom')||node.classList.contains('healPulse'));
+  }
+  function syncEffectLayer(){
+    effectSyncFrame=null;
+    const next=scene.style.transform||'';
+    if(next!==lastEffectTransform){effectLayer.style.transform=next;lastEffectTransform=next}
+    if(effectLayer.childElementCount>0)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
+  }
+  function ensureEffectSync(){
+    const next=scene.style.transform||'';
+    if(next!==lastEffectTransform){effectLayer.style.transform=next;lastEffectTransform=next}
+    if(effectSyncFrame===null)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
+  }
+  scene.appendChild=function(node){
+    if(isTemporaryChipEffect(node)){
+      effectLayer.appendChild(node);
+      ensureEffectSync();
+      return node;
+    }
+    return nativeSceneAppend(node);
+  };
+
   const performanceStyle=document.createElement('style');
   performanceStyle.textContent=`
     .bullet.normal,.bullet.charged,.bullet.vulcan,.bullet.cannon{
