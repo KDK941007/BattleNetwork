@@ -1,9 +1,6 @@
 (()=>{
-  const searchEnabled=new URLSearchParams(location.search).get('perf')==='1';
-  const hashEnabled=/(?:^|[&#])perf=1(?:$|&)/.test(location.hash.replace(/^#/,''));
-  if(searchEnabled||hashEnabled){try{sessionStorage.setItem('battleNetworkPerfTest','1')}catch(_){}}
-  let enabled=searchEnabled||hashEnabled;
-  if(!enabled){try{enabled=sessionStorage.getItem('battleNetworkPerfTest')==='1'}catch(_){}}
+  // Temporary investigation build: keep the monitor explicitly enabled so device-side URL/query handling cannot suppress it.
+  const enabled=true;
   if(!enabled)return;
 
   const battle=document.getElementById('battle'),A=document.getElementById('A');
