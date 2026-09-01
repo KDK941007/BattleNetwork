@@ -4,9 +4,9 @@
 
   // Chip-detail test rule:
   // while testing one chip, the Custom screen exposes only that target chip.
-  // Change only this target when moving to the next chip-detail test.
+  // Enable this only while a chip-detail test is active, and change only the target when moving to the next chip.
   const TEST_TARGET=Object.freeze({
-    enabled:true,
+    enabled:false,
     type:'CRACKOUT',
     chipId:'CHIP_EXE4_S106',
     codes:Object.freeze(['*'])
