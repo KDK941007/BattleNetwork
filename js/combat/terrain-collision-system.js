@@ -2,7 +2,7 @@
   const FIELD=window.BattleNetworkField,BASE=window.BattleNetworkEnemy,RANGE=window.BattleNetworkRangeGeometry;
   if(!FIELD||!BASE||!RANGE)return;
 
-  const EPS=.001,SLIDE_SLOP=1;
+  const EPS=.001,HOLE_SLIDE_SLOP=1,BODY_CONTACT_SLOP=3,BODY_TANGENT_RATIO=.35;
   const DEFAULT_DIAMETER_TILES=.7;
   const PLAYER_PROFILE=Object.freeze({body:Object.freeze({diameterTiles:DEFAULT_DIAMETER_TILES,offsetScreenYTiles:0}),hurt:Object.freeze({diameterTiles:DEFAULT_DIAMETER_TILES,offsetScreenYTiles:0})});
   const ENEMY_DEFAULT_PROFILE=Object.freeze({body:Object.freeze({diameterTiles:DEFAULT_DIAMETER_TILES,offsetScreenYTiles:-.3}),hurt:Object.freeze({diameterTiles:DEFAULT_DIAMETER_TILES,offsetScreenYTiles:-.3})});
@@ -48,8 +48,20 @@
     }
     return max;
   }
-  function blocksProgress(currentPen,nextPen){return nextPen>SLIDE_SLOP&&(currentPen<=SLIDE_SLOP||nextPen>currentPen+SLIDE_SLOP)}
-  function circleTouchesHole(circle){return holePenetration(circle)>SLIDE_SLOP}
+  function blocksProgress(currentPen,nextPen,slop=HOLE_SLIDE_SLOP){return nextPen>slop&&(currentPen<=slop||nextPen>currentPen+slop)}
+  function bodyMoveBlocks(current,next,obstacle){
+    const currentPen=circlePenetration(current,obstacle),nextPen=circlePenetration(next,obstacle);
+    if(nextPen<=BODY_CONTACT_SLOP)return false;
+    if(nextPen<=currentPen+BODY_CONTACT_SLOP)return false;
+    const mx=next.x-current.x,my=next.y-current.y,ml=Math.hypot(mx,my);
+    const tx=obstacle.x-current.x,ty=obstacle.y-current.y,tl=Math.hypot(tx,ty);
+    if(ml>EPS&&tl>EPS){
+      const inward=(mx*tx+my*ty)/(ml*tl);
+      if(inward<=BODY_TANGENT_RATIO&&nextPen<=BODY_CONTACT_SLOP*2)return false;
+    }
+    return true;
+  }
+  function circleTouchesHole(circle){return holePenetration(circle)>HOLE_SLIDE_SLOP}
   function circleIntersectsShape(circle,shape){
     if(!circle||!shape)return false;
     if(shape.rangeTypeId==='CIRCLE')return Math.hypot(circle.x-shape.center.x,circle.y-shape.center.y)<=circle.radius+shape.radiusWorld+EPS;
@@ -74,21 +86,21 @@
     const enemy=getEnemy(id);if(!enemy)return BASE.setPosition(id,x,y);
     const nx=Number(x),ny=Number(y);if(!Number.isFinite(nx)||!Number.isFinite(ny))return BASE.setPosition(id,x,y);
     const clampedX=Math.max(0,Math.min(FIELD.WORLD_SIZE,nx)),clampedY=Math.max(0,Math.min(FIELD.WORLD_SIZE,ny)),current=enemy.bodyCircle,next=enemyBodyAt(enemy,clampedX,clampedY);
-    if(blocksProgress(holePenetration(current),holePenetration(next)))return Object.freeze({applied:false,reason:'TERRAIN_BLOCKED',enemy});
-    if(enemy.collision?.allowEnemyOverlap!==true){for(const other of getActiveEnemies()){if(other.id===id||other.collision?.allowEnemyOverlap===true)continue;if(blocksProgress(circlePenetration(current,other.bodyCircle),circlePenetration(next,other.bodyCircle)))return Object.freeze({applied:false,reason:'ENEMY_COLLISION',enemy})}}
+    if(blocksProgress(holePenetration(current),holePenetration(next),HOLE_SLIDE_SLOP))return Object.freeze({applied:false,reason:'TERRAIN_BLOCKED',enemy});
+    if(enemy.collision?.allowEnemyOverlap!==true){for(const other of getActiveEnemies()){if(other.id===id||other.collision?.allowEnemyOverlap===true)continue;if(bodyMoveBlocks(current,next,other.bodyCircle))return Object.freeze({applied:false,reason:'ENEMY_COLLISION',enemy})}}
     return BASE.setPosition(id,clampedX,clampedY);
   }
   function isPlayerBoundsBlocked(bounds){
     const position=playerPositionFromBounds(bounds);if(!position)return false;
     const next=playerBodyAt(position),currentPosition=window.BattleNetworkPlayer?.getPosition?.()||position,current=playerBodyAt(currentPosition);
-    if(blocksProgress(holePenetration(current),holePenetration(next)))return true;
-    for(const enemy of getActiveEnemies()){if(enemy.collision?.allowPlayerOverlap===true)continue;if(blocksProgress(circlePenetration(current,enemy.bodyCircle),circlePenetration(next,enemy.bodyCircle)))return true}
+    if(blocksProgress(holePenetration(current),holePenetration(next),HOLE_SLIDE_SLOP))return true;
+    for(const enemy of getActiveEnemies()){if(enemy.collision?.allowPlayerOverlap===true)continue;if(bodyMoveBlocks(current,next,enemy.bodyCircle))return true}
     return false;
   }
   function wouldOverlapBounds(id,x,y,bounds){
     const enemy=getEnemy(id),position=playerPositionFromBounds(bounds);if(!enemy||!position||enemy.collision?.allowPlayerOverlap===true)return false;
     const playerBody=playerBodyAt(position),current=enemy.bodyCircle,next=enemyBodyAt(enemy,Number(x),Number(y));
-    return blocksProgress(circlePenetration(current,playerBody),circlePenetration(next,playerBody));
+    return bodyMoveBlocks(current,next,playerBody);
   }
   function containsPoint(id,x,y){return pointInCircle(getEnemy(id)?.hurtCircle,x,y)}
   function findEnemyIdAtPoint(x,y){for(const enemy of getActiveEnemies())if(pointInCircle(enemy.hurtCircle,x,y))return enemy.id;return null}
@@ -103,8 +115,8 @@
       const next=playerBodyAt({x:nx,y:ny});
       const current=Number.isFinite(trackedPlayer.x)&&Number.isFinite(trackedPlayer.y)?playerBodyAt(trackedPlayer):next;
       const currentPen=holePenetration(current),nextPen=holePenetration(next);
-      if(blocksProgress(currentPen,nextPen))return false;
-      const escapeOptions=currentPen>SLIDE_SLOP&&nextPen<currentPen-SLIDE_SLOP?{...options,allowHole:true}:options;
+      if(blocksProgress(currentPen,nextPen,HOLE_SLIDE_SLOP))return false;
+      const escapeOptions=currentPen>HOLE_SLIDE_SLOP&&nextPen<currentPen-HOLE_SLIDE_SLOP?{...options,allowHole:true}:options;
       const applied=FIELD.trackOccupant?FIELD.trackOccupant(key,nx,ny,escapeOptions):true;
       if(applied){trackedPlayer.x=nx;trackedPlayer.y=ny}return applied;
     }
