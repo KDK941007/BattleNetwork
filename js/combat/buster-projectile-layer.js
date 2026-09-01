@@ -17,6 +17,23 @@
   layer.style.zIndex='6';
   battle.appendChild(layer);
 
+  const effectLayer=document.createElement('div');
+  effectLayer.id='chipTransientEffectLayer';
+  effectLayer.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;contain:layout paint style;';
+  scene.appendChild(effectLayer);
+  const transientEffectClasses=new Set(['slash','boom','healPulse']);
+  const effectObserver=new MutationObserver(records=>{
+    for(const record of records){
+      for(const node of record.addedNodes){
+        if(node.nodeType!==1||node===effectLayer||node.parentNode!==scene)continue;
+        let matched=false;
+        for(const cls of transientEffectClasses){if(node.classList?.contains(cls)){matched=true;break}}
+        if(matched)effectLayer.appendChild(node);
+      }
+    }
+  });
+  effectObserver.observe(scene,{childList:true});
+
   const config=Object.freeze({
     normal:Object.freeze({width:30,height:15,border:'2px solid rgba(205,248,255,.9)',background:'#66ddff'}),
     charged:Object.freeze({width:52,height:26,border:'2px solid rgba(255,220,210,.92)',background:'#ff514e'}),
