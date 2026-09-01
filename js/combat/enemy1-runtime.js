@@ -1,5 +1,6 @@
 (()=>{
   const DEFAULTS=window.BattleNetworkCombatDefaults;
+  const NAV=window.BattleNetworkEnemyNavigation;
   if(!DEFAULTS)throw new Error('BattleNetworkEnemy1Runtime: combat defaults are not loaded.');
   const attackLocks=new Set();
   const perception=new Map();
@@ -7,6 +8,7 @@
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
   const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
+  const NAVIGATION_POLICY=NAV?.POLICY||Object.freeze({PATHFIND_ON_BLOCK:'PATHFIND_ON_BLOCK',DIRECT:'DIRECT'});
   const ENEMY1_DEFAULTS=Object.freeze({maxHp:40,hitBoxWidthTiles:1.32,hitBoxHeightTiles:1.32,hitBoxOffsetXTiles:0,hitBoxOffsetYTiles:0,visualWidthPx:116,visualHeightPx:140,visualOffsetXPx:0,visualOffsetYPx:-29,allowPlayerOverlap:false,allowEnemyOverlap:false});
   const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
   const ENEMY1_OVERRIDES=Object.freeze({perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
@@ -14,6 +16,7 @@
   const enemyConfig=Object.freeze({
     chasePolicy:CHASE_POLICY.OVERLAP_COOLDOWN_CHASE,
     chaseDistanceMode:CHASE_DISTANCE_MODE.APPROACH,
+    navigationPolicy:NAV?.DEFAULT_POLICY||NAVIGATION_POLICY.PATHFIND_ON_BLOCK,
     perceptionStartTiles:useOrDefault(ENEMY1_OVERRIDES.perceptionStartTiles,DEFAULTS.enemyPerceptionStartTiles),
     perceptionReleaseTiles:useOrDefault(ENEMY1_OVERRIDES.perceptionReleaseTiles,DEFAULTS.enemyPerceptionReleaseTiles),
     chaseRangeTiles:useOrDefault(ENEMY1_OVERRIDES.chaseRangeTiles,DEFAULTS.enemyChaseRangeTiles),
@@ -44,5 +47,5 @@
   function getNextAttackAt(enemyId){return nextAttackAt.get(enemyId)||0}
   function isAttackReady(enemyId,now=performance.now()){return now>=getNextAttackAt(enemyId)}
   function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId);nextAttackAt.delete(enemyId)}
-  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,ENEMY1_DEFAULTS,ATTACK_DEFAULTS,ENEMY1_OVERRIDES,patterns,getPattern,cyclePattern,getEnemyDefaults,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
+  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,NAVIGATION_POLICY,ENEMY1_DEFAULTS,ATTACK_DEFAULTS,ENEMY1_OVERRIDES,patterns,getPattern,cyclePattern,getEnemyDefaults,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
 })();
