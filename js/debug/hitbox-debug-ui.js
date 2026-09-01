@@ -6,7 +6,8 @@
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,SH=FIELD.WORLD_SIZE*PY*2,NS='http://www.w3.org/2000/svg';
   const LIMIT=Object.freeze({min:.1,max:2,step:.1});
   const OFFSET_STEP=.1;
-  let diameterTiles=1,playerOffsetTiles=0,enemyOffsetTiles=0;
+  const SELECTED=Object.freeze({diameterTiles:.7,playerOffsetTiles:0,enemyOffsetTiles:-.3});
+  let diameterTiles=SELECTED.diameterTiles,playerOffsetTiles=SELECTED.playerOffsetTiles,enemyOffsetTiles=SELECTED.enemyOffsetTiles;
   const svg=document.createElementNS(NS,'svg');
   svg.setAttribute('viewBox',`0 0 ${SW} ${SH}`);svg.dataset.testOnly='hitbox-debug-layer';
   svg.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;overflow:visible;pointer-events:none;z-index:30;display:none;`;
@@ -52,5 +53,5 @@
   modePanel?.append(playerOffsetRow,enemyOffsetRow);
 
   RUNTIME.subscribeDebug(sync);renderButton();
-  window.BattleNetworkHitboxDebug=Object.freeze({LIMIT,OFFSET_STEP,setEnabled,getEnabled,setDiameterTiles,adjustDiameter,getDiameterTiles,setPlayerOffsetTiles,setEnemyOffsetTiles,getPlayerOffsetTiles,getEnemyOffsetTiles});
+  window.BattleNetworkHitboxDebug=Object.freeze({LIMIT,OFFSET_STEP,SELECTED,setEnabled,getEnabled,setDiameterTiles,adjustDiameter,getDiameterTiles,setPlayerOffsetTiles,setEnemyOffsetTiles,getPlayerOffsetTiles,getEnemyOffsetTiles});
 })();
