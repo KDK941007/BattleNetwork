@@ -9,6 +9,9 @@
   });
   const DEFAULT_POLICY=POLICY.PATHFIND_ON_BLOCK;
   const EPS=.001;
+  const STEP=FIELD.TILE_SIZE*.5;
+  const NAV_COLS=Math.ceil(FIELD.WORLD_SIZE/STEP);
+  const NAV_ROWS=Math.ceil(FIELD.WORLD_SIZE/STEP);
   const NEIGHBORS=Object.freeze([
     Object.freeze({dr:-1,dc:0,cost:1}),Object.freeze({dr:1,dc:0,cost:1}),
     Object.freeze({dr:0,dc:-1,cost:1}),Object.freeze({dr:0,dc:1,cost:1}),
@@ -39,63 +42,93 @@
   }
   function canStandAt(enemyId,x,y,{ignoreEnemies=false}={}){
     const enemy=ENEMY.getEnemy(enemyId);
-    if(!enemy)return false;
+    if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
     const bounds=boundsAt(enemy,x,y);
     if(boundsTouchHole(bounds))return false;
     if(!ignoreEnemies&&boundsTouchEnemy(enemyId,bounds))return false;
     return true;
   }
+  function gridPoint(row,col){return{x:(col+.5)*STEP,y:(row+.5)*STEP}}
   function nodeKey(row,col){return `${row}:${col}`}
   function heuristic(a,b){return Math.hypot(a.row-b.row,a.col-b.col)}
+  function inside(row,col){return row>=0&&row<NAV_ROWS&&col>=0&&col<NAV_COLS}
+  function nodeFromWorld(x,y){return{row:Math.max(0,Math.min(NAV_ROWS-1,Math.floor(y/STEP))),col:Math.max(0,Math.min(NAV_COLS-1,Math.floor(x/STEP)))}}
   function reconstruct(came,current){
     const path=[];
     while(current){path.push(current);current=came.get(nodeKey(current.row,current.col))||null}
     path.reverse();
     return path;
   }
-  function nearestReachableTarget(enemyId,targetTile,startTile){
-    if(canStandAt(enemyId,...Object.values(FIELD.tileToWorldCenter(targetTile.row,targetTile.col))))return targetTile;
-    let best=null,bestScore=Infinity;
-    for(let radius=1;radius<=3;radius++){
+  function findNearestStandableNode(enemyId,position,{ignoreEnemies=false,maxRadius=8}={}){
+    const base=nodeFromWorld(position.x,position.y);
+    let best=null,bestDistance=Infinity;
+    for(let radius=0;radius<=maxRadius;radius++){
       for(let dr=-radius;dr<=radius;dr++)for(let dc=-radius;dc<=radius;dc++){
-        if(Math.max(Math.abs(dr),Math.abs(dc))!==radius)continue;
-        const row=targetTile.row+dr,col=targetTile.col+dc,tile=FIELD.getTile(row,col);if(!tile)continue;
-        const p=FIELD.tileToWorldCenter(row,col);if(!canStandAt(enemyId,p.x,p.y))continue;
-        const score=Math.hypot(row-targetTile.row,col-targetTile.col)+heuristic({row,col},startTile)*.001;
-        if(score<bestScore){bestScore=score;best=tile}
+        if(radius>0&&Math.max(Math.abs(dr),Math.abs(dc))!==radius)continue;
+        const row=base.row+dr,col=base.col+dc;if(!inside(row,col))continue;
+        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies}))continue;
+        const distance=Math.hypot(p.x-position.x,p.y-position.y);
+        if(distance<bestDistance){bestDistance=distance;best={row,col}}
       }
       if(best)return best;
     }
     return null;
   }
+  function canTraverse(enemyId,from,to,{ignoreEnemies=false}={}){
+    if(!from||!to)return false;
+    const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
+    if(distance<=EPS)return canStandAt(enemyId,to.x,to.y,{ignoreEnemies});
+    const samples=Math.max(1,Math.ceil(distance/(STEP*.35)));
+    for(let i=1;i<=samples;i++){
+      const t=i/samples,x=from.x+dx*t,y=from.y+dy*t;
+      if(!canStandAt(enemyId,x,y,{ignoreEnemies}))return false;
+    }
+    return true;
+  }
+  function smoothPath(enemyId,startPosition,points,options){
+    if(points.length<=1)return points;
+    const result=[];let anchor=startPosition,index=0;
+    while(index<points.length){
+      let chosen=index;
+      for(let i=points.length-1;i>=index;i--){if(canTraverse(enemyId,anchor,points[i],options)){chosen=i;break}}
+      const point=points[chosen];result.push(point);anchor=point;index=chosen+1;
+    }
+    return result;
+  }
   function findPath(enemyId,targetPosition,{ignoreEnemies=false}={}){
     const enemy=ENEMY.getEnemy(enemyId);if(!enemy||!targetPosition)return Object.freeze([]);
-    const start=FIELD.getTileAtWorld(enemy.x,enemy.y),requested=FIELD.getTileAtWorld(targetPosition.x,targetPosition.y);if(!start||!requested)return Object.freeze([]);
-    const target=nearestReachableTarget(enemyId,requested,start);if(!target)return Object.freeze([]);
-    const startNode={row:start.row,col:start.col},targetNode={row:target.row,col:target.col};
-    const open=[startNode],openKeys=new Set([nodeKey(startNode.row,startNode.col)]),came=new Map(),g=new Map([[nodeKey(startNode.row,startNode.col),0]]),f=new Map([[nodeKey(startNode.row,startNode.col),heuristic(startNode,targetNode)]]);
+    const startPosition={x:enemy.x,y:enemy.y};
+    const start=findNearestStandableNode(enemyId,startPosition,{ignoreEnemies,maxRadius:6});
+    const target=findNearestStandableNode(enemyId,targetPosition,{ignoreEnemies,maxRadius:10});
+    if(!start||!target)return Object.freeze([]);
+    const open=[start],openKeys=new Set([nodeKey(start.row,start.col)]),closed=new Set(),came=new Map();
+    const g=new Map([[nodeKey(start.row,start.col),0]]),f=new Map([[nodeKey(start.row,start.col),heuristic(start,target)]]);
     while(open.length){
       let bestIndex=0;for(let i=1;i<open.length;i++)if((f.get(nodeKey(open[i].row,open[i].col))??Infinity)<(f.get(nodeKey(open[bestIndex].row,open[bestIndex].col))??Infinity))bestIndex=i;
       const current=open.splice(bestIndex,1)[0],ck=nodeKey(current.row,current.col);openKeys.delete(ck);
-      if(current.row===targetNode.row&&current.col===targetNode.col){
+      if(closed.has(ck))continue;closed.add(ck);
+      if(current.row===target.row&&current.col===target.col){
         const nodes=reconstruct(came,current).slice(1);
-        return Object.freeze(nodes.map(node=>Object.freeze({...node,...FIELD.tileToWorldCenter(node.row,node.col)})));
+        const points=nodes.map(node=>Object.freeze({...node,...gridPoint(node.row,node.col)}));
+        const smoothed=smoothPath(enemyId,startPosition,points,{ignoreEnemies});
+        return Object.freeze(smoothed.map(point=>Object.freeze({...point})));
       }
       for(const n of NEIGHBORS){
-        const row=current.row+n.dr,col=current.col+n.dc,tile=FIELD.getTile(row,col);if(!tile)continue;
-        const p=FIELD.tileToWorldCenter(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies}))continue;
+        const row=current.row+n.dr,col=current.col+n.dc;if(!inside(row,col))continue;
+        const nk=nodeKey(row,col);if(closed.has(nk))continue;
+        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies}))continue;
         if(n.dr&&n.dc){
-          const a=FIELD.tileToWorldCenter(current.row+n.dr,current.col),b=FIELD.tileToWorldCenter(current.row,current.col+n.dc);
+          const a=gridPoint(current.row+n.dr,current.col),b=gridPoint(current.row,current.col+n.dc);
           if(!canStandAt(enemyId,a.x,a.y,{ignoreEnemies})||!canStandAt(enemyId,b.x,b.y,{ignoreEnemies}))continue;
         }
-        const nk=nodeKey(row,col),tentative=(g.get(ck)??Infinity)+n.cost;
+        const tentative=(g.get(ck)??Infinity)+n.cost;
         if(tentative>=(g.get(nk)??Infinity))continue;
-        came.set(nk,current);g.set(nk,tentative);f.set(nk,tentative+heuristic({row,col},targetNode));
+        came.set(nk,current);g.set(nk,tentative);f.set(nk,tentative+heuristic({row,col},target));
         if(!openKeys.has(nk)){open.push({row,col});openKeys.add(nk)}
       }
     }
     return Object.freeze([]);
   }
 
-  window.BattleNetworkEnemyNavigation=Object.freeze({POLICY,DEFAULT_POLICY,canStandAt,findPath});
+  window.BattleNetworkEnemyNavigation=Object.freeze({POLICY,DEFAULT_POLICY,STEP,canStandAt,canTraverse,findPath});
 })();
