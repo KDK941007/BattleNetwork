@@ -22,6 +22,7 @@
   const clampCol = col => clamp(Math.trunc(col), 0, GRID_COLS - 1);
   const clampRow = row => clamp(Math.trunc(row), 0, GRID_ROWS - 1);
   const terrainValues = new Set(Object.values(TERRAIN));
+  const occupantTiles = new Map();
 
   const tiles = Array.from({ length: GRID_ROWS }, (_, row) =>
     Array.from({ length: GRID_COLS }, (_, col) => ({
@@ -55,12 +56,64 @@
     return getTile(row, col);
   }
 
+  function emitTerrainChange(tile, previousTerrain) {
+    if (!tile || previousTerrain === tile.currentTerrain) return;
+    window.dispatchEvent(new CustomEvent('battlenetwork:terrainchange', {
+      detail: Object.freeze({
+        row: tile.row,
+        col: tile.col,
+        previousTerrain,
+        terrain: tile.currentTerrain
+      })
+    }));
+  }
+
   function setTerrain(row, col, terrain) {
     const tile = getTile(row, col);
     if (!tile || !terrainValues.has(terrain)) return null;
+    const previousTerrain = tile.currentTerrain;
     tile.currentTerrain = terrain;
     tile.walkable = terrain !== TERRAIN.HOLE;
+    emitTerrainChange(tile, previousTerrain);
     return tile;
+  }
+
+  function canOccupyWorld(x, y, options = {}) {
+    const tile = getTileAtWorld(x, y);
+    if (!tile) return false;
+    if (options.allowHole === true) return true;
+    return tile.currentTerrain !== TERRAIN.HOLE;
+  }
+
+  function trackOccupant(occupantId, x, y, options = {}) {
+    if (!occupantId || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const nextTile = getTileAtWorld(x, y);
+    if (!nextTile) return false;
+    if (nextTile.currentTerrain === TERRAIN.HOLE && options.allowHole !== true) return false;
+
+    const key = String(occupantId);
+    const previous = occupantTiles.get(key) || null;
+    const changedTile = !previous || previous.row !== nextTile.row || previous.col !== nextTile.col;
+    if (changedTile && previous) {
+      const previousTile = getTile(previous.row, previous.col);
+      if (previousTile?.currentTerrain === TERRAIN.CRACKED) {
+        setTerrain(previousTile.row, previousTile.col, TERRAIN.HOLE);
+      }
+    }
+    occupantTiles.set(key, Object.freeze({ row: nextTile.row, col: nextTile.col }));
+    return true;
+  }
+
+  function untrackOccupant(occupantId) {
+    if (!occupantId) return false;
+    return occupantTiles.delete(String(occupantId));
+  }
+
+  function resetTerrain() {
+    forEachTile(tile => {
+      if (tile.currentTerrain !== tile.baseTerrain) setTerrain(tile.row, tile.col, tile.baseTerrain);
+    });
+    occupantTiles.clear();
   }
 
   function tileToWorldBounds(row, col) {
@@ -111,6 +164,10 @@
     getTile,
     getTileAtWorld,
     setTerrain,
+    canOccupyWorld,
+    trackOccupant,
+    untrackOccupant,
+    resetTerrain,
     tileToWorldBounds,
     tileToWorldCenter,
     toWorldDistance,
