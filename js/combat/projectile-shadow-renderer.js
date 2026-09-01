@@ -27,8 +27,15 @@
     bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
     bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
 
+    // キャノンだけ巨大scene直下から分離し、既存の投射物専用レイヤーへ移す。
+    // 座標系はbusterProjectileLayer側でscene transformと同期済みなので、
+    // game.jsの弾座標・弾速・射程・当たり判定はそのまま維持できる。
+    if(resolvedKind==='cannon'){
+      const projectileLayer=document.getElementById('busterProjectileLayer');
+      if(projectileLayer&&bullet.parentElement!==projectileLayer)projectileLayer.appendChild(bullet);
+    }
+
     // iPhone Safariの描画停止対策として、プレイヤー弾は床影DOMを追加しない。
-    // 以前はキャノンだけ巨大なblur床影を都度生成しており、バルカンとの差分になっていた。
     tracked.set(bullet,{shadow:null,config});
     return true;
   }
