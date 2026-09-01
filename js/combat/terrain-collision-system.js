@@ -102,8 +102,10 @@
       const nx=Number(x),ny=Number(y);if(!Number.isFinite(nx)||!Number.isFinite(ny))return false;
       const next=playerBodyAt({x:nx,y:ny});
       const current=Number.isFinite(trackedPlayer.x)&&Number.isFinite(trackedPlayer.y)?playerBodyAt(trackedPlayer):next;
-      if(blocksProgress(holePenetration(current),holePenetration(next)))return false;
-      const applied=FIELD.trackOccupant?FIELD.trackOccupant(key,nx,ny,options):true;
+      const currentPen=holePenetration(current),nextPen=holePenetration(next);
+      if(blocksProgress(currentPen,nextPen))return false;
+      const escapeOptions=currentPen>SLIDE_SLOP&&nextPen<currentPen-SLIDE_SLOP?{...options,allowHole:true}:options;
+      const applied=FIELD.trackOccupant?FIELD.trackOccupant(key,nx,ny,escapeOptions):true;
       if(applied){trackedPlayer.x=nx;trackedPlayer.y=ny}return applied;
     }
     return FIELD.trackOccupant?FIELD.trackOccupant(key,x,y,options):true;
