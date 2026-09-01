@@ -45,6 +45,9 @@
   let width=0,height=0,px=0,py=0,visible=false,hideGeneration=0,activeShape='';
   let lastRangeType='',lastPolygonGeometry='',lastPolygonTransform='',lastEllipseGeometry='',lastEllipseTransform='';
 
+  function perfMeasure(name,fn){const perf=window.BattleNetworkPerfTest;return perf?.measure?perf.measure(name,fn):fn()}
+  function perfTrace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
+
   function refreshProjection(){
     const nextWidth=scene.clientWidth,nextHeight=scene.clientHeight;
     if(!nextWidth||!nextHeight)return false;
@@ -60,8 +63,8 @@
 
   function project(point){return{x:(point.x-point.y)*px+width/2,y:(point.x+point.y)*py}}
   function setActiveShape(next){if(activeShape===next)return;activeShape=next;polygon.style.display=next==='polygon'?'':'none';ellipse.style.display=next==='ellipse'?'':'none'}
-  function applyHidden(){if(!visible)return;svg.classList.remove('show');visible=false}
-  function hide(){const generation=++hideGeneration;queueMicrotask(()=>{if(generation===hideGeneration)applyHidden()})}
+  function applyHidden(){if(!visible)return;svg.classList.remove('show');visible=false;perfTrace('range:hidden')}
+  function hide(){const generation=++hideGeneration;perfMeasure('range hide',()=>queueMicrotask(()=>{if(generation===hideGeneration)applyHidden()}))}
 
   function renderForwardShape(shape){
     if(!shape.origin||!shape.direction||!Number.isFinite(shape.lengthWorld)||!Number.isFinite(shape.widthWorld))return false;
@@ -89,14 +92,16 @@
   }
 
   function render(shape){
-    ++hideGeneration;
-    if(!shape)return applyHidden();
-    if((!width||!height)&&!refreshProjection())return applyHidden();
-    const rendered=shape.rangeTypeId==='CIRCLE'?renderCircle(shape):renderForwardShape(shape);
-    if(!rendered)return applyHidden();
-    const rangeType=(shape.rangeTypeId||'').toLowerCase();
-    if(rangeType!==lastRangeType){polygon.dataset.rangeType=rangeType;ellipse.dataset.rangeType=rangeType;lastRangeType=rangeType}
-    if(!visible){svg.classList.add('show');visible=true}
+    return perfMeasure('range render',()=>{
+      ++hideGeneration;
+      if(!shape)return applyHidden();
+      if((!width||!height)&&!refreshProjection())return applyHidden();
+      const rendered=shape.rangeTypeId==='CIRCLE'?renderCircle(shape):renderForwardShape(shape);
+      if(!rendered)return applyHidden();
+      const rangeType=(shape.rangeTypeId||'').toLowerCase();
+      if(rangeType!==lastRangeType){polygon.dataset.rangeType=rangeType;ellipse.dataset.rangeType=rangeType;lastRangeType=rangeType}
+      if(!visible){svg.classList.add('show');visible=true;perfTrace('range:shown',rangeType)}
+    })
   }
 
   refreshProjection();
