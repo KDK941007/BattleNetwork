@@ -26,6 +26,22 @@
 
     function canStart(){const enemy=ENEMY.getEnemy(enemyId);return !!enemy&&!enemy.isDefeated&&!running}
     function start(){if(!canStart())return false;running=true;return true}
+    function terrainAllowsHitBox(enemy,nextX){
+      if(!FIELD.canOccupyWorld)return true;
+      const bounds=enemy?.bounds;
+      if(!bounds)return FIELD.canOccupyWorld(nextX,originY);
+      const offsetX=bounds.centerX-enemy.x;
+      const offsetY=bounds.centerY-enemy.y;
+      const halfW=bounds.width/2;
+      const halfH=bounds.height/2;
+      const centerX=nextX+offsetX;
+      const centerY=originY+offsetY;
+      const leadX=centerX+direction*halfW;
+      const inset=Math.min(1,Math.max(0,halfH*.02));
+      return FIELD.canOccupyWorld(leadX,centerY-halfH+inset)&&
+        FIELD.canOccupyWorld(leadX,centerY)&&
+        FIELD.canOccupyWorld(leadX,centerY+halfH-inset);
+    }
     function update(_now,dt){
       if(!running)return;
       const enemy=ENEMY.getEnemy(enemyId);
@@ -33,6 +49,7 @@
       let nextX=enemy.x+direction*speedWorld*dt;
       if(nextX>=maxX){nextX=maxX;direction=-1}
       else if(nextX<=minX){nextX=minX;direction=1}
+      if(!terrainAllowsHitBox(enemy,nextX)){direction*=-1;return}
       const result=ENEMY.setPosition(enemyId,nextX,originY);
       if(!result?.applied&&result?.reason==='TERRAIN_BLOCKED')direction*=-1;
     }
