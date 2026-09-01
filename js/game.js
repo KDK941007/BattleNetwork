@@ -38,7 +38,7 @@ function getPlayerBounds(){return getPlayerBoundsAt(s.x,s.y)}
 function playerContainsPoint(x,y){if(!Number.isFinite(x)||!Number.isFinite(y))return false;let b=getPlayerBounds();return x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom}
 function tryPlayerPosition(x,y){const nx=clamp(x,0,WORLD),ny=clamp(y,0,WORLD);if(ENEMY.isPlayerBoundsBlocked?.(getPlayerBoundsAt(nx,ny)))return false;if(FIELD.trackOccupant&&!FIELD.trackOccupant('player',nx,ny))return false;s.x=nx;s.y=ny;return true}
 function tryPlayerDashPosition(x,y){const nx=clamp(x,0,WORLD),ny=clamp(y,0,WORLD);if(FIELD.trackOccupant&&!FIELD.trackOccupant('player',nx,ny))return false;s.x=nx;s.y=ny;return true}
-function movePlayerWithCollision(dx,dy){if(dx){const nx=clamp(s.x+dx,0,WORLD);tryPlayerPosition(nx,s.y)}if(dy){const ny=clamp(s.y+dy,0,WORLD);tryPlayerPosition(s.x,ny)}}
+function movePlayerWithCollision(dx,dy){if(!dx&&!dy)return;const targetX=clamp(s.x+dx,0,WORLD),targetY=clamp(s.y+dy,0,WORLD);if(tryPlayerPosition(targetX,targetY))return;if(dx){const nx=clamp(s.x+dx,0,WORLD);tryPlayerPosition(nx,s.y)}if(dy){const ny=clamp(s.y+dy,0,WORLD);tryPlayerPosition(s.x,ny)}}
 function resolveDashEndCollision(){ENEMY.pushBlockingEnemiesFromBounds?.(getPlayerBounds(),{x:s.dvx,y:s.dvy})}
 function buildChipRange(ch,origin={x:s.x,y:s.y},direction={x:s.dx,y:s.dy}){return RANGE.createFromChip(ch,{origin,direction})}
 function buildBombRange(ch,origin={x:s.x,y:s.y},direction={x:s.dx,y:s.dy}){let dir=RANGE.normalizeDirection(direction),throwTiles=Number(ch?.throwDistanceTiles),distance=FIELD.toWorldDistance(Number.isFinite(throwTiles)?throwTiles:3),center={x:origin.x+dir.x*distance,y:origin.y+dir.y*distance};return RANGE.createCircle(center,ch?.radiusTiles??.75)}
