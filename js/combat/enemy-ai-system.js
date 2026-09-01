@@ -19,34 +19,16 @@
   function normalizeId(value){return String(value||'').trim()}
   function normalizeChannel(value){return (normalizeId(value)||'ATTACK').toUpperCase()}
   function assignmentKey(enemyId,channel){return `${enemyId}:${channel}`}
-  function uiPaused(){
-    return customModal?.classList.contains('open')||settingsModal?.classList.contains('open')||chipDetailModal?.classList.contains('open')||editTopBar?.classList.contains('open');
-  }
+  function uiPaused(){return customModal?.classList.contains('open')||settingsModal?.classList.contains('open')||chipDetailModal?.classList.contains('open')||editTopBar?.classList.contains('open')}
   function isSystemPaused(){return pauseReasons.size>0||uiPaused()||HEALTH.getSnapshot().isDefeated}
-  function call(controller,method,...args){
-    try{return typeof controller?.[method]==='function'?controller[method](...args):undefined}
-    catch(error){console.error(`BattleNetworkEnemyAI controller ${method} failed.`,error);return undefined}
-  }
+  function call(controller,method,...args){try{return typeof controller?.[method]==='function'?controller[method](...args):undefined}catch(error){console.error(`BattleNetworkEnemyAI controller ${method} failed.`,error);return undefined}}
   function isBusy(assignment){return call(assignment?.controller,'isBusy')===true}
-  function cancelAssignment(assignment,now=performance.now()){
-    if(!assignment||!isBusy(assignment))return false;
-    call(assignment.controller,'cancel',now);
-    return true;
-  }
-  function destroyByKey(key){
-    const assignment=assignments.get(key);
-    if(!assignment)return false;
-    cancelAssignment(assignment);
-    call(assignment.controller,'destroy');
-    assignments.delete(key);
-    return true;
-  }
+  function cancelAssignment(assignment,now=performance.now()){if(!assignment||!isBusy(assignment))return false;call(assignment.controller,'cancel',now);return true}
+  function destroyByKey(key){const assignment=assignments.get(key);if(!assignment)return false;cancelAssignment(assignment);call(assignment.controller,'destroy');assignments.delete(key);return true}
   function destroyAssignment(enemyId,channel=null){
-    if(channel!==null)return destroyByKey(assignmentKey(enemyId,normalizeChannel(channel));
+    if(channel!==null)return destroyByKey(assignmentKey(enemyId,normalizeChannel(channel)));
     let removed=false;
-    for(const [key,assignment] of [...assignments.entries()]){
-      if(assignment.enemyId===enemyId){destroyByKey(key);removed=true}
-    }
+    for(const [key,assignment] of [...assignments.entries()])if(assignment.enemyId===enemyId){destroyByKey(key);removed=true}
     return removed;
   }
   function cleanupMissingEnemies(){for(const [key,assignment] of [...assignments.entries()])if(!ENEMY.getEnemy(assignment.enemyId))destroyByKey(key)}
