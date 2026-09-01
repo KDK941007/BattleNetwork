@@ -1,5 +1,7 @@
 (()=>{
-  const enabled=true;
+  // 非常時の性能調査専用。通常プレイでは計測処理自体を起動しない。
+  // 必要時のみ URL に ?perfTest=1（既存クエリがある場合は &perfTest=1）を付けて有効化する。
+  const enabled=new URLSearchParams(location.search).get('perfTest')==='1';
   if(!enabled)return;
 
   const battle=document.getElementById('battle'),scene=document.getElementById('scene'),A=document.getElementById('A'),queue=document.getElementById('queue'),customFill=document.getElementById('customFill');
