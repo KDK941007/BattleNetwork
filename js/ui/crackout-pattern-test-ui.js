@@ -2,20 +2,19 @@
   const FIELD=window.BattleNetworkField;
   const PLAYER=window.BattleNetworkPlayer;
   const ENEMY=window.BattleNetworkEnemy;
-  const data=window.BattleNetworkData||{};
+  const COMBAT_RANGE=window.BattleNetworkCombatRange;
   const battle=document.getElementById('battle');
   const scene=document.getElementById('scene');
   const playerEl=document.getElementById('player');
   const arrowEl=document.getElementById('arrow');
   const aButton=document.getElementById('A');
   const queue=document.getElementById('queue');
-  if(!FIELD||!PLAYER||!ENEMY||!battle||!scene||!playerEl||!arrowEl||!aButton||!queue)return;
+  if(!FIELD||!PLAYER||!ENEMY||!COMBAT_RANGE||!battle||!scene||!playerEl||!arrowEl||!aButton||!queue)return;
 
   const PX=.72,PY=.36;
   const WORLD=FIELD.WORLD_SIZE;
   const TILE=FIELD.TILE_SIZE;
   const SW=WORLD*PX*2;
-  const STARTUP_SEC=Number(data.CHIP_TIMING_DEFAULTS?.startupDelaySec) || .10;
   const DESCRIPTION='プレイヤー座標＋向き×1マスの座標が属するマスを使用前から常時プレビュー';
   const TERRAIN_LABEL=Object.freeze({
     [FIELD.TERRAIN.NORMAL]:'通常',
@@ -23,7 +22,8 @@
     [FIELD.TERRAIN.HOLE]:'穴'
   });
   let lastTileKey='';
-  let pressSnapshot=null;
+  let pendingTile=null;
+  let lastSeenAttackToken=COMBAT_RANGE.getLastAttackContext?.()?.shotToken??null;
   const terrainVisuals=new Map();
 
   const wrap=document.createElement('div');
@@ -87,7 +87,6 @@
   }
 
   function updatePreview(){placePreview(getTarget(),false)}
-
   function tileKey(tile){return `${tile.row}:${tile.col}`}
 
   function ensureTerrainVisual(tile){
@@ -99,9 +98,9 @@
     const crack=document.createElementNS('http://www.w3.org/2000/svg','path');
     svg.dataset.crackoutTerrain=key;
     svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
-    svg.style.cssText=`position:absolute;width:${w}px;height:${h}px;left:0;top:0;z-index:5;pointer-events:none;opacity:1;contain:layout paint style;`;
+    svg.style.cssText=`position:absolute;width:${w}px;height:${h}px;left:0;top:0;z-index:3;pointer-events:none;opacity:1;contain:layout paint style;`;
     base.setAttribute('d',`M ${w/2} 0 L ${w} ${h/2} L ${w/2} ${h} L 0 ${h/2} Z`);
-    crack.setAttribute('d',`M ${w*.50} ${h*.12} L ${w*.43} ${h*.43} L ${w*.58} ${h*.53} L ${w*.46} ${h*.88} M ${w*.43} ${h*.43} L ${w*.27} ${h*.56} M ${w*.58} ${h*.53} L ${w*.75} ${h*.65}`);
+    crack.setAttribute('d',`M ${w*.50} ${h*.10} L ${w*.42} ${h*.42} L ${w*.58} ${h*.54} L ${w*.46} ${h*.90} M ${w*.42} ${h*.42} L ${w*.24} ${h*.58} M ${w*.58} ${h*.54} L ${w*.78} ${h*.68}`);
     crack.setAttribute('fill','none');
     crack.setAttribute('stroke-linecap','round');
     crack.setAttribute('stroke-linejoin','round');
@@ -126,16 +125,16 @@
     }
     const entry=ensureTerrainVisual(tile);
     if(terrain===FIELD.TERRAIN.CRACKED){
-      entry.base.setAttribute('fill','rgba(102,74,48,.58)');
-      entry.base.setAttribute('stroke','rgba(255,199,120,.95)');
-      entry.base.setAttribute('stroke-width','4');
-      entry.crack.setAttribute('stroke','rgba(255,239,203,.98)');
-      entry.crack.setAttribute('stroke-width','7');
+      entry.base.setAttribute('fill','rgba(120,72,38,.86)');
+      entry.base.setAttribute('stroke','rgba(255,190,92,1)');
+      entry.base.setAttribute('stroke-width','7');
+      entry.crack.setAttribute('stroke','rgba(255,248,214,1)');
+      entry.crack.setAttribute('stroke-width','9');
       entry.crack.style.opacity='1';
     }else{
-      entry.base.setAttribute('fill','rgba(2,5,10,.94)');
-      entry.base.setAttribute('stroke','rgba(90,129,154,.9)');
-      entry.base.setAttribute('stroke-width','4');
+      entry.base.setAttribute('fill','rgba(0,2,5,.98)');
+      entry.base.setAttribute('stroke','rgba(72,214,255,1)');
+      entry.base.setAttribute('stroke-width','8');
       entry.crack.style.opacity='0';
     }
   }
@@ -165,28 +164,28 @@
   }
 
   function firstQueuedName(){return queue.querySelector('.q:not(.empty)')?.textContent?.trim()||''}
-  function queuedCount(){return queue.querySelectorAll('.q:not(.empty)').length}
+
+  function syncAttackTrigger(){
+    const context=COMBAT_RANGE.getLastAttackContext?.();
+    const token=context?.shotToken??null;
+    if(token===null||token===lastSeenAttackToken)return;
+    lastSeenAttackToken=token;
+    if(context?.sourceId!=='CHIP_EXE4_S106'||!pendingTile)return;
+    const tile=pendingTile;
+    pendingTile=null;
+    placePreview(tile,true);
+    applyCrackOut(tile);
+    updatePreview();
+  }
 
   aButton.addEventListener('pointerdown',()=>{
-    pressSnapshot={
-      firstName:firstQueuedName(),
-      count:queuedCount(),
-      tile:getTarget()
-    };
-    queueMicrotask(()=>{
-      const snapshot=pressSnapshot;
-      pressSnapshot=null;
-      if(!snapshot||snapshot.firstName!=='クラックアウト')return;
-      if(queuedCount()>=snapshot.count)return;
-      placePreview(snapshot.tile,true);
-      setTimeout(()=>{
-        applyCrackOut(snapshot.tile);
-        updatePreview();
-      },Math.max(0,STARTUP_SEC*1000));
-    });
+    pendingTile=firstQueuedName()==='クラックアウト'?getTarget():null;
   },{capture:true});
 
-  const observer=new MutationObserver(updatePreview);
+  const observer=new MutationObserver(()=>{
+    syncAttackTrigger();
+    updatePreview();
+  });
   observer.observe(playerEl,{attributes:true,attributeFilter:['style']});
   observer.observe(arrowEl,{attributes:true,attributeFilter:['style']});
 
