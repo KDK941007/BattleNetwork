@@ -42,139 +42,36 @@
     return true;
   }
   function destroyAssignment(enemyId,channel=null){
-    if(channel!==null)return destroyByKey(assignmentKey(enemyId,normalizeChannel(channel)));
+    if(channel!==null)return destroyByKey(assignmentKey(enemyId,normalizeChannel(channel));
     let removed=false;
     for(const [key,assignment] of [...assignments.entries()]){
       if(assignment.enemyId===enemyId){destroyByKey(key);removed=true}
     }
     return removed;
   }
-  function cleanupMissingEnemies(){
-    for(const [key,assignment] of [...assignments.entries()])if(!ENEMY.getEnemy(assignment.enemyId))destroyByKey(key);
-  }
-  function cancelAll(now=performance.now()){
-    let cancelled=0;
-    for(const assignment of assignments.values())if(cancelAssignment(assignment,now))cancelled++;
-    return cancelled;
-  }
-  function cancelChannel(channel,now=performance.now()){
-    const normalized=normalizeChannel(channel);
-    let cancelled=0;
-    for(const assignment of assignments.values())if(assignment.channel===normalized&&cancelAssignment(assignment,now))cancelled++;
-    return cancelled;
-  }
-  function registerBehavior(behaviorId,factory,options={}){
-    const id=normalizeId(behaviorId);
-    if(!id)throw new Error('BattleNetworkEnemyAI: behaviorId is required.');
-    if(typeof factory!=='function')throw new Error(`BattleNetworkEnemyAI: factory for ${id} must be a function.`);
-    if(registry.has(id))throw new Error(`BattleNetworkEnemyAI: behavior ${id} is already registered.`);
-    const channel=normalizeChannel(options?.channel);
-    registry.set(id,Object.freeze({factory,channel}));
-    return id;
-  }
-  function assignBehavior(enemyId,behaviorId,config={}){
-    const enemy=ENEMY.getEnemy(enemyId);
-    const id=normalizeId(behaviorId);
-    if(!enemy)return Object.freeze({ok:false,reason:'ENEMY_NOT_FOUND',enemyId,behaviorId:id||null,channel:null});
-    const registered=registry.get(id);
-    if(!registered)return Object.freeze({ok:false,reason:'BEHAVIOR_NOT_REGISTERED',enemyId,behaviorId:id||null,channel:null});
-    const {factory,channel}=registered;
-    destroyAssignment(enemyId,channel);
-    let controller;
-    try{controller=factory(Object.freeze({enemyId,channel,config:Object.freeze({...config})}))}
-    catch(error){console.error(`BattleNetworkEnemyAI: failed to create behavior ${id}.`,error);return Object.freeze({ok:false,reason:'BEHAVIOR_CREATE_FAILED',enemyId,behaviorId:id,channel})}
-    if(!controller||typeof controller!=='object')return Object.freeze({ok:false,reason:'INVALID_CONTROLLER',enemyId,behaviorId:id,channel});
-    assignments.set(assignmentKey(enemyId,channel),{enemyId,behaviorId:id,channel,controller});
-    return Object.freeze({ok:true,reason:null,enemyId,behaviorId:id,channel});
-  }
-  function clearAssignments(){
-    cancelAll();
-    for(const key of [...assignments.keys()])destroyByKey(key);
-    return getSnapshot();
-  }
-  function pause(reason='MANUAL'){
-    const key=normalizeId(reason)||'MANUAL';
-    pauseReasons.add(key);
-    cancelAll();
-    return getSnapshot();
-  }
-  function resume(reason='MANUAL'){
-    const key=normalizeId(reason)||'MANUAL';
-    pauseReasons.delete(key);
-    return getSnapshot();
-  }
-  function setChannelEnabled(channel,enabled=true){
-    const key=normalizeChannel(channel);
-    if(enabled)disabledChannels.delete(key);
-    else{disabledChannels.add(key);cancelChannel(key)}
-    return getSnapshot();
-  }
+  function cleanupMissingEnemies(){for(const [key,assignment] of [...assignments.entries()])if(!ENEMY.getEnemy(assignment.enemyId))destroyByKey(key)}
+  function cancelAll(now=performance.now()){let cancelled=0;for(const assignment of assignments.values())if(cancelAssignment(assignment,now))cancelled++;return cancelled}
+  function cancelChannel(channel,now=performance.now()){const normalized=normalizeChannel(channel);let cancelled=0;for(const assignment of assignments.values())if(assignment.channel===normalized&&cancelAssignment(assignment,now))cancelled++;return cancelled}
+  function registerBehavior(behaviorId,factory,options={}){const id=normalizeId(behaviorId);if(!id)throw new Error('BattleNetworkEnemyAI: behaviorId is required.');if(typeof factory!=='function')throw new Error(`BattleNetworkEnemyAI: factory for ${id} must be a function.`);if(registry.has(id))throw new Error(`BattleNetworkEnemyAI: behavior ${id} is already registered.`);const channel=normalizeChannel(options?.channel);registry.set(id,Object.freeze({factory,channel}));return id}
+  function assignBehavior(enemyId,behaviorId,config={}){const enemy=ENEMY.getEnemy(enemyId),id=normalizeId(behaviorId);if(!enemy)return Object.freeze({ok:false,reason:'ENEMY_NOT_FOUND',enemyId,behaviorId:id||null,channel:null});const registered=registry.get(id);if(!registered)return Object.freeze({ok:false,reason:'BEHAVIOR_NOT_REGISTERED',enemyId,behaviorId:id||null,channel:null});const {factory,channel}=registered;destroyAssignment(enemyId,channel);let controller;try{controller=factory(Object.freeze({enemyId,channel,config:Object.freeze({...config})}))}catch(error){console.error(`BattleNetworkEnemyAI: failed to create behavior ${id}.`,error);return Object.freeze({ok:false,reason:'BEHAVIOR_CREATE_FAILED',enemyId,behaviorId:id,channel})}if(!controller||typeof controller!=='object')return Object.freeze({ok:false,reason:'INVALID_CONTROLLER',enemyId,behaviorId:id,channel});assignments.set(assignmentKey(enemyId,channel),{enemyId,behaviorId:id,channel,controller});return Object.freeze({ok:true,reason:null,enemyId,behaviorId:id,channel})}
+  function clearAssignments(){cancelAll();for(const key of [...assignments.keys()])destroyByKey(key);return getSnapshot()}
+  function pause(reason='MANUAL'){const key=normalizeId(reason)||'MANUAL';pauseReasons.add(key);cancelAll();return getSnapshot()}
+  function resume(reason='MANUAL'){const key=normalizeId(reason)||'MANUAL';pauseReasons.delete(key);return getSnapshot()}
+  function setChannelEnabled(channel,enabled=true){const key=normalizeChannel(channel);if(enabled)disabledChannels.delete(key);else{disabledChannels.add(key);cancelChannel(key)}return getSnapshot()}
   function isChannelEnabled(channel){return !disabledChannels.has(normalizeChannel(channel))}
-  function getSnapshot(){
-    const activeEnemyIds=new Set();
-    const activeChannels=[];
-    for(const assignment of assignments.values()){
-      if(!isBusy(assignment))continue;
-      activeEnemyIds.add(assignment.enemyId);
-      activeChannels.push(Object.freeze({enemyId:assignment.enemyId,channel:assignment.channel,behaviorId:assignment.behaviorId}));
-    }
-    return Object.freeze({
-      schedulerPolicy:'INDEPENDENT_PER_ENEMY_CHANNEL',
-      running,
-      paused:isSystemPaused(),
-      pauseReasons:Object.freeze([...pauseReasons]),
-      disabledChannels:Object.freeze([...disabledChannels]),
-      activeEnemyIds:Object.freeze([...activeEnemyIds]),
-      activeChannels:Object.freeze(activeChannels),
-      assignments:Object.freeze([...assignments.values()].map(item=>Object.freeze({enemyId:item.enemyId,behaviorId:item.behaviorId,channel:item.channel}))),
-      registeredBehaviors:Object.freeze([...registry.entries()].map(([behaviorId,item])=>Object.freeze({behaviorId,channel:item.channel})))
-    });
-  }
-  function updateAssignment(assignment,now,dt){
-    const enemy=ENEMY.getEnemy(assignment.enemyId);
-    if(!enemy){destroyByKey(assignmentKey(assignment.enemyId,assignment.channel));return}
-    if(disabledChannels.has(assignment.channel)){
-      cancelAssignment(assignment,now);
-      return;
-    }
-
-    if(isBusy(assignment)){
-      call(assignment.controller,'update',now,dt);
-      return;
-    }
-
-    if(enemy.isDefeated)return;
-    if(call(assignment.controller,'canStart',now)!==true)return;
-    call(assignment.controller,'start',now);
-  }
+  function getSnapshot(){const activeEnemyIds=new Set(),activeChannels=[];for(const assignment of assignments.values()){if(!isBusy(assignment))continue;activeEnemyIds.add(assignment.enemyId);activeChannels.push(Object.freeze({enemyId:assignment.enemyId,channel:assignment.channel,behaviorId:assignment.behaviorId}))}return Object.freeze({schedulerPolicy:'INDEPENDENT_PER_ENEMY_CHANNEL',running,paused:isSystemPaused(),pauseReasons:Object.freeze([...pauseReasons]),disabledChannels:Object.freeze([...disabledChannels]),activeEnemyIds:Object.freeze([...activeEnemyIds]),activeChannels:Object.freeze(activeChannels),assignments:Object.freeze([...assignments.values()].map(item=>Object.freeze({enemyId:item.enemyId,behaviorId:item.behaviorId,channel:item.channel}))),registeredBehaviors:Object.freeze([...registry.entries()].map(([behaviorId,item])=>Object.freeze({behaviorId,channel:item.channel})))})}
+  function updateAssignment(assignment,now,dt){const enemy=ENEMY.getEnemy(assignment.enemyId);if(!enemy){destroyByKey(assignmentKey(assignment.enemyId,assignment.channel));return}if(disabledChannels.has(assignment.channel)){cancelAssignment(assignment,now);return}if(isBusy(assignment)){call(assignment.controller,'update',now,dt);return}if(enemy.isDefeated)return;if(call(assignment.controller,'canStart',now)!==true)return;call(assignment.controller,'start',now)}
   function loop(now){
     if(!running)return;
-    const dt=Math.min((now-lastFrame)/1000,.05);
-    lastFrame=now;
-    cleanupMissingEnemies();
-    if(isSystemPaused()){
-      cancelAll(now);
-      requestAnimationFrame(loop);
-      return;
-    }
+    window.BattleNetworkPerfTest?.heartbeat?.('enemyAI',now);
+    const dt=Math.min((now-lastFrame)/1000,.05);lastFrame=now;cleanupMissingEnemies();
+    if(isSystemPaused()){cancelAll(now);requestAnimationFrame(loop);return}
     for(const assignment of [...assignments.values()])updateAssignment(assignment,now,dt);
     requestAnimationFrame(loop);
   }
   function stop(){if(!running)return;running=false;cancelAll()}
   function start(){if(running)return;running=true;lastFrame=performance.now();requestAnimationFrame(loop)}
 
-  window.BattleNetworkEnemyAI=Object.freeze({
-    registerBehavior,
-    assignBehavior,
-    detachBehavior:destroyAssignment,
-    clearAssignments,
-    pause,
-    resume,
-    setChannelEnabled,
-    isChannelEnabled,
-    getSnapshot,
-    start,
-    stop
-  });
+  window.BattleNetworkEnemyAI=Object.freeze({registerBehavior,assignBehavior,detachBehavior:destroyAssignment,clearAssignments,pause,resume,setChannelEnabled,isChannelEnabled,getSnapshot,start,stop});
   requestAnimationFrame(loop);
 })();
