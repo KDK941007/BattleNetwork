@@ -6,16 +6,14 @@
   width:100%;
   height:100%;
   z-index:4;
-  display:block;
+  display:none;
   overflow:visible;
   pointer-events:none;
-  opacity:0;
-  will-change:opacity;
-  contain:layout paint style;
+  opacity:.45;
 }
 
-.battleRangeOverlay.show{opacity:.45}
-.bombTrajectoryOverlay.show{opacity:.55}
+.battleRangeOverlay.show,
+.bombTrajectoryOverlay.show{display:block}
 
 .battleRangeShape{
   vector-effect:non-scaling-stroke;
@@ -43,6 +41,7 @@
 
 .bombTrajectoryOverlay{
   z-index:5;
+  opacity:.55;
 }
 
 .bombTrajectoryPath{
@@ -53,10 +52,4 @@
   stroke-dasharray:12 8;
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 0 5px rgba(255,155,45,.42));
-}
-
-/* Chip-use effects stay inside their own paint/layout scope so startup/recovery does not invalidate the large battle scene. */
-.slash,.boom,.healPulse,.bullet.cannon{
-  will-change:transform,opacity;
-  contain:layout paint style;
 }
