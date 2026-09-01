@@ -54,3 +54,9 @@
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 0 5px rgba(255,155,45,.42));
 }
+
+/* Chip-use effects stay inside their own paint/layout scope so startup/recovery does not invalidate the large battle scene. */
+.slash,.boom,.healPulse,.bullet.cannon{
+  will-change:transform,opacity;
+  contain:layout paint style;
+}
