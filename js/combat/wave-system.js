@@ -1,7 +1,7 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/enemy-navigation.js?v=3','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=143','./js/combat/enemy1-movement.js?v=145','./js/combat/enemy1-shockwave.js?v=142','./js/ui/enemy1-pattern-test-ui.js?v=157','./js/debug/hitbox-debug-ui.js?v=1'];
+  const MODULES=['./js/combat/enemy-navigation.js?v=3','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=143','./js/combat/enemy1-movement.js?v=145','./js/combat/enemy1-shockwave.js?v=142','./js/ui/enemy1-pattern-test-ui.js?v=157','./js/debug/hitbox-debug-ui.js?v=2'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({testOnly:true,attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',movementBehaviorId:'ENEMY1_MOVEMENT',clearNoticeMs:1500,startNoticeMs:1500,spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),spreadDummyTiles:Object.freeze([Object.freeze({rowOffset:-1,colOffset:4}),Object.freeze({rowOffset:1,colOffset:4})]),spreadTestHp:999});
@@ -10,7 +10,7 @@
   function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
   function render(){notice.dataset.status=state.status;if(state.status==='CLEARING'||(state.status==='WAITING_CUSTOM'&&state.waveNumber>0)){notice.textContent='WAVE CLEAR';return}if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}notice.textContent=`WAVE ${state.status==='ACTIVE'?state.waveNumber:state.pendingWaveNumber}`}
   function emit(){const v=getSnapshot();listeners.forEach(fn=>{try{fn(v)}catch(e){console.error('BattleNetworkWave listener failed.',e)}});return v}
-  function subscribe(fn){if(typeof fn!=='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(fn)}
+  function subscribe(fn){if(typeof fn!=='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(listener)}
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
