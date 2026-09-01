@@ -4,11 +4,9 @@
   const ENEMY=window.BattleNetworkEnemy;
   const COMBAT_RANGE=window.BattleNetworkCombatRange;
   const scene=document.getElementById('scene');
-  const playerEl=document.getElementById('player');
-  const arrowEl=document.getElementById('arrow');
   const aButton=document.getElementById('A');
   const queue=document.getElementById('queue');
-  if(!FIELD||!PLAYER||!ENEMY||!COMBAT_RANGE||!scene||!playerEl||!arrowEl||!aButton||!queue)return;
+  if(!FIELD||!PLAYER||!ENEMY||!COMBAT_RANGE||!scene||!aButton||!queue)return;
 
   const PX=.72,PY=.36;
   const WORLD=FIELD.WORLD_SIZE;
@@ -16,6 +14,7 @@
   const SW=WORLD*PX*2;
   let lastTileKey='';
   let triggerWatchId=0;
+  let previewFrame=null;
   const terrainVisuals=new Map();
 
   const previewSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -64,6 +63,20 @@
     previewSvg.style.opacity='1';
   }
   function updatePreview(){placePreview(isCrackOutHeld()?getTarget():null,false)}
+  function runPreviewFrame(){
+    previewFrame=null;
+    if(!isCrackOutHeld()){updatePreview();return}
+    updatePreview();
+    previewFrame=requestAnimationFrame(runPreviewFrame);
+  }
+  function syncPreviewTracking(){
+    if(isCrackOutHeld()){
+      if(previewFrame===null)previewFrame=requestAnimationFrame(runPreviewFrame);
+    }else{
+      if(previewFrame!==null){cancelAnimationFrame(previewFrame);previewFrame=null}
+      updatePreview();
+    }
+  }
   function tileKey(tile){return `${tile.row}:${tile.col}`}
 
   function ensureTerrainVisual(tile){
@@ -126,13 +139,8 @@
   function applyCrackOut(tile){
     if(!tile)return Object.freeze({applied:false,reason:'NO_TARGET',terrain:null});
     const current=tile.currentTerrain;
-    if(current===FIELD.TERRAIN.HOLE){
-      renderTerrain(tile);
-      return Object.freeze({applied:false,reason:'ALREADY_HOLE',terrain:current});
-    }
-    const next=current===FIELD.TERRAIN.CRACKED
-      ?FIELD.TERRAIN.HOLE
-      :(isOccupiedByEnemy(tile)?FIELD.TERRAIN.CRACKED:FIELD.TERRAIN.HOLE);
+    if(current===FIELD.TERRAIN.HOLE){renderTerrain(tile);return Object.freeze({applied:false,reason:'ALREADY_HOLE',terrain:current})}
+    const next=current===FIELD.TERRAIN.CRACKED?FIELD.TERRAIN.HOLE:(isOccupiedByEnemy(tile)?FIELD.TERRAIN.CRACKED:FIELD.TERRAIN.HOLE);
     const changed=FIELD.setTerrain(tile.row,tile.col,next);
     renderTerrain(changed);
     return Object.freeze({applied:true,reason:null,terrain:next});
@@ -146,7 +154,7 @@
       if(context?.sourceId==='CHIP_EXE4_S106'){
         placePreview(tile,true);
         applyCrackOut(tile);
-        updatePreview();
+        syncPreviewTracking();
       }
       return;
     }
@@ -163,10 +171,8 @@
     requestAnimationFrame(()=>watchForCrackOutUse(tile,startToken,watchId,performance.now()));
   },{capture:true});
 
-  const observer=new MutationObserver(updatePreview);
-  observer.observe(playerEl,{attributes:true,attributeFilter:['style']});
-  observer.observe(arrowEl,{attributes:true,attributeFilter:['style']});
-  observer.observe(queue,{childList:true,subtree:true,characterData:true});
+  const queueObserver=new MutationObserver(syncPreviewTracking);
+  queueObserver.observe(queue,{childList:true,subtree:true,characterData:true});
 
   window.addEventListener('battlenetwork:terrainchange',event=>{
     const row=Number(event.detail?.row),col=Number(event.detail?.col);
@@ -179,9 +185,6 @@
     applyToTile:(row,col)=>applyCrackOut(FIELD.getTile(row,col)),
     isOccupiedByEnemy:(row,col)=>{const tile=FIELD.getTile(row,col);return !!tile&&isOccupiedByEnemy(tile)}
   });
-  window.BattleNetworkCrackOutPatternTest=Object.freeze({
-    getPattern:()=> 'D',
-    getTargetTile:()=>getTarget()
-  });
-  updatePreview();
+  window.BattleNetworkCrackOutPatternTest=Object.freeze({getPattern:()=> 'D',getTargetTile:()=>getTarget()});
+  syncPreviewTracking();
 })();
