@@ -6,14 +6,16 @@
   width:100%;
   height:100%;
   z-index:4;
-  display:none;
+  display:block;
   overflow:visible;
   pointer-events:none;
-  opacity:.45;
+  opacity:0;
+  will-change:opacity;
+  contain:layout paint style;
 }
 
-.battleRangeOverlay.show,
-.bombTrajectoryOverlay.show{display:block}
+.battleRangeOverlay.show{opacity:.45}
+.bombTrajectoryOverlay.show{opacity:.55}
 
 .battleRangeShape{
   vector-effect:non-scaling-stroke;
@@ -41,7 +43,6 @@
 
 .bombTrajectoryOverlay{
   z-index:5;
-  opacity:.55;
 }
 
 .bombTrajectoryPath{
