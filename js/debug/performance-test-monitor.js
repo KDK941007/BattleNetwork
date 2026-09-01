@@ -1,4 +1,7 @@
 (()=>{
+  const enabled=new URLSearchParams(location.search).get('perf')==='1';
+  if(!enabled)return;
+
   const battle=document.getElementById('battle'),A=document.getElementById('A');
   if(!battle||!A)return;
   const values=new Map(),events=[];
