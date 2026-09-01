@@ -6,13 +6,19 @@
   const battle=document.getElementById('battle');
   const scene=document.getElementById('scene');
   const A=document.getElementById('A');
+  const B=document.getElementById('B');
+  const X=document.getElementById('X');
+  const Y=document.getElementById('Y');
+  const joy=document.getElementById('joy');
   const queue=document.getElementById('queue');
   if(!FIELD||!PLAYER||!ENEMY||!AI||!battle||!scene||!A||!queue)return;
 
   const SVG_NS='http://www.w3.org/2000/svg';
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,SH=FIELD.WORLD_SIZE*PY*2;
   const PAUSE_REASON='AREA_STEAL_SELECTION';
+  const controls=[joy,A,B,X,Y].filter(Boolean);
   let active=false,timer=null,shade=null,svg=null,activationTimer=null;
+  let savedControlPointerEvents=null;
 
   function firstQueuedName(){return queue.querySelector('.q:not(.empty)')?.textContent?.trim()||''}
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
@@ -29,8 +35,18 @@
     return true;
   }
   function polygonPoints(row,col){const b=FIELD.tileToWorldBounds(row,col);if(!b)return '';return [project(b.left,b.top),project(b.right,b.top),project(b.right,b.bottom),project(b.left,b.bottom)].map(p=>`${p.x},${p.y}`).join(' ')}
+  function setControlsPassThrough(enabled){
+    if(enabled){
+      if(savedControlPointerEvents===null)savedControlPointerEvents=controls.map(el=>el.style.pointerEvents);
+      controls.forEach(el=>{el.style.pointerEvents='none'});
+      return;
+    }
+    if(savedControlPointerEvents===null)return;
+    controls.forEach((el,index)=>{el.style.pointerEvents=savedControlPointerEvents[index]||''});
+    savedControlPointerEvents=null;
+  }
   function cleanupVisuals(){shade?.remove();svg?.remove();shade=null;svg=null}
-  function finish(){if(!active)return;active=false;if(timer!==null){clearTimeout(timer);timer=null}cleanupVisuals();AI.resume(PAUSE_REASON);PLAYER.resumeAfterChipSelection?.()}
+  function finish(){if(!active)return;active=false;if(timer!==null){clearTimeout(timer);timer=null}cleanupVisuals();setControlsPassThrough(false);AI.resume(PAUSE_REASON);PLAYER.resumeAfterChipSelection?.()}
   function choose(row,col,allowHole){if(!active)return false;const origin=FIELD.worldToTile(PLAYER.getPosition().x,PLAYER.getPosition().y);if(!isSelectable(row,col,origin,allowHole))return false;const moved=PLAYER.teleportToTile?.(row,col,{allowHole})===true;if(moved)finish();return moved}
   function renderCells(origin,rangeTiles,allowHole){
     shade=document.createElement('div');shade.dataset.areaStealShade='true';shade.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:48;background:rgba(0,4,14,.68);pointer-events:auto;touch-action:none;`;
@@ -56,6 +72,7 @@
     if(PLAYER.pauseForChipSelection?.()!==true)return false;
     AI.pause(PAUSE_REASON);
     active=true;
+    setControlsPassThrough(true);
     const settings=getSettings(),position=PLAYER.getPosition(),origin=FIELD.worldToTile(position.x,position.y),allowHole=PLAYER.canStandOnHole?.()===true;
     renderCells(origin,settings.rangeTiles,allowHole);
     timer=setTimeout(()=>finish(),settings.selectionTimeSec*1000);
