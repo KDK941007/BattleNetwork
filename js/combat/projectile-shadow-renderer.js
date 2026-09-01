@@ -51,37 +51,72 @@
     tracked.delete(bullet);
   }
 
-  // ソード/ワイドソード/ボム/回復の一時エフェクトを巨大scene直下へ置かない。
-  // game.jsは従来どおりscene.appendChild()を呼ぶが、この3種だけ描画分離レイヤーへ同期的に転送する。
-  // DOM削除時の再描画をこのレイヤー内に閉じ込める。
+  // 一時チップエフェクトは巨大sceneから分離し、さらにDOMを破棄せず再利用する。
+  // iPhone Safariでは大きいslash（ワイドソード等）のレイヤー破棄時に全rAFが止まるケースがあるため、
+  // display:noneでプールへ戻し、次回同種エフェクトで再使用する。
   const effectLayer=document.createElement('div');
   effectLayer.id='chipEffectLayer';
   effectLayer.style.cssText=`position:absolute;left:0;top:0;width:${scene.clientWidth}px;height:${scene.clientHeight}px;transform-origin:0 0;pointer-events:none;contain:layout paint style;z-index:8;`;
   battle.appendChild(effectLayer);
 
   const nativeSceneAppend=scene.appendChild.bind(scene);
-  let effectSyncFrame=null,lastEffectTransform='';
-  function isTemporaryChipEffect(node){
-    return node instanceof HTMLElement&&(node.classList.contains('slash')||node.classList.contains('boom')||node.classList.contains('healPulse'));
+  const effectPools=new Map([['slash',[]],['boom',[]],['healPulse',[]]]);
+  let effectSyncFrame=null,lastEffectTransform='',activeEffectCount=0;
+
+  function temporaryEffectKind(node){
+    if(!(node instanceof HTMLElement))return null;
+    if(node.classList.contains('slash'))return 'slash';
+    if(node.classList.contains('boom'))return 'boom';
+    if(node.classList.contains('healPulse'))return 'healPulse';
+    return null;
   }
+
   function syncEffectLayer(){
     effectSyncFrame=null;
     const next=scene.style.transform||'';
     if(next!==lastEffectTransform){effectLayer.style.transform=next;lastEffectTransform=next}
-    if(effectLayer.childElementCount>0)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
+    if(activeEffectCount>0)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
   }
+
   function ensureEffectSync(){
     const next=scene.style.transform||'';
     if(next!==lastEffectTransform){effectLayer.style.transform=next;lastEffectTransform=next}
-    if(effectSyncFrame===null)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
+    if(effectSyncFrame===null&&activeEffectCount>0)effectSyncFrame=requestAnimationFrame(syncEffectLayer);
   }
+
+  function releaseEffect(target,kind){
+    if(target.dataset.effectPoolActive!=='true')return;
+    target.dataset.effectPoolActive='false';
+    target.style.display='none';
+    target.getAnimations?.().forEach(animation=>animation.cancel());
+    activeEffectCount=Math.max(0,activeEffectCount-1);
+    effectPools.get(kind)?.push(target);
+  }
+
+  function activateEffect(target,source,kind){
+    target.className=source.className;
+    target.style.cssText=source.style.cssText;
+    target.style.display='block';
+    target.dataset.effectPoolActive='true';
+    activeEffectCount+=1;
+    ensureEffectSync();
+    return target;
+  }
+
   scene.appendChild=function(node){
-    if(isTemporaryChipEffect(node)){
-      effectLayer.appendChild(node);
-      ensureEffectSync();
-      return node;
-    }
-    return nativeSceneAppend(node);
+    const kind=temporaryEffectKind(node);
+    if(!kind)return nativeSceneAppend(node);
+
+    const pool=effectPools.get(kind);
+    const reusable=pool?.pop()||null;
+    const target=reusable||node;
+    if(!reusable)effectLayer.appendChild(target);
+    activateEffect(target,node,kind);
+
+    // game.js側は700ms後に生成したnode.remove()を呼ぶため、
+    // 実DOMの削除ではなく対応するプール要素を解放するよう差し替える。
+    node.remove=()=>releaseEffect(target,kind);
+    return target;
   };
 
   const performanceStyle=document.createElement('style');
