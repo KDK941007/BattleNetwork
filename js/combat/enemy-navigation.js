@@ -40,11 +40,12 @@
   function boundsTouchEnemy(enemyId,bounds){
     return ENEMY.getActiveEnemies().some(other=>other.id!==enemyId&&!other.collision?.allowEnemyOverlap&&overlaps(bounds,other.bounds));
   }
-  function canStandAt(enemyId,x,y,{ignoreEnemies=false}={}){
+  function canStandAt(enemyId,x,y,{ignoreEnemies=false,blockedBounds=null}={}){
     const enemy=ENEMY.getEnemy(enemyId);
     if(!enemy||!Number.isFinite(x)||!Number.isFinite(y))return false;
     const bounds=boundsAt(enemy,x,y);
     if(boundsTouchHole(bounds))return false;
+    if(blockedBounds&&overlaps(bounds,blockedBounds))return false;
     if(!ignoreEnemies&&boundsTouchEnemy(enemyId,bounds))return false;
     return true;
   }
@@ -59,14 +60,14 @@
     path.reverse();
     return path;
   }
-  function findNearestStandableNode(enemyId,position,{ignoreEnemies=false,maxRadius=8}={}){
+  function findNearestStandableNode(enemyId,position,{ignoreEnemies=false,blockedBounds=null,maxRadius=8}={}){
     const base=nodeFromWorld(position.x,position.y);
     let best=null,bestDistance=Infinity;
     for(let radius=0;radius<=maxRadius;radius++){
       for(let dr=-radius;dr<=radius;dr++)for(let dc=-radius;dc<=radius;dc++){
         if(radius>0&&Math.max(Math.abs(dr),Math.abs(dc))!==radius)continue;
         const row=base.row+dr,col=base.col+dc;if(!inside(row,col))continue;
-        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies}))continue;
+        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies,blockedBounds}))continue;
         const distance=Math.hypot(p.x-position.x,p.y-position.y);
         if(distance<bestDistance){bestDistance=distance;best={row,col}}
       }
@@ -74,14 +75,14 @@
     }
     return null;
   }
-  function canTraverse(enemyId,from,to,{ignoreEnemies=false}={}){
+  function canTraverse(enemyId,from,to,{ignoreEnemies=false,blockedBounds=null}={}){
     if(!from||!to)return false;
     const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
-    if(distance<=EPS)return canStandAt(enemyId,to.x,to.y,{ignoreEnemies});
+    if(distance<=EPS)return canStandAt(enemyId,to.x,to.y,{ignoreEnemies,blockedBounds});
     const samples=Math.max(1,Math.ceil(distance/(STEP*.35)));
     for(let i=1;i<=samples;i++){
       const t=i/samples,x=from.x+dx*t,y=from.y+dy*t;
-      if(!canStandAt(enemyId,x,y,{ignoreEnemies}))return false;
+      if(!canStandAt(enemyId,x,y,{ignoreEnemies,blockedBounds}))return false;
     }
     return true;
   }
@@ -95,11 +96,11 @@
     }
     return result;
   }
-  function findPath(enemyId,targetPosition,{ignoreEnemies=false}={}){
+  function findPath(enemyId,targetPosition,{ignoreEnemies=false,blockedBounds=null}={}){
     const enemy=ENEMY.getEnemy(enemyId);if(!enemy||!targetPosition)return Object.freeze([]);
     const startPosition={x:enemy.x,y:enemy.y};
-    const start=findNearestStandableNode(enemyId,startPosition,{ignoreEnemies,maxRadius:6});
-    const target=findNearestStandableNode(enemyId,targetPosition,{ignoreEnemies,maxRadius:10});
+    const start=findNearestStandableNode(enemyId,startPosition,{ignoreEnemies,maxRadius:8});
+    const target=findNearestStandableNode(enemyId,targetPosition,{ignoreEnemies,blockedBounds,maxRadius:20});
     if(!start||!target)return Object.freeze([]);
     const open=[start],openKeys=new Set([nodeKey(start.row,start.col)]),closed=new Set(),came=new Map();
     const g=new Map([[nodeKey(start.row,start.col),0]]),f=new Map([[nodeKey(start.row,start.col),heuristic(start,target)]]);
@@ -110,16 +111,16 @@
       if(current.row===target.row&&current.col===target.col){
         const nodes=reconstruct(came,current).slice(1);
         const points=nodes.map(node=>Object.freeze({...node,...gridPoint(node.row,node.col)}));
-        const smoothed=smoothPath(enemyId,startPosition,points,{ignoreEnemies});
+        const smoothed=smoothPath(enemyId,startPosition,points,{ignoreEnemies,blockedBounds});
         return Object.freeze(smoothed.map(point=>Object.freeze({...point})));
       }
       for(const n of NEIGHBORS){
         const row=current.row+n.dr,col=current.col+n.dc;if(!inside(row,col))continue;
         const nk=nodeKey(row,col);if(closed.has(nk))continue;
-        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies}))continue;
+        const p=gridPoint(row,col);if(!canStandAt(enemyId,p.x,p.y,{ignoreEnemies,blockedBounds}))continue;
         if(n.dr&&n.dc){
           const a=gridPoint(current.row+n.dr,current.col),b=gridPoint(current.row,current.col+n.dc);
-          if(!canStandAt(enemyId,a.x,a.y,{ignoreEnemies})||!canStandAt(enemyId,b.x,b.y,{ignoreEnemies}))continue;
+          if(!canStandAt(enemyId,a.x,a.y,{ignoreEnemies,blockedBounds})||!canStandAt(enemyId,b.x,b.y,{ignoreEnemies,blockedBounds}))continue;
         }
         const tentative=(g.get(ck)??Infinity)+n.cost;
         if(tentative>=(g.get(nk)??Infinity))continue;
