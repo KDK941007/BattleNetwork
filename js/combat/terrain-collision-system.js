@@ -59,8 +59,8 @@
   function setPosition(id,x,y){
     const enemy=getEnemy(id);if(!enemy)return BASE.setPosition(id,x,y);
     const nx=Number(x),ny=Number(y);if(!Number.isFinite(nx)||!Number.isFinite(ny))return BASE.setPosition(id,x,y);
-    const clampedX=Math.max(0,Math.min(FIELD.WORLD_SIZE,nx)),clampedY=Math.max(0,Math.min(FIELD.WORLD_SIZE,ny)),next=enemyBodyAt(enemy,clampedX,clampedY),current=enemy.bodyCircle;
-    const currentHole=circleTouchesHole(current),nextHole=circleTouchesHole(next);if(nextHole&&(!currentHole||nextHole===currentHole))return Object.freeze({applied:false,reason:'TERRAIN_BLOCKED',enemy});
+    const clampedX=Math.max(0,Math.min(FIELD.WORLD_SIZE,nx)),clampedY=Math.max(0,Math.min(FIELD.WORLD_SIZE,ny)),next=enemyBodyAt(enemy,clampedX,clampedY);
+    if(circleTouchesHole(next))return Object.freeze({applied:false,reason:'TERRAIN_BLOCKED',enemy});
     if(enemy.collision?.allowEnemyOverlap!==true){for(const other of getActiveEnemies()){if(other.id===id||other.collision?.allowEnemyOverlap===true)continue;if(circlesOverlap(next,other.bodyCircle))return Object.freeze({applied:false,reason:'ENEMY_COLLISION',enemy})}}
     return BASE.setPosition(id,clampedX,clampedY);
   }
@@ -71,7 +71,9 @@
   function intersectsRange(id,shape){const enemy=getEnemy(id);return !!enemy&&!enemy.isDefeated&&circleIntersectsShape(enemy.hurtCircle,shape)}
   function getHitEnemies(shape){if(!shape)return Object.freeze([]);return Object.freeze(getActiveEnemies().filter(enemy=>circleIntersectsShape(enemy.hurtCircle,shape)))}
   function clearAll(){profiles.clear();return BASE.clearAll()}
+  function trackOccupant(key,x,y){if(key==='player'&&circleTouchesHole(playerBodyAt({x:Number(x),y:Number(y)})))return false;return FIELD.trackOccupant?FIELD.trackOccupant(key,x,y):true}
 
   window.BattleNetworkEnemy=Object.freeze({...BASE,spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,clearAll,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,isPlayerBoundsBlocked,wouldOverlapBounds});
+  window.BattleNetworkField=Object.freeze({...FIELD,trackOccupant});
   window.BattleNetworkCharacterCollision=Object.freeze({DEFAULT_DIAMETER_TILES,PLAYER_PROFILE,ENEMY_DEFAULT_PROFILE,getEnemyProfile:getProfile,getEnemyBody:id=>getEnemy(id)?.bodyCircle||null,getEnemyHurt:id=>getEnemy(id)?.hurtCircle||null,getPlayerBody:position=>playerBodyAt(position),getPlayerHurt:position=>playerHurtAt(position),circleBounds,circlesOverlap,circleTouchesHole,circleIntersectsShape});
 })();
