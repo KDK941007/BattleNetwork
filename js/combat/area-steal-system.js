@@ -31,17 +31,24 @@
   function polygonPoints(row,col){const b=FIELD.tileToWorldBounds(row,col);if(!b)return '';return [project(b.left,b.top),project(b.right,b.top),project(b.right,b.bottom),project(b.left,b.bottom)].map(p=>`${p.x},${p.y}`).join(' ')}
   function cleanupVisuals(){shade?.remove();svg?.remove();shade=null;svg=null}
   function finish(){if(!active)return;active=false;if(timer!==null){clearTimeout(timer);timer=null}cleanupVisuals();AI.resume(PAUSE_REASON);PLAYER.resumeAfterChipSelection?.()}
-  function choose(row,col,allowHole){if(!active)return;const origin=FIELD.worldToTile(PLAYER.getPosition().x,PLAYER.getPosition().y);if(!isSelectable(row,col,origin,allowHole))return;const moved=PLAYER.teleportToTile?.(row,col,{allowHole})===true;if(moved)finish()}
+  function choose(row,col,allowHole){if(!active)return false;const origin=FIELD.worldToTile(PLAYER.getPosition().x,PLAYER.getPosition().y);if(!isSelectable(row,col,origin,allowHole))return false;const moved=PLAYER.teleportToTile?.(row,col,{allowHole})===true;if(moved)finish();return moved}
   function renderCells(origin,rangeTiles,allowHole){
-    shade=document.createElement('div');shade.dataset.areaStealShade='true';shade.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:48;background:rgba(0,4,14,.68);pointer-events:auto;`;
-    svg=document.createElementNS(SVG_NS,'svg');svg.dataset.areaStealLayer='true';svg.setAttribute('viewBox',`0 0 ${SW} ${SH}`);svg.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:49;overflow:visible;pointer-events:none;`;
+    shade=document.createElement('div');shade.dataset.areaStealShade='true';shade.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:48;background:rgba(0,4,14,.68);pointer-events:auto;touch-action:none;`;
+    svg=document.createElementNS(SVG_NS,'svg');svg.dataset.areaStealLayer='true';svg.setAttribute('viewBox',`0 0 ${SW} ${SH}`);svg.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:49;overflow:visible;pointer-events:auto;touch-action:none;`;
     const rowMin=Math.max(0,origin.row-rangeTiles),rowMax=Math.min(FIELD.GRID_ROWS-1,origin.row+rangeTiles),colMin=Math.max(0,origin.col-rangeTiles),colMax=Math.min(FIELD.GRID_COLS-1,origin.col+rangeTiles);
     for(let row=rowMin;row<=rowMax;row++)for(let col=colMin;col<=colMax;col++){
       if(Math.max(Math.abs(row-origin.row),Math.abs(col-origin.col))>rangeTiles)continue;
       if(!isSelectable(row,col,origin,allowHole))continue;
-      const cell=document.createElementNS(SVG_NS,'polygon');cell.dataset.areaStealCell='true';cell.dataset.row=String(row);cell.dataset.col=String(col);cell.setAttribute('points',polygonPoints(row,col));cell.setAttribute('fill','rgba(80,238,255,.48)');cell.setAttribute('stroke','rgba(196,253,255,.98)');cell.setAttribute('stroke-width','5');cell.setAttribute('vector-effect','non-scaling-stroke');cell.style.cssText='pointer-events:all;cursor:pointer;';
-      cell.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();choose(row,col,allowHole)});svg.appendChild(cell);
+      const cell=document.createElementNS(SVG_NS,'polygon');cell.dataset.areaStealCell='true';cell.dataset.row=String(row);cell.dataset.col=String(col);cell.setAttribute('points',polygonPoints(row,col));cell.setAttribute('fill','rgba(80,238,255,.48)');cell.setAttribute('stroke','rgba(196,253,255,.98)');cell.setAttribute('stroke-width','5');cell.setAttribute('vector-effect','non-scaling-stroke');cell.style.cssText='pointer-events:all;cursor:pointer;touch-action:none;';svg.appendChild(cell);
     }
+    svg.addEventListener('pointerdown',event=>{
+      if(!active)return;
+      const cell=event.target?.closest?.('[data-area-steal-cell="true"]');
+      if(!cell)return;
+      event.preventDefault();event.stopPropagation();
+      const row=Number(cell.dataset.row),col=Number(cell.dataset.col);
+      if(Number.isInteger(row)&&Number.isInteger(col))choose(row,col,allowHole);
+    });
     scene.append(shade,svg);
   }
   function begin(){
@@ -55,8 +62,6 @@
     return true;
   }
 
-  // Aボタンの通常チップ処理が同一イベント内でキューを消費した直後に選択状態へ入る。
-  // DOM上のキュー件数変化には依存させず、使用前にエリアスチールだった事実だけを記録する。
   A.addEventListener('pointerdown',()=>{
     if(active||firstQueuedName()!=='エリアスチール')return;
     if(activationTimer!==null)clearTimeout(activationTimer);
