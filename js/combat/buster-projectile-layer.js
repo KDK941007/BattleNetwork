@@ -13,6 +13,7 @@
   layer.style.transformOrigin='0 0';
   layer.style.pointerEvents='none';
   layer.style.willChange='transform';
+  layer.style.contain='layout paint style';
   layer.style.zIndex='6';
   battle.appendChild(layer);
 
