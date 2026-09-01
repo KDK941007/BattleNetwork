@@ -2,6 +2,7 @@
   const HEALTH=window.BattleNetworkPlayerHealth;
   const PLAYER=window.BattleNetworkPlayer;
   const RANGE=window.BattleNetworkRangeGeometry;
+  const COLLISION=window.BattleNetworkCharacterCollision;
   const PLAYER_EL=document.getElementById('player');
   if(!HEALTH)throw new Error('BattleNetworkPlayerDamage: player health is not loaded.');
   if(!PLAYER)throw new Error('BattleNetworkPlayerDamage: player foundation is not loaded.');
@@ -19,107 +20,39 @@
       attackId:input.attackId??null
     });
   }
-  function isInvincible(now=performance.now()){
-    return now<invincibleUntil;
-  }
-  function remainingInvincibilityMs(now=performance.now()){
-    return Math.max(0,invincibleUntil-now);
-  }
-  function clearInvincibilityVisual(){
-    PLAYER_EL?.classList.remove('damageInvincible');
-  }
+  function isInvincible(now=performance.now()){return now<invincibleUntil}
+  function remainingInvincibilityMs(now=performance.now()){return Math.max(0,invincibleUntil-now)}
+  function clearInvincibilityVisual(){PLAYER_EL?.classList.remove('damageInvincible')}
   function scheduleInvincibilityEnd(){
     if(invincibilityTimer!==null)clearTimeout(invincibilityTimer);
     const remaining=remainingInvincibilityMs();
-    if(remaining<=0){
-      invincibilityTimer=null;
-      clearInvincibilityVisual();
-      return;
-    }
-    invincibilityTimer=setTimeout(()=>{
-      invincibilityTimer=null;
-      if(isInvincible())scheduleInvincibilityEnd();
-      else clearInvincibilityVisual();
-    },remaining+16);
+    if(remaining<=0){invincibilityTimer=null;clearInvincibilityVisual();return}
+    invincibilityTimer=setTimeout(()=>{invincibilityTimer=null;if(isInvincible())scheduleInvincibilityEnd();else clearInvincibilityVisual()},remaining+16);
   }
   function beginInvincibility(durationMs=INVINCIBILITY_MS){
-    const duration=Number(durationMs);
-    if(!Number.isFinite(duration)||duration<=0)return false;
-    invincibleUntil=performance.now()+duration;
-    PLAYER_EL?.classList.add('damageInvincible');
-    scheduleInvincibilityEnd();
-    return true;
+    const duration=Number(durationMs);if(!Number.isFinite(duration)||duration<=0)return false;
+    invincibleUntil=performance.now()+duration;PLAYER_EL?.classList.add('damageInvincible');scheduleInvincibilityEnd();return true;
   }
-  function clearInvincibility(){
-    invincibleUntil=0;
-    if(invincibilityTimer!==null){
-      clearTimeout(invincibilityTimer);
-      invincibilityTimer=null;
-    }
-    clearInvincibilityVisual();
-  }
+  function clearInvincibility(){invincibleUntil=0;if(invincibilityTimer!==null){clearTimeout(invincibilityTimer);invincibilityTimer=null}clearInvincibilityVisual()}
   function missResult(reason,input={}){
     const health=HEALTH.getSnapshot();
-    return freezeResult({
-      hit:false,
-      applied:false,
-      reason,
-      requestedDamage:Number(input.damage),
-      appliedDamage:0,
-      beforeHp:health.hp,
-      afterHp:health.hp,
-      defeatedNow:false,
-      invincible:isInvincible(),
-      remainingInvincibilityMs:remainingInvincibilityMs(),
-      ...sourceMeta(input),
-      health
-    });
+    return freezeResult({hit:false,applied:false,reason,requestedDamage:Number(input.damage),appliedDamage:0,beforeHp:health.hp,afterHp:health.hp,defeatedNow:false,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),health});
   }
   function applyResolvedDamage(input={}){
-    const damage=Number(input.damage);
-    if(!Number.isFinite(damage)||damage<=0)return missResult('INVALID_DAMAGE',input);
-    if(isInvincible())return missResult('INVINCIBLE',input);
-    const result=HEALTH.applyDamage(damage);
-    if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){
-      PLAYER.beginHitStun?.();
-      beginInvincibility();
-    }
-    return freezeResult({
-      hit:true,
-      applied:result.ok===true,
-      reason:result.reason,
-      requestedDamage:damage,
-      appliedDamage:result.appliedDamage||0,
-      beforeHp:result.beforeHp,
-      afterHp:result.afterHp,
-      defeatedNow:result.defeatedNow===true,
-      invincible:isInvincible(),
-      remainingInvincibilityMs:remainingInvincibilityMs(),
-      ...sourceMeta(input),
-      health:HEALTH.getSnapshot()
-    });
+    const damage=Number(input.damage);if(!Number.isFinite(damage)||damage<=0)return missResult('INVALID_DAMAGE',input);if(isInvincible())return missResult('INVINCIBLE',input);
+    const result=HEALTH.applyDamage(damage);if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){PLAYER.beginHitStun?.();beginInvincibility()}
+    return freezeResult({hit:true,applied:result.ok===true,reason:result.reason,requestedDamage:damage,appliedDamage:result.appliedDamage||0,beforeHp:result.beforeHp,afterHp:result.afterHp,defeatedNow:result.defeatedNow===true,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),health:HEALTH.getSnapshot()});
   }
+  function playerHurt(){return COLLISION?.getPlayerHurt?.(PLAYER.getPosition())||null}
   function resolvePointHit(input={}){
-    const x=Number(input.x),y=Number(input.y);
-    if(!Number.isFinite(x)||!Number.isFinite(y))return missResult('INVALID_POINT',input);
-    if(!PLAYER.containsPoint(x,y))return missResult('MISS',input);
-    return applyResolvedDamage(input);
+    const x=Number(input.x),y=Number(input.y);if(!Number.isFinite(x)||!Number.isFinite(y))return missResult('INVALID_POINT',input);
+    const hurt=playerHurt();const hit=hurt?Math.hypot(x-hurt.x,y-hurt.y)<=hurt.radius:.0+PLAYER.containsPoint(x,y);if(!hit)return missResult('MISS',input);return applyResolvedDamage(input);
   }
   function resolveRangeHit(input={}){
-    const shape=input.shape;
-    if(!shape)return missResult('INVALID_RANGE',input);
-    let hit=false;
-    try{hit=RANGE.intersectsBounds(shape,PLAYER.getBounds())}catch{return missResult('INVALID_RANGE',input)}
-    if(!hit)return missResult('MISS',input);
-    return applyResolvedDamage(input);
+    const shape=input.shape;if(!shape)return missResult('INVALID_RANGE',input);let hit=false;
+    try{const hurt=playerHurt();hit=hurt&&COLLISION?.circleIntersectsShape?COLLISION.circleIntersectsShape(hurt,shape):RANGE.intersectsBounds(shape,PLAYER.getBounds())}catch{return missResult('INVALID_RANGE',input)}
+    if(!hit)return missResult('MISS',input);return applyResolvedDamage(input);
   }
 
-  window.BattleNetworkPlayerDamage=Object.freeze({
-    INVINCIBILITY_MS,
-    resolvePointHit,
-    resolveRangeHit,
-    isInvincible,
-    getRemainingInvincibilityMs:remainingInvincibilityMs,
-    clearInvincibility
-  });
+  window.BattleNetworkPlayerDamage=Object.freeze({INVINCIBILITY_MS,resolvePointHit,resolveRangeHit,isInvincible,getRemainingInvincibilityMs:remainingInvincibilityMs,clearInvincibility});
 })();
