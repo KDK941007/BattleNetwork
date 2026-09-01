@@ -33,7 +33,8 @@
       let nextX=enemy.x+direction*speedWorld*dt;
       if(nextX>=maxX){nextX=maxX;direction=-1}
       else if(nextX<=minX){nextX=minX;direction=1}
-      ENEMY.setPosition(enemyId,nextX,originY);
+      const result=ENEMY.setPosition(enemyId,nextX,originY);
+      if(!result?.applied&&result?.reason==='TERRAIN_BLOCKED')direction*=-1;
     }
     function cancel(){running=false}
     function destroy(){running=false}
