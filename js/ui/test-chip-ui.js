@@ -4,6 +4,7 @@
   const hand=document.getElementById('hand');
   const modal=document.getElementById('chipDetailModal');
   if(!master||!hand||!modal)return;
+  if(window.BattleNetworkFolder?.getTestTarget?.().enabled)return;
 
   const TEST_CHIP_IDS=['TEST_9001','TEST_9002','TEST_9003'];
   const LONG_PRESS_MS=520;
