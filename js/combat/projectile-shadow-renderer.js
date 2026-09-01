@@ -27,18 +27,9 @@
     bullet.style.marginLeft=`${LEGACY_TRANSLATE_X-config.bulletWidth/2}px`;
     bullet.style.marginTop=`${LEGACY_TRANSLATE_Y-config.bulletHeight-FLOOR_CLEARANCE}px`;
 
-    // B攻撃は連打時の描画負荷を優先し、床影DOMを持たせない。
-    // キャノンのみ従来の床影を維持する。
-    if(resolvedKind==='normal'||resolvedKind==='charged'){
-      tracked.set(bullet,{shadow:null,config});
-      return true;
-    }
-
-    const shadow=document.createElement('div');
-    shadow.className=`projectileFloorShadow ${resolvedKind}`;
-    shadow.style.cssText=`position:absolute;width:${config.shadowWidth}px;height:${config.shadowHeight}px;border-radius:50%;background:rgba(0,0,0,${config.opacity});filter:blur(1.4px);z-index:5;pointer-events:none;transform-origin:center;will-change:transform;`;
-    scene.appendChild(shadow);
-    tracked.set(bullet,{shadow,config});
+    // iPhone Safariの描画停止対策として、プレイヤー弾は床影DOMを追加しない。
+    // 以前はキャノンだけ巨大なblur床影を都度生成しており、バルカンとの差分になっていた。
+    tracked.set(bullet,{shadow:null,config});
     return true;
   }
 
@@ -56,12 +47,11 @@
     tracked.delete(bullet);
   }
 
-  // iPhone Safariで連続タップ時に再描画負荷が高くなりやすい発光・filterを
-  // B攻撃と短間隔で3連射するバルカンだけ軽量表現へ置き換える。
-  // 戦闘仕様・弾速・当たり判定・連射間隔には影響しない。
+  // バルカンで有効だった軽量描画を、キャノンと一時チップエフェクトにも適用する。
+  // 戦闘仕様・弾速・当たり判定・硬直時間は変更しない。
   const performanceStyle=document.createElement('style');
   performanceStyle.textContent=`
-    .bullet.normal,.bullet.charged,.bullet.vulcan{
+    .bullet.normal,.bullet.charged,.bullet.vulcan,.bullet.cannon{
       box-shadow:none!important;
       filter:none!important;
       will-change:transform;
@@ -78,6 +68,16 @@
     .bullet.vulcan{
       border:2px solid rgba(255,250,190,.92);
       background:#ffe97a!important;
+    }
+    .bullet.cannon{
+      border:2px solid rgba(255,242,176,.94);
+      background:#ffd55a!important;
+    }
+    .slash,.boom,.healPulse{
+      box-shadow:none!important;
+      filter:none!important;
+      will-change:transform,opacity;
+      contain:layout paint style;
     }
     #B.pressed{
       filter:none!important;
