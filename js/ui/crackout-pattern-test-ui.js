@@ -3,39 +3,20 @@
   const PLAYER=window.BattleNetworkPlayer;
   const ENEMY=window.BattleNetworkEnemy;
   const COMBAT_RANGE=window.BattleNetworkCombatRange;
-  const battle=document.getElementById('battle');
   const scene=document.getElementById('scene');
   const playerEl=document.getElementById('player');
   const arrowEl=document.getElementById('arrow');
   const aButton=document.getElementById('A');
   const queue=document.getElementById('queue');
-  if(!FIELD||!PLAYER||!ENEMY||!COMBAT_RANGE||!battle||!scene||!playerEl||!arrowEl||!aButton||!queue)return;
+  if(!FIELD||!PLAYER||!ENEMY||!COMBAT_RANGE||!scene||!playerEl||!arrowEl||!aButton||!queue)return;
 
   const PX=.72,PY=.36;
   const WORLD=FIELD.WORLD_SIZE;
   const TILE=FIELD.TILE_SIZE;
   const SW=WORLD*PX*2;
-  const DESCRIPTION='プレイヤー座標＋向き×1マスの座標が属するマスを使用前から常時プレビュー';
-  const TERRAIN_LABEL=Object.freeze({
-    [FIELD.TERRAIN.NORMAL]:'通常',
-    [FIELD.TERRAIN.CRACKED]:'ヒビ',
-    [FIELD.TERRAIN.HOLE]:'穴'
-  });
   let lastTileKey='';
   let triggerWatchId=0;
   const terrainVisuals=new Map();
-
-  const wrap=document.createElement('div');
-  const label=document.createElement('div');
-  const detail=document.createElement('div');
-  wrap.dataset.testOnly='crackout-pattern-test';
-  wrap.style.cssText='position:absolute;left:10px;top:10px;z-index:69;display:flex;flex-direction:column;gap:5px;max-width:min(340px,58vw);padding:6px;border:1px solid rgba(126,231,255,.65);border-radius:8px;background:rgba(5,22,31,.9);color:#eaffff;font:800 10px/1.3 system-ui,sans-serif;pointer-events:none;box-sizing:border-box;';
-  label.textContent='クラックアウト D：1マス先座標＋照準【採用】';
-  label.style.cssText='min-height:24px;display:flex;align-items:center;color:#eaffff;font-weight:900;';
-  detail.style.cssText='white-space:normal;color:#c8f5ff;';
-  detail.textContent=DESCRIPTION;
-  wrap.append(label,detail);
-  battle.appendChild(wrap);
 
   const previewSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   const previewPath=document.createElementNS('http://www.w3.org/2000/svg','path');
@@ -47,10 +28,9 @@
   previewPath.setAttribute('fill','rgba(65,220,255,.16)');
   previewPath.setAttribute('stroke','rgba(143,242,255,.98)');
   previewPath.setAttribute('stroke-width','5');
-  svgAppend(previewSvg,previewPath);
+  previewSvg.appendChild(previewPath);
   scene.appendChild(previewSvg);
 
-  function svgAppend(parent,...children){children.forEach(child=>parent.appendChild(child))}
   function normalizeDirection(direction){
     const x=Number(direction?.x)||0,y=Number(direction?.y)||0;
     const length=Math.hypot(x,y)||1;
@@ -64,8 +44,14 @@
     return FIELD.getTileAtWorld(x,y);
   }
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
+  function firstQueuedName(){return queue.querySelector('.q:not(.empty)')?.textContent?.trim()||''}
+  function isCrackOutHeld(){return firstQueuedName()==='クラックアウト'}
   function placePreview(tile,active=false){
-    if(!tile){previewSvg.style.opacity='0';lastTileKey='';return}
+    if(!tile||!isCrackOutHeld()){
+      previewSvg.style.opacity='0';
+      lastTileKey='';
+      return;
+    }
     const key=`${tile.row}:${tile.col}`;
     if(key!==lastTileKey){
       const center=FIELD.tileToWorldCenter(tile.row,tile.col);
@@ -77,7 +63,7 @@
     previewPath.setAttribute('stroke',active?'rgba(255,221,121,.98)':'rgba(143,242,255,.98)');
     previewSvg.style.opacity='1';
   }
-  function updatePreview(){placePreview(getTarget(),false)}
+  function updatePreview(){placePreview(isCrackOutHeld()?getTarget():null,false)}
   function tileKey(tile){return `${tile.row}:${tile.col}`}
 
   function ensureTerrainVisual(tile){
@@ -95,7 +81,7 @@
     crack.setAttribute('fill','none');
     crack.setAttribute('stroke-linecap','round');
     crack.setAttribute('stroke-linejoin','round');
-    svgAppend(svg,base,crack);
+    svg.append(base,crack);
     const center=FIELD.tileToWorldCenter(tile.row,tile.col);
     const p=project(center.x,center.y);
     svg.style.transform=`translate(${p.x-w/2}px,${p.y-h/2}px)`;
@@ -142,7 +128,6 @@
     const current=tile.currentTerrain;
     if(current===FIELD.TERRAIN.HOLE){
       renderTerrain(tile);
-      detail.textContent=`${DESCRIPTION} / row ${tile.row}・col ${tile.col}：穴のため変化なし`;
       return Object.freeze({applied:false,reason:'ALREADY_HOLE',terrain:current});
     }
     const next=current===FIELD.TERRAIN.CRACKED
@@ -150,11 +135,8 @@
       :(isOccupiedByEnemy(tile)?FIELD.TERRAIN.CRACKED:FIELD.TERRAIN.HOLE);
     const changed=FIELD.setTerrain(tile.row,tile.col,next);
     renderTerrain(changed);
-    detail.textContent=`${DESCRIPTION} / row ${tile.row}・col ${tile.col}：${TERRAIN_LABEL[current]||current} → ${TERRAIN_LABEL[next]||next}`;
     return Object.freeze({applied:true,reason:null,terrain:next});
   }
-
-  function firstQueuedName(){return queue.querySelector('.q:not(.empty)')?.textContent?.trim()||''}
 
   function watchForCrackOutUse(tile,startToken,watchId,startTime){
     if(watchId!==triggerWatchId)return;
@@ -173,7 +155,7 @@
   }
 
   aButton.addEventListener('pointerdown',()=>{
-    if(firstQueuedName()!=='クラックアウト')return;
+    if(!isCrackOutHeld())return;
     const tile=getTarget();
     if(!tile)return;
     const startToken=COMBAT_RANGE.getLastAttackContext?.()?.shotToken??null;
@@ -184,6 +166,7 @@
   const observer=new MutationObserver(updatePreview);
   observer.observe(playerEl,{attributes:true,attributeFilter:['style']});
   observer.observe(arrowEl,{attributes:true,attributeFilter:['style']});
+  observer.observe(queue,{childList:true,subtree:true,characterData:true});
 
   window.addEventListener('battlenetwork:terrainchange',event=>{
     const row=Number(event.detail?.row),col=Number(event.detail?.col);
