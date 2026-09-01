@@ -117,6 +117,7 @@
     const x=Number(config.x),y=Number(config.y);
     if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error('BattleNetworkEnemy: spawn requires finite world x/y.');
     if(x<0||x>FIELD.WORLD_SIZE||y<0||y>FIELD.WORLD_SIZE)throw new Error('BattleNetworkEnemy: spawn position is outside the world.');
+    if(FIELD.canOccupyWorld&&!FIELD.canOccupyWorld(x,y))throw new Error('BattleNetworkEnemy: spawn position is not walkable.');
     const scene=document.getElementById('scene');
     if(!scene)throw new Error('BattleNetworkEnemy: scene is not available.');
     const el=document.createElement('div');
@@ -127,7 +128,7 @@
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
     const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0};
-    scene.appendChild(el);enemies.push(enemy);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
+    scene.appendChild(el);enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
@@ -142,13 +143,14 @@
     if(!Number.isFinite(nextX)||!Number.isFinite(nextY))return Object.freeze({applied:false,reason:'INVALID_POSITION',enemy:getSnapshot(enemy)});
     const clampedX=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextX)),clampedY=Math.max(0,Math.min(FIELD.WORLD_SIZE,nextY));
     if(isEnemyPositionBlocked(enemy,clampedX,clampedY))return Object.freeze({applied:false,reason:'ENEMY_COLLISION',enemy:getSnapshot(enemy)});
+    if(FIELD.trackOccupant&&!FIELD.trackOccupant(`enemy:${enemy.id}`,clampedX,clampedY))return Object.freeze({applied:false,reason:'TERRAIN_BLOCKED',enemy:getSnapshot(enemy)});
     enemy.x=clampedX;
     enemy.y=clampedY;
     render(enemy);
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
@@ -207,7 +209,7 @@
         {x:enemy.x,y:bounds.top-enemy.hitBox.height/2-enemy.hitBox.offsetY},
         {x:enemy.x,y:bounds.bottom+enemy.hitBox.height/2-enemy.hitBox.offsetY}
       ].map(c=>({x:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.x)),y:Math.max(0,Math.min(FIELD.WORLD_SIZE,c.y))}))
-       .filter(c=>!boundsOverlap(getBoundsAt(enemy,c.x,c.y),bounds)&&!isEnemyPositionBlocked(enemy,c.x,c.y));
+       .filter(c=>!boundsOverlap(getBoundsAt(enemy,c.x,c.y),bounds)&&!isEnemyPositionBlocked(enemy,c.x,c.y)&&(!FIELD.canOccupyWorld||FIELD.canOccupyWorld(c.x,c.y)));
       if(!candidates.length)continue;
       candidates.sort((a,b)=>{
         const adx=a.x-enemy.x,ady=a.y-enemy.y,bdx=b.x-enemy.x,bdy=b.y-enemy.y;
