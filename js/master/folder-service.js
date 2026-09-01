@@ -6,10 +6,10 @@
   // while testing one chip, the Custom screen exposes only that target chip.
   // Enable this only while a chip-detail test is active, and change only the target when moving to the next chip.
   const TEST_TARGET=Object.freeze({
-    enabled:false,
-    type:'CRACKOUT',
-    chipId:'CHIP_EXE4_S106',
-    codes:Object.freeze(['*'])
+    enabled:true,
+    type:'AREASTEAL',
+    chipId:'CHIP_EXE4_S119',
+    codes:Object.freeze(['S'])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
@@ -36,6 +36,7 @@
   function getFolder(folderId=getEquippedFolderId()){return folderById.get(folderId)||null}
   function getFolderEntries(folderId=getEquippedFolderId()){return (data.FOLDER_CHIP_RELATION||[]).filter(row=>row.folderId===folderId).sort((a,b)=>a.slotNo-b.slotNo).map(row=>({...row}))}
   function equipFolder(folderId){if(!folderById.has(folderId))throw new Error(`BattleNetwork folder: unknown folderId ${folderId}`);try{localStorage.setItem(STORAGE_KEY,folderId)}catch{}return getFolder(folderId)}
+  function getTestTarget(){return TEST_TARGET}
 
   function buildTestCards(folderId){
     const codes=TEST_TARGET.codes;
@@ -65,6 +66,6 @@
     };
   }
 
-  window.BattleNetworkFolder={getFolder,getFolderEntries,getEquippedFolderId,equipFolder,toLegacyCards,installCurrentBattleBridge};
+  window.BattleNetworkFolder={getFolder,getFolderEntries,getEquippedFolderId,equipFolder,getTestTarget,toLegacyCards,installCurrentBattleBridge};
   installCurrentBattleBridge();
 })();
