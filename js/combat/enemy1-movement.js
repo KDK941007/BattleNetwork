@@ -17,7 +17,7 @@
     function shouldChase(enemy,player,now){const config=RUNTIME.getEnemyConfig(),distance=Math.hypot(player.x-enemy.x,player.y-enemy.y),chaseRange=FIELD.toWorldDistance(config.chaseRangeTiles);if(distance>chaseRange)return false;if(config.chasePolicy===RUNTIME.CHASE_POLICY.ALWAYS_WHILE_AWARE)return true;if(config.chasePolicy===RUNTIME.CHASE_POLICY.OVERLAP_COOLDOWN_CHASE){if(!AI.isChannelEnabled('ATTACK'))return true;const attackRange=FIELD.toWorldDistance(RUNTIME.getPattern().attackStartRangeTiles);if(distance<=attackRange&&RUNTIME.isAttackReady(enemyId,now))return false;return true}return false}
     function chaseDirection(enemy,player){const config=RUNTIME.getEnemyConfig(),dx=player.x-enemy.x,dy=player.y-enemy.y,distance=Math.hypot(dx,dy),toward=unit(dx,dy);if(config.chaseDistanceMode===RUNTIME.CHASE_DISTANCE_MODE.APPROACH){const stopTiles=Number(config.approachStopTiles);if(Number.isFinite(stopTiles)&&stopTiles>=0&&distance<=FIELD.toWorldDistance(stopTiles))return null;return toward}if(config.chaseDistanceMode!==RUNTIME.CHASE_DISTANCE_MODE.KEEP_BAND)return toward;const minTiles=config.keepDistanceMinTiles,maxTiles=config.keepDistanceMaxTiles;if(!Number.isFinite(minTiles)||!Number.isFinite(maxTiles)||minTiles<0||maxTiles<minTiles)return toward;const min=FIELD.toWorldDistance(minTiles),max=FIELD.toWorldDistance(maxTiles);if(distance>max)return toward;if(distance<min)return{x:-toward.x,y:-toward.y};return null}
     function moveTo(enemy,x,y){if(enemy.collision?.allowPlayerOverlap!==true&&ENEMY.wouldOverlapBounds?.(enemyId,x,y,PLAYER.getBounds()))return false;const result=ENEMY.setPosition(enemyId,x,y);if(result?.applied){lastX=result.enemy.x;lastY=result.enemy.y;return true}return false}
-    function buildPath(player,now){if(!NAV?.findPath)return false;path=[...NAV.findPath(enemyId,player)];pathTargetKey=tileKeyAt(player);lastPathAt=now;return path.length>0}
+    function buildPath(player,now){if(!NAV?.findPath)return false;path=[...NAV.findPath(enemyId,player,{blockedBounds:PLAYER.getBounds()})];pathTargetKey=tileKeyAt(player);lastPathAt=now;return path.length>0}
     function followPath(enemy,player,speed,dt,now){
       const playerKey=tileKeyAt(player);
       if((!path.length||pathTargetKey!==playerKey)&&now-lastPathAt>=PATH_RECALC_MS&&!buildPath(player,now))return false;
@@ -33,7 +33,7 @@
       if(config.navigationPolicy===RUNTIME.NAVIGATION_POLICY?.DIRECT||!NAV){clearPath();moveTo(enemy,enemy.x+d.x*speed*dt,enemy.y+d.y*speed*dt);return}
       if(path.length){followPath(enemy,player,speed,dt,now);return}
       if(moveTo(enemy,enemy.x+d.x*speed*dt,enemy.y+d.y*speed*dt)){pathTargetKey=tileKeyAt(player);return}
-      buildPath(player,now);followPath(enemy,player,speed,dt,now);
+      if(buildPath(player,now))followPath(enemy,player,speed,dt,now);
     }
     function detectExternalPush(enemy,now,dt){if(lastX===null||lastY===null){lastX=enemy.x;lastY=enemy.y;return false}const moved=Math.hypot(enemy.x-lastX,enemy.y-lastY),maxOwnMove=RUNTIME.getPattern().moveSpeedWorld*dt+1;if(moved>maxOwnMove){pushStunUntil=Math.max(pushStunUntil,now+PUSH_STUN_MS);target=null;clearPath();lastX=enemy.x;lastY=enemy.y;return true}lastX=enemy.x;lastY=enemy.y;return false}
     function canStart(){const e=ENEMY.getEnemy(enemyId);return !!e&&!e.isDefeated}
