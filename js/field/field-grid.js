@@ -13,6 +13,10 @@
     ICE: 'ICE',
     GRASS: 'GRASS'
   });
+  const HOLE_KIND = Object.freeze({
+    PERMANENT: 'PERMANENT',
+    RESTORABLE: 'RESTORABLE'
+  });
 
   if (WORLD_SIZE !== TILE_SIZE * GRID_COLS || WORLD_SIZE !== TILE_SIZE * GRID_ROWS) {
     throw new Error('BattleNetworkField: logical grid does not exactly match world size.');
@@ -30,6 +34,7 @@
       col,
       baseTerrain: TERRAIN.NORMAL,
       currentTerrain: TERRAIN.NORMAL,
+      holeKind: null,
       walkable: true
     }))
   );
@@ -56,14 +61,21 @@
     return getTile(row, col);
   }
 
-  function emitTerrainChange(tile, previousTerrain) {
-    if (!tile || previousTerrain === tile.currentTerrain) return;
+  function resolveHoleKind(tile, terrain) {
+    if (!tile || terrain !== TERRAIN.HOLE) return null;
+    return tile.baseTerrain === TERRAIN.HOLE ? HOLE_KIND.PERMANENT : HOLE_KIND.RESTORABLE;
+  }
+
+  function emitTerrainChange(tile, previousTerrain, previousHoleKind) {
+    if (!tile || (previousTerrain === tile.currentTerrain && previousHoleKind === tile.holeKind)) return;
     window.dispatchEvent(new CustomEvent('battlenetwork:terrainchange', {
       detail: Object.freeze({
         row: tile.row,
         col: tile.col,
         previousTerrain,
-        terrain: tile.currentTerrain
+        terrain: tile.currentTerrain,
+        previousHoleKind: previousHoleKind || null,
+        holeKind: tile.holeKind || null
       })
     }));
   }
@@ -72,10 +84,37 @@
     const tile = getTile(row, col);
     if (!tile || !terrainValues.has(terrain)) return null;
     const previousTerrain = tile.currentTerrain;
+    const previousHoleKind = tile.holeKind;
     tile.currentTerrain = terrain;
+    tile.holeKind = resolveHoleKind(tile, terrain);
     tile.walkable = terrain !== TERRAIN.HOLE;
-    emitTerrainChange(tile, previousTerrain);
+    emitTerrainChange(tile, previousTerrain, previousHoleKind);
     return tile;
+  }
+
+  function setBaseTerrain(row, col, terrain) {
+    const tile = getTile(row, col);
+    if (!tile || !terrainValues.has(terrain)) return null;
+    const previousTerrain = tile.currentTerrain;
+    const previousHoleKind = tile.holeKind;
+    tile.baseTerrain = terrain;
+    tile.currentTerrain = terrain;
+    tile.holeKind = terrain === TERRAIN.HOLE ? HOLE_KIND.PERMANENT : null;
+    tile.walkable = terrain !== TERRAIN.HOLE;
+    emitTerrainChange(tile, previousTerrain, previousHoleKind);
+    return tile;
+  }
+
+  function getHoleKind(row, col) {
+    return getTile(row, col)?.holeKind || null;
+  }
+
+  function isPermanentHole(row, col) {
+    return getHoleKind(row, col) === HOLE_KIND.PERMANENT;
+  }
+
+  function isRestorableHole(row, col) {
+    return getHoleKind(row, col) === HOLE_KIND.RESTORABLE;
   }
 
   function canOccupyWorld(x, y, options = {}) {
@@ -111,7 +150,9 @@
 
   function resetTerrain() {
     forEachTile(tile => {
-      if (tile.currentTerrain !== tile.baseTerrain) setTerrain(tile.row, tile.col, tile.baseTerrain);
+      if (tile.currentTerrain !== tile.baseTerrain || tile.holeKind !== resolveHoleKind(tile, tile.baseTerrain)) {
+        setTerrain(tile.row, tile.col, tile.baseTerrain);
+      }
     });
     occupantTiles.clear();
   }
@@ -160,10 +201,15 @@
     GRID_COLS,
     GRID_ROWS,
     TERRAIN,
+    HOLE_KIND,
     worldToTile,
     getTile,
     getTileAtWorld,
     setTerrain,
+    setBaseTerrain,
+    getHoleKind,
+    isPermanentHole,
+    isRestorableHole,
     canOccupyWorld,
     trackOccupant,
     untrackOccupant,
