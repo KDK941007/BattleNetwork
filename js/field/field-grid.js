@@ -9,6 +9,7 @@
     POISON: 'POISON',
     MAGMA: 'MAGMA',
     HOLE: 'HOLE',
+    CRACKED: 'CRACKED',
     ICE: 'ICE',
     GRASS: 'GRASS'
   });
@@ -20,6 +21,7 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const clampCol = col => clamp(Math.trunc(col), 0, GRID_COLS - 1);
   const clampRow = row => clamp(Math.trunc(row), 0, GRID_ROWS - 1);
+  const terrainValues = new Set(Object.values(TERRAIN));
 
   const tiles = Array.from({ length: GRID_ROWS }, (_, row) =>
     Array.from({ length: GRID_COLS }, (_, col) => ({
@@ -51,6 +53,14 @@
   function getTileAtWorld(x, y) {
     const { row, col } = worldToTile(x, y);
     return getTile(row, col);
+  }
+
+  function setTerrain(row, col, terrain) {
+    const tile = getTile(row, col);
+    if (!tile || !terrainValues.has(terrain)) return null;
+    tile.currentTerrain = terrain;
+    tile.walkable = terrain !== TERRAIN.HOLE;
+    return tile;
   }
 
   function tileToWorldBounds(row, col) {
@@ -100,6 +110,7 @@
     worldToTile,
     getTile,
     getTileAtWorld,
+    setTerrain,
     tileToWorldBounds,
     tileToWorldCenter,
     toWorldDistance,
