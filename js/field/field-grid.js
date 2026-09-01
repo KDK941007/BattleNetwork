@@ -148,6 +148,16 @@
     return occupantTiles.delete(String(occupantId));
   }
 
+  function getOccupantsAt(row, col) {
+    const tile = getTile(row, col);
+    if (!tile) return Object.freeze([]);
+    const ids = [];
+    for (const [occupantId, position] of occupantTiles) {
+      if (position.row === tile.row && position.col === tile.col) ids.push(occupantId);
+    }
+    return Object.freeze(ids);
+  }
+
   function resetTerrain() {
     forEachTile(tile => {
       if (tile.currentTerrain !== tile.baseTerrain || tile.holeKind !== resolveHoleKind(tile, tile.baseTerrain)) {
@@ -213,6 +223,7 @@
     canOccupyWorld,
     trackOccupant,
     untrackOccupant,
+    getOccupantsAt,
     resetTerrain,
     tileToWorldBounds,
     tileToWorldCenter,
