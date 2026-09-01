@@ -46,7 +46,7 @@
   function playerHurt(){return COLLISION?.getPlayerHurt?.(PLAYER.getPosition())||null}
   function resolvePointHit(input={}){
     const x=Number(input.x),y=Number(input.y);if(!Number.isFinite(x)||!Number.isFinite(y))return missResult('INVALID_POINT',input);
-    const hurt=playerHurt();const hit=hurt?Math.hypot(x-hurt.x,y-hurt.y)<=hurt.radius:.0+PLAYER.containsPoint(x,y);if(!hit)return missResult('MISS',input);return applyResolvedDamage(input);
+    const hurt=playerHurt();const hit=hurt?Math.hypot(x-hurt.x,y-hurt.y)<=hurt.radius:PLAYER.containsPoint(x,y);if(!hit)return missResult('MISS',input);return applyResolvedDamage(input);
   }
   function resolveRangeHit(input={}){
     const shape=input.shape;if(!shape)return missResult('INVALID_RANGE',input);let hit=false;
