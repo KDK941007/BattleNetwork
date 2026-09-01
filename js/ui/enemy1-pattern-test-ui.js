@@ -2,8 +2,8 @@
   const RUNTIME=window.BattleNetworkEnemy1Runtime,FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle'),scene=document.getElementById('scene');
   if(!RUNTIME||!FIELD||!ENEMY||!AI||!battle||!scene)throw new Error('BattleNetworkEnemy1PatternTestUI: required dependency is missing.');
   const PX=.72,PY=.36;
-  const AREA_STEAL_BASE=Object.freeze({rangeTiles:3,selectionTimeSec:.8});
-  const AREA_STEAL_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:3,max:7,step:1}),selectionTimeSec:Object.freeze({min:.8,max:3,step:.1})});
+  const AREA_STEAL_BASE=Object.freeze({rangeTiles:4,selectionTimeSec:2});
+  const AREA_STEAL_LIMITS=Object.freeze({rangeTiles:Object.freeze({min:4,max:4,step:1}),selectionTimeSec:Object.freeze({min:2,max:2,step:.1})});
   let areaStealSettings={...AREA_STEAL_BASE},settingsOpen=false;
   const areaStealListeners=new Set();
   function clampStep(value,limit){const n=Math.max(limit.min,Math.min(limit.max,Number(value)));const steps=Math.round((n-limit.min)/limit.step);return Number((limit.min+steps*limit.step).toFixed(2))}
@@ -36,7 +36,7 @@
   const areaTitle=document.createElement('strong');areaTitle.textContent='エリアスチール';areaTitle.style.cssText='font-size:14px;color:#eaffff;';
   const areaRangeStepper=makeStepper('周囲範囲','rangeTiles','マス',value=>String(value));
   const areaTimeStepper=makeStepper('暗転時間','selectionTimeSec','秒',value=>Number(value).toFixed(1));
-  const areaNote=document.createElement('span');areaNote.style.cssText='display:block;color:#ffe9a6;font-weight:900;padding-top:4px;';areaNote.textContent='テスト範囲：3〜7マス / 暗転時間：0.8〜3.0秒（0.1秒刻み）';
+  const areaNote=document.createElement('span');areaNote.style.cssText='display:block;color:#ffe9a6;font-weight:900;padding-top:4px;';areaNote.textContent='確定値：周囲4マス / 暗転時間2.0秒';
   areaStealPanel.append(areaTitle,areaRangeStepper,areaTimeStepper,areaNote);
 
   const rings=new Map();let animationFrame=null,startRadius=0,releaseRadius=0;
