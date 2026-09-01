@@ -1,5 +1,9 @@
 (()=>{
-  const enabled=new URLSearchParams(location.search).get('perf')==='1';
+  const searchEnabled=new URLSearchParams(location.search).get('perf')==='1';
+  const hashEnabled=/(?:^|[&#])perf=1(?:$|&)/.test(location.hash.replace(/^#/,''));
+  if(searchEnabled||hashEnabled){try{sessionStorage.setItem('battleNetworkPerfTest','1')}catch(_){}}
+  let enabled=searchEnabled||hashEnabled;
+  if(!enabled){try{enabled=sessionStorage.getItem('battleNetworkPerfTest')==='1'}catch(_){}}
   if(!enabled)return;
 
   const battle=document.getElementById('battle'),A=document.getElementById('A');
@@ -10,8 +14,8 @@
   const pendingFrameMarks=[];
   const panel=document.createElement('div');
   panel.dataset.testOnly='performance-monitor';
-  panel.style.cssText="position:absolute;left:8px;top:54px;z-index:9999;min-width:360px;max-width:560px;padding:8px 10px;border:1px solid rgba(120,235,255,.75);border-radius:5px;background:rgba(0,12,20,.9);color:#dffaff;font:700 12px/1.34 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;pointer-events:none;";
-  panel.textContent='PERF TEST  Chip use\nSTALL: none';battle.appendChild(panel);
+  panel.style.cssText="position:absolute;left:8px;bottom:8px;z-index:9999;min-width:360px;max-width:560px;padding:8px 10px;border:1px solid rgba(120,235,255,.75);border-radius:5px;background:rgba(0,12,20,.9);color:#dffaff;font:700 12px/1.34 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;pointer-events:none;";
+  panel.textContent='PERF TEST ON\nSTALL: none';battle.appendChild(panel);
 
   function record(name,ms){if(!Number.isFinite(ms))return;const prev=values.get(name)||{last:0,max:0};prev.last=ms;prev.max=Math.max(prev.max,ms);values.set(name,prev)}
   function measure(name,fn){const t=performance.now();try{return fn()}finally{record(name,performance.now()-t)}}
@@ -21,20 +25,11 @@
   window.requestAnimationFrame=function(callback){if(typeof callback!=='function')return nativeRAF(callback);const name=callbackName(callback);return nativeRAF(now=>{const t=performance.now();try{return callback(now)}finally{record(name,performance.now()-t)}})};
 
   function isLandscape(){return innerWidth>innerHeight}
-  function captureStall(now,gap){
-    if(!isLandscape()||now>shotWindowUntil)return;
-    const from=now-gap-140,to=now+10;
-    const nearby=events.filter(e=>e.time>=from&&e.time<=to).slice(-22);
-    lastStall={gap,time:now,events:nearby};
-  }
+  function captureStall(now,gap){if(!isLandscape()||now>shotWindowUntil)return;const from=now-gap-140,to=now+10;lastStall={gap,time:now,events:events.filter(e=>e.time>=from&&e.time<=to).slice(-22)}}
   function render(now){
     if(now-lastRender<200)return;lastRender=now;
-    const lines=['PERF TEST  Chip use'];
-    if(lastStall){
-      lines.push(`STALL ${lastStall.gap.toFixed(1)}ms:`);
-      if(!lastStall.events.length)lines.push('  (no traced event in window)');
-      else for(const e of lastStall.events){const delta=e.time-lastStall.time;lines.push(`${delta.toFixed(0).padStart(5)}ms ${e.name}${e.detail?' '+e.detail:''}`)}
-    }else lines.push('STALL: none');
+    const lines=['PERF TEST ON'];
+    if(lastStall){lines.push(`STALL ${lastStall.gap.toFixed(1)}ms:`);if(!lastStall.events.length)lines.push('  (no traced event in window)');else for(const e of lastStall.events){const delta=e.time-lastStall.time;lines.push(`${delta.toFixed(0).padStart(5)}ms ${e.name}${e.detail?' '+e.detail:''}`)}}else lines.push('STALL: none');
     lines.push('');
     const compact=['A nextFrame','range render','range hide','bomb render','bomb hide','raf:gameLoop','raf:previewSync','chipFrameGap'];
     for(const name of compact){const v=values.get(name);if(v)lines.push(`${name.padEnd(16)} ${v.last.toFixed(1).padStart(6)} / ${v.max.toFixed(1).padStart(6)} ms`)}
@@ -42,13 +37,7 @@
   }
   A.addEventListener('pointerdown',()=>{trace('A:pointerdown');const t=performance.now();markNextFrame('A nextFrame');queueMicrotask(()=>record('A task',performance.now()-t))},true);
   A.addEventListener('pointerup',()=>trace('A:pointerup'),true);
-  function monitorFrame(now){
-    const gap=now-lastFrame;lastFrame=now;
-    if(isLandscape()&&now<=shotWindowUntil&&gap>20)record('chipFrameGap',gap);
-    if(gap>=40)captureStall(now,gap);
-    if(pendingFrameMarks.length){const marks=pendingFrameMarks.splice(0,pendingFrameMarks.length);for(const mark of marks)record(mark.name,performance.now()-mark.time)}
-    render(now);nativeRAF(monitorFrame)
-  }
+  function monitorFrame(now){const gap=now-lastFrame;lastFrame=now;if(isLandscape()&&now<=shotWindowUntil&&gap>20)record('chipFrameGap',gap);if(gap>=40)captureStall(now,gap);if(pendingFrameMarks.length){const marks=pendingFrameMarks.splice(0,pendingFrameMarks.length);for(const mark of marks)record(mark.name,performance.now()-mark.time)}render(now);nativeRAF(monitorFrame)}
   nativeRAF(monitorFrame);
   window.BattleNetworkPerfTest=Object.freeze({record,measure,trace,markNextFrame,getSnapshot:()=>Object.freeze(Object.fromEntries([...values].map(([k,v])=>[k,Object.freeze({...v})]))),getLastStall:()=>lastStall?Object.freeze({gap:lastStall.gap,time:lastStall.time,events:Object.freeze(lastStall.events.map(e=>Object.freeze({...e})))}):null});
 })();
