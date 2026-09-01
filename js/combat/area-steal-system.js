@@ -12,10 +12,9 @@
   const SVG_NS='http://www.w3.org/2000/svg';
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,SH=FIELD.WORLD_SIZE*PY*2;
   const PAUSE_REASON='AREA_STEAL_SELECTION';
-  let active=false,timer=null,shade=null,svg=null;
+  let active=false,timer=null,shade=null,svg=null,activationTimer=null;
 
   function firstQueuedName(){return queue.querySelector('.q:not(.empty)')?.textContent?.trim()||''}
-  function queueCount(){return queue.querySelectorAll('.q:not(.empty)').length}
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
   function playerLandingBounds(center){const hit=PLAYER.getHitBox?.();if(!hit)return null;const halfW=Number(hit.width)/2,halfH=Number(hit.height)/2,offsetX=Number(hit.offsetX)||0,offsetY=Number(hit.offsetY)||0,cx=center.x+offsetX,cy=center.y+offsetY;return{left:cx-halfW,right:cx+halfW,top:cy-halfH,bottom:cy+halfH,width:Number(hit.width),height:Number(hit.height),centerX:cx,centerY:cy}}
   function getSettings(){const raw=window.BattleNetworkTestSettings?.getAreaStealSettings?.()||{};const range=Math.max(3,Math.min(7,Math.round(Number(raw.rangeTiles)||3))),time=Math.max(.8,Math.min(3,Number(raw.selectionTimeSec)||.8));return{rangeTiles:range,selectionTimeSec:time}}
@@ -56,10 +55,12 @@
     return true;
   }
 
+  // Aボタンの通常チップ処理が同一イベント内でキューを消費した直後に選択状態へ入る。
+  // DOM上のキュー件数変化には依存させず、使用前にエリアスチールだった事実だけを記録する。
   A.addEventListener('pointerdown',()=>{
     if(active||firstQueuedName()!=='エリアスチール')return;
-    const before=queueCount();
-    queueMicrotask(()=>{if(!active&&queueCount()===before-1)begin()});
+    if(activationTimer!==null)clearTimeout(activationTimer);
+    activationTimer=setTimeout(()=>{activationTimer=null;if(!active)begin()},0);
   },true);
   battle.addEventListener('pointerdown',event=>{
     if(!active)return;
