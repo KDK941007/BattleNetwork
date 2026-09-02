@@ -111,9 +111,11 @@
         if(targetIndex<0||!isEligibleChip(chipByType[targetCard?.type]))result.push({id:ids[i],label:chipByType[c.type]?.name||c.type});
         continue;
       }
+      const chip=chipByType[c.type],name=chip?.name||c.type;
       let plus=0,j=i+1;
-      if(isEligibleChip(chipByType[c.type]))while(j<ids.length&&isModifierCard(cardAt(ids[j]))){plus+=10;j++}
-      result.push({id:ids[i],label:`${chipByType[c.type]?.name||c.type}${plus?` +${plus}`:''}`});
+      if(isEligibleChip(chip))while(j<ids.length&&isModifierCard(cardAt(ids[j]))){plus+=10;j++}
+      const basePower=Number(chip?.power),power=Number.isFinite(basePower)&&basePower>0?basePower+plus:null;
+      result.push({id:ids[i],label:power===null?name:`${name} ${power}`});
     }
     return result;
   }
