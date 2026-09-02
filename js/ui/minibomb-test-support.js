@@ -1,45 +1,13 @@
 (()=>{
   const MASTER=window.BattleNetworkMaster;
-  const FOLDER=window.BattleNetworkFolder;
-  if(!MASTER||!FOLDER)throw new Error('BattleNetworkMiniBombTest: required master/folder service is missing.');
+  if(!MASTER)throw new Error('BattleNetworkMiniBomb: required master service is missing.');
 
-  const TEST_TARGET=Object.freeze({
-    enabled:true,
-    type:'BOMB',
-    chipId:'CHIP_0004',
-    codes:Object.freeze(['B','L']),
-    requiredCards:Object.freeze([])
-  });
   const DIAMETER_TILES=2;
   const settings=Object.freeze({diameterTiles:DIAMETER_TILES});
-  function getSettings(){return settings}
-  window.BattleNetworkMiniBombTestSettings=Object.freeze({TEST_TARGET,getSettings});
-
-  function buildTestCards(folderId=FOLDER.getEquippedFolderId?.()){
-    const codes=TEST_TARGET.codes;
-    return Array.from({length:30},(_,index)=>({
-      id:index,
-      type:TEST_TARGET.type,
-      code:codes[index%codes.length],
-      chipId:TEST_TARGET.chipId,
-      folderId,
-      slotNo:index+1
-    }));
-  }
-
-  // Replace only the active chip-detail test target. The original bridge is invoked once
-  // on the legacy folder so it restores Array.prototype.map to its native implementation.
-  const inheritedMap=Array.prototype.map;
-  Array.prototype.map=function(callback,thisArg){
-    const isLegacyBattleFolder=this.length===30&&Array.isArray(this[0])&&this[0][0]==='CANNON'&&this[0][1]==='A';
-    if(!isLegacyBattleFolder)return inheritedMap.call(this,callback,thisArg);
-    inheritedMap.call(this,callback,thisArg);
-    return buildTestCards();
-  };
-  FOLDER.getTestTarget=()=>TEST_TARGET;
-  FOLDER.toLegacyCards=folderId=>buildTestCards(folderId);
+  window.BattleNetworkMiniBombSettings=Object.freeze({getSettings:()=>settings});
 
   // Finalized MiniBomb parameters: fixed 3-tile throw and 2-tile blast diameter.
+  // This file no longer changes the active chip-detail test target.
   const originalCreate=MASTER.createGameCompatibilityData;
   MASTER.createGameCompatibilityData=()=>{
     const result=originalCreate();
