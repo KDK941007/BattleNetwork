@@ -6,14 +6,10 @@
   // expose only the chip under test plus the minimum chips required for its effect to function.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'ATTACK10',
-    chipId:'CHIP_EXE4_S148',
-    codes:Object.freeze(['*']),
-    requiredCards:Object.freeze([
-      Object.freeze({type:'VULCAN1',chipId:'CHIP_EXE4_S005',code:'V'}),
-      Object.freeze({type:'ATTACK10',chipId:'CHIP_EXE4_S148',code:'*'}),
-      Object.freeze({type:'ATTACK10',chipId:'CHIP_EXE4_S148',code:'*'})
-    ])
+    type:'RECOVER',
+    chipId:'CHIP_0005',
+    codes:Object.freeze(['A','L']),
+    requiredCards:Object.freeze([])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
