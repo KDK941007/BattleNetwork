@@ -1,6 +1,7 @@
 (()=>{
   const previous=document.getElementById('recovery10DirectEffectStyle');
   if(previous)previous.remove();
+
   const style=document.createElement('style');
   style.id='recovery10DirectEffectStyle';
   style.textContent=`
@@ -16,7 +17,7 @@
       background-size:175px 220px!important;
       box-shadow:none!important;
       opacity:0!important;
-      z-index:12!important;
+      z-index:4!important;
       will-change:opacity;
       transform:translate(-44.5px,-121px)!important;
       transform-origin:center;
@@ -32,17 +33,65 @@
       78%{opacity:.22}
       100%{opacity:0}
     }
-    .scene:has(>.healPulse)>.player{
-      animation:recoveryDirectPlayerGlow .95s ease-in-out both;
+    .player.recoveryEffectGlow{
+      animation:recoveryDirectPlayerGlow .95s ease-in-out both!important;
     }
     @keyframes recoveryDirectPlayerGlow{
-      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
-      18%{filter:brightness(1.6) saturate(1.3);box-shadow:0 0 18px rgba(120,255,158,.95),0 0 34px rgba(83,255,143,.7)}
-      38%{filter:brightness(1.08) saturate(1.04);box-shadow:0 0 14px rgba(83,255,143,.28)}
-      58%{filter:brightness(1.55) saturate(1.28);box-shadow:0 0 18px rgba(120,255,158,.9),0 0 32px rgba(83,255,143,.66)}
-      78%{filter:brightness(1.08) saturate(1.04);box-shadow:0 0 14px rgba(83,255,143,.24)}
-      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+      0%{
+        filter:brightness(1) saturate(1) drop-shadow(0 0 0 rgba(112,255,158,0));
+        box-shadow:0 0 12px #40cbff;
+      }
+      18%{
+        filter:brightness(1.75) saturate(1.45) drop-shadow(0 0 10px rgba(112,255,158,1)) drop-shadow(0 0 22px rgba(83,255,143,.9));
+        box-shadow:0 0 22px rgba(120,255,158,1),0 0 44px rgba(83,255,143,.9);
+      }
+      38%{
+        filter:brightness(1.12) saturate(1.08) drop-shadow(0 0 4px rgba(112,255,158,.32));
+        box-shadow:0 0 14px rgba(83,255,143,.32);
+      }
+      58%{
+        filter:brightness(1.7) saturate(1.4) drop-shadow(0 0 10px rgba(112,255,158,.95)) drop-shadow(0 0 20px rgba(83,255,143,.82));
+        box-shadow:0 0 21px rgba(120,255,158,.95),0 0 40px rgba(83,255,143,.82);
+      }
+      78%{
+        filter:brightness(1.1) saturate(1.05) drop-shadow(0 0 4px rgba(112,255,158,.25));
+        box-shadow:0 0 14px rgba(83,255,143,.25);
+      }
+      100%{
+        filter:brightness(1) saturate(1) drop-shadow(0 0 0 rgba(112,255,158,0));
+        box-shadow:0 0 12px #40cbff;
+      }
     }
   `;
   document.head.appendChild(style);
+
+  function installGlowTrigger(){
+    const scene=document.getElementById('scene');
+    const player=document.getElementById('player');
+    if(!scene||!player)return;
+
+    let glowTimer=0;
+    const triggerGlow=()=>{
+      clearTimeout(glowTimer);
+      player.classList.remove('recoveryEffectGlow');
+      void player.offsetWidth;
+      player.classList.add('recoveryEffectGlow');
+      glowTimer=setTimeout(()=>player.classList.remove('recoveryEffectGlow'),1000);
+    };
+
+    const observer=new MutationObserver(mutations=>{
+      for(const mutation of mutations){
+        for(const node of mutation.addedNodes){
+          if(node instanceof HTMLElement&&node.classList.contains('healPulse')){
+            triggerGlow();
+            return;
+          }
+        }
+      }
+    });
+    observer.observe(scene,{childList:true});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installGlowTrigger,{once:true});
+  else installGlowTrigger();
 })();
