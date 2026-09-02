@@ -70,6 +70,7 @@
     {behaviorId:'BOMB_THROW',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'EXPLOSION_DELAY',paramName:'爆発遅延',dataType:'number',defaultValue:.28,requiredFlg:true},
     {behaviorId:'BOMB_THROW',paramId:'THROW_DISTANCE_TILES',paramName:'投擲距離マス数',dataType:'number',defaultValue:3,requiredFlg:true},
+    {behaviorId:'BOMB_THROW',paramId:'IGNORE_INTERMEDIATE_OBSTACLES',paramName:'投擲経路上の障害物を無視',dataType:'boolean',defaultValue:true,requiredFlg:true},
     {behaviorId:'RECOVER_HP',paramId:'STARTUP_DELAY',paramName:'発動前硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.startupDelaySec,requiredFlg:true},
     {behaviorId:'RECOVER_HP',paramId:'ACTION_LOCK',paramName:'発動後硬直',dataType:'number',defaultValue:CHIP_TIMING_DEFAULTS.actionLockSec,requiredFlg:true}
   ];
