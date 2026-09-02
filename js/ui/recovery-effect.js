@@ -1,106 +1,40 @@
 (()=>{
-  const player=document.getElementById('player');
-  const scene=document.getElementById('scene');
-  const aButton=document.getElementById('A');
-  const queue=document.getElementById('queue');
-  if(!player||!scene)return;
-
   const style=document.createElement('style');
+  style.id='recovery10DirectEffectStyle';
   style.textContent=`
-    .player.recoveryGlow{animation:recoveryPlayerGlow .9s ease-out both}
-    @keyframes recoveryPlayerGlow{
-      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
-      28%{filter:brightness(1.65) saturate(1.35);box-shadow:0 0 18px rgba(120,255,158,.95),0 0 34px rgba(83,255,143,.68)}
-      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
-    }
-    .recoveryRiseRing{
-      position:absolute;
-      z-index:30;
-      left:-33.5px;
-      top:92px;
-      width:175px;
-      height:175px;
-      border:4px solid rgba(112,255,158,.98);
-      border-radius:50%;
-      background:transparent;
-      box-shadow:0 0 16px rgba(83,255,143,.88),inset 0 0 10px rgba(120,255,158,.24);
-      pointer-events:none;
-      opacity:0;
-      transform:translateY(28px) scaleY(.34);
-      transform-origin:center;
+    .recoveryRiseRing{display:none!important}
+    .healPulse{
+      width:175px!important;
+      height:220px!important;
+      border:0!important;
+      border-radius:0!important;
+      background-color:transparent!important;
+      background-repeat:no-repeat!important;
+      background-position:center!important;
+      background-size:175px 220px!important;
+      box-shadow:none!important;
+      opacity:1!important;
+      z-index:12!important;
       will-change:transform,opacity;
+      animation:recoveryRingStackRise .64s linear forwards!important;
+      transform-origin:center;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='175' height='220' viewBox='0 0 175 220'%3E%3Cg fill='none' stroke='%2370ff9e' stroke-width='4'%3E%3Cellipse cx='87.5' cy='200' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='178' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='156' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='134' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='112' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='90' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='68' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='46' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='24' rx='83' ry='18'/%3E%3C/g%3E%3C/svg%3E")!important;
+      filter:drop-shadow(0 0 7px rgba(83,255,143,.9));
+    }
+    @keyframes recoveryRingStackRise{
+      0%{transform:translate(-44.5px,-121px);opacity:0}
+      8%{opacity:1}
+      78%{opacity:.94}
+      100%{transform:translate(-44.5px,-270px);opacity:0}
+    }
+    .scene:has(>.healPulse)>.player{
+      animation:recoveryDirectPlayerGlow .64s ease-out both;
+    }
+    @keyframes recoveryDirectPlayerGlow{
+      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+      30%{filter:brightness(1.6) saturate(1.3);box-shadow:0 0 18px rgba(120,255,158,.95),0 0 34px rgba(83,255,143,.7)}
+      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
     }
   `;
   document.head.appendChild(style);
-
-  const RING_COUNT=9;
-  const RING_INTERVAL_MS=55;
-  const RING_DURATION_MS=720;
-  const START_Y=28;
-  const END_Y=-155;
-  const STARTUP_MS=100;
-  let glowTimer=null;
-  let lastPlayAt=-Infinity;
-
-  function flashPlayer(){
-    if(glowTimer!==null)clearTimeout(glowTimer);
-    player.classList.remove('recoveryGlow');
-    void player.offsetWidth;
-    player.classList.add('recoveryGlow');
-    glowTimer=setTimeout(()=>{
-      player.classList.remove('recoveryGlow');
-      glowTimer=null;
-    },940);
-  }
-
-  function createRing(delayMs){
-    setTimeout(()=>{
-      const ring=document.createElement('span');
-      ring.className='recoveryRiseRing';
-      player.appendChild(ring);
-
-      const animation=ring.animate([
-        {transform:`translateY(${START_Y}px) scaleY(.34)`,opacity:0},
-        {transform:`translateY(${START_Y-8}px) scaleY(.34)`,opacity:1,offset:.08},
-        {transform:`translateY(${END_Y+28}px) scaleY(.34)`,opacity:.9,offset:.78},
-        {transform:`translateY(${END_Y}px) scaleY(.34)`,opacity:0}
-      ],{duration:RING_DURATION_MS,easing:'ease-out',fill:'forwards'});
-      animation.onfinish=()=>ring.remove();
-      setTimeout(()=>ring.remove(),RING_DURATION_MS+120);
-    },delayMs);
-  }
-
-  function play(){
-    const now=performance.now();
-    if(now-lastPlayAt<180)return false;
-    lastPlayAt=now;
-    flashPlayer();
-    for(let i=0;i<RING_COUNT;i++)createRing(i*RING_INTERVAL_MS);
-    return true;
-  }
-
-  // Primary trigger for the current battle: capture the A press before game.js consumes
-  // the first queue entry, then play at the confirmed common Recovery startup timing.
-  if(aButton&&queue){
-    aButton.addEventListener('pointerdown',()=>{
-      const first=queue.querySelector('.q:first-child:not(.empty)');
-      const label=first?.textContent||'';
-      if(!label.includes('リカバリー'))return;
-      if(document.getElementById('customModal')?.classList.contains('open'))return;
-      if(document.getElementById('settingsModal')?.classList.contains('open'))return;
-      setTimeout(play,STARTUP_MS);
-    },true);
-  }
-
-  // Fallback for any existing code path that still emits the legacy healPulse node.
-  const observer=new MutationObserver(records=>{
-    for(const record of records){
-      for(const node of record.addedNodes){
-        if(node.nodeType===1&&node.classList?.contains('healPulse'))play();
-      }
-    }
-  });
-  observer.observe(scene,{childList:true});
-
-  window.BattleNetworkRecoveryEffect=Object.freeze({play});
 })();
