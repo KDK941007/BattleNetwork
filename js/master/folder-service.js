@@ -45,10 +45,7 @@
   function buildTestCards(folderId){
     const required=TEST_TARGET.requiredCards;
     if(required?.length){
-      return Array.from({length:30},(_,index)=>{
-        const source=required[index%required.length];
-        return {id:index,type:source.type,code:source.code,chipId:source.chipId,folderId,slotNo:index+1};
-      });
+      return required.map((source,index)=>({id:index,type:source.type,code:source.code,chipId:source.chipId,folderId,slotNo:index+1}));
     }
     const codes=TEST_TARGET.codes;
     if(!codes.length)throw new Error('BattleNetwork folder: test target has no chip codes.');
@@ -128,7 +125,7 @@
     const selectedSet=new Set(selectedIds);
     const cardElements=[...hand.querySelectorAll('.chipCard')];
     const elementById=new Map();
-    cardElements.forEach((el,index)=>{const id=Number(el.dataset.cardId);if(Number.isFinite(id))elementById.set(id,el)});
+    cardElements.forEach(el=>{const id=Number(el.dataset.cardId);if(Number.isFinite(id))elementById.set(id,el)});
     const links=[];
     for(let i=0;i<selectedIds.length;i++){
       const modifierId=selectedIds[i],modifierCard=cardAt(modifierId);
