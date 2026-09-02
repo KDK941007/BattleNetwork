@@ -5,72 +5,73 @@
   const style=document.createElement('style');
   style.id='recovery10DirectEffectStyle';
   style.textContent=`
-    .recoveryRiseRing,.recoveryFrontPulse{display:none!important}
-    .healPulse{
-      position:absolute!important;
-      width:175px!important;
-      height:220px!important;
-      border:0!important;
-      border-radius:0!important;
-      background-color:transparent!important;
-      background-repeat:no-repeat!important;
-      background-position:center!important;
-      background-size:175px 220px!important;
-      box-shadow:none!important;
-      opacity:0!important;
-      z-index:3!important;
-      will-change:opacity;
-      transform:translate(-44.5px,-121px)!important;
-      transform-origin:center;
-      animation:recoveryRingStackBlink .95s ease-in-out forwards!important;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='175' height='220' viewBox='0 0 175 220'%3E%3Cg fill='none' stroke='%2370ff9e' stroke-width='4'%3E%3Cellipse cx='87.5' cy='200' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='178' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='156' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='134' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='112' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='90' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='68' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='46' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='24' rx='83' ry='18'/%3E%3C/g%3E%3C/svg%3E")!important;
-      filter:drop-shadow(0 0 7px rgba(83,255,143,.9));
-      pointer-events:none!important;
-    }
-    @keyframes recoveryRingStackBlink{
-      0%{opacity:0}
-      18%{opacity:1}
-      38%{opacity:.18}
-      58%{opacity:1}
-      78%{opacity:.22}
-      100%{opacity:0}
-    }
+    .healPulse,.recoveryRiseRing,.recoveryFrontPulse{display:none!important}
 
-    .player{
-      z-index:5!important;
+    .player.recoverySparkGlow{
       overflow:visible!important;
+      animation:recoveryPlayerFlash .9s ease-in-out both!important;
     }
-    .recoveryPlayerGlowLayer{
+    .player.recoverySparkGlow::after{
+      content:"";
       position:absolute;
-      inset:-24px;
-      border-radius:60px;
-      z-index:10;
-      pointer-events:none;
-      opacity:0;
-      background:radial-gradient(ellipse at center,rgba(95,255,150,.68) 0%,rgba(70,255,135,.46) 42%,rgba(83,255,143,.16) 63%,rgba(83,255,143,0) 78%);
-      box-shadow:0 0 24px 10px rgba(112,255,158,.98),0 0 52px 20px rgba(83,255,143,.72);
-      mix-blend-mode:screen;
-      animation:recoveryPlayerGlowBlink .95s ease-in-out both;
-    }
-    .recoveryPlayerGlowCore{
-      position:absolute;
-      inset:-3px;
+      inset:-1px;
       border-radius:inherit;
-      z-index:11;
+      z-index:1;
       pointer-events:none;
       opacity:0;
-      background:rgba(68,255,132,.58);
-      box-shadow:inset 0 0 20px rgba(215,255,226,1),0 0 20px 7px rgba(83,255,143,.92);
+      background:rgba(74,255,135,.55);
+      box-shadow:inset 0 0 22px rgba(220,255,230,1);
       mix-blend-mode:screen;
-      animation:recoveryPlayerGlowBlink .95s ease-in-out both;
+      animation:recoveryPlayerTint .9s ease-in-out both;
     }
-    @keyframes recoveryPlayerGlowBlink{
+    .recoverySparkParticle{
+      position:absolute;
+      width:11px;
+      height:11px;
+      z-index:12;
+      pointer-events:none;
+      opacity:0;
+      border-radius:2px;
+      background:#baffc9;
+      box-shadow:0 0 6px 2px rgba(170,255,194,.95),0 0 13px 5px rgba(83,255,143,.72);
+      transform:translate(-50%,-50%) rotate(45deg) scale(.55);
+      animation:recoverySparkBlink .9s ease-in-out both;
+    }
+    .recoverySparkParticle::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:3px;
+      height:17px;
+      border-radius:3px;
+      background:#eaffef;
+      transform:translate(-50%,-50%) rotate(-45deg);
+      box-shadow:0 0 6px rgba(210,255,224,.95);
+    }
+    @keyframes recoveryPlayerFlash{
+      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+      18%{filter:brightness(1.85) saturate(1.55);box-shadow:0 0 0 3px rgba(165,255,190,.98),0 0 30px 12px rgba(83,255,143,.9)}
+      38%{filter:brightness(1.08) saturate(1.06);box-shadow:0 0 14px rgba(83,255,143,.3)}
+      58%{filter:brightness(1.8) saturate(1.5);box-shadow:0 0 0 3px rgba(165,255,190,.95),0 0 28px 11px rgba(83,255,143,.86)}
+      78%{filter:brightness(1.08) saturate(1.06);box-shadow:0 0 14px rgba(83,255,143,.28)}
+      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+    }
+    @keyframes recoveryPlayerTint{
       0%{opacity:0}
-      18%{opacity:1}
-      38%{opacity:.18}
-      58%{opacity:1}
-      78%{opacity:.2}
+      18%{opacity:.9}
+      38%{opacity:.14}
+      58%{opacity:.82}
+      78%{opacity:.12}
       100%{opacity:0}
+    }
+    @keyframes recoverySparkBlink{
+      0%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(.45)}
+      18%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(1)}
+      38%{opacity:.12;transform:translate(-50%,-50%) rotate(45deg) scale(.65)}
+      58%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(.95)}
+      78%{opacity:.1;transform:translate(-50%,-50%) rotate(45deg) scale(.6)}
+      100%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(.45)}
     }
   `;
   document.head.appendChild(style);
@@ -80,30 +81,41 @@
     const player=document.getElementById('player');
     if(!scene||!player)return;
 
+    const points=[
+      [-18,8],[18,-12],[50,-18],[82,-12],[118,8],[122,38],
+      [120,72],[88,110],[50,118],[12,110],[-20,72],[-22,38]
+    ];
     let cleanupTimer=0;
-    const triggerPlayerGlow=()=>{
+
+    const clearEffect=()=>{
       clearTimeout(cleanupTimer);
-      player.querySelectorAll('.recoveryPlayerGlowLayer,.recoveryPlayerGlowCore').forEach(el=>el.remove());
+      player.classList.remove('recoverySparkGlow');
+      player.querySelectorAll('.recoverySparkParticle').forEach(el=>el.remove());
+    };
 
-      const aura=document.createElement('div');
-      aura.className='recoveryPlayerGlowLayer';
-      const core=document.createElement('div');
-      core.className='recoveryPlayerGlowCore';
-      player.append(aura,core);
+    const triggerEffect=()=>{
+      clearEffect();
+      void player.offsetWidth;
+      player.classList.add('recoverySparkGlow');
 
-      cleanupTimer=setTimeout(()=>{
-        aura.remove();
-        core.remove();
-      },1000);
+      points.forEach(([x,y],index)=>{
+        const particle=document.createElement('span');
+        particle.className='recoverySparkParticle';
+        particle.style.left=`${x}%`;
+        particle.style.top=`${y}%`;
+        particle.style.animationDelay=`${index*22}ms`;
+        player.appendChild(particle);
+      });
+
+      cleanupTimer=setTimeout(clearEffect,1200);
     };
 
     const observer=new MutationObserver(mutations=>{
       for(const mutation of mutations){
         for(const node of mutation.addedNodes){
           if(node instanceof HTMLElement&&node.classList.contains('healPulse')){
-            node.style.setProperty('z-index','3','important');
-            player.style.setProperty('z-index','5','important');
-            triggerPlayerGlow();
+            triggerEffect();
+            return;
           }
         }
       }
