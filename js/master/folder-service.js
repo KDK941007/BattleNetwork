@@ -85,7 +85,7 @@
     }
     return -1;
   }
-  function canAddModifier(selectedIds,cardAt,chipByType){return findSelectedTargetIndex(selectedIds,cardAt,chipByType)>=0}
+  function canAddModifier(){return true}
   function consumeAttached(queue,cardAt,discard){
     let count=0;
     while(queue.length){
@@ -104,9 +104,15 @@
     const result=[];
     for(let i=0;i<ids.length;i++){
       const c=cardAt(ids[i]);
-      if(isModifierCard(c))continue;
+      if(isModifierCard(c)){
+        let targetIndex=i-1;
+        while(targetIndex>=0&&isModifierCard(cardAt(ids[targetIndex])))targetIndex--;
+        const targetCard=targetIndex>=0?cardAt(ids[targetIndex]):null;
+        if(targetIndex<0||!isEligibleChip(chipByType[targetCard?.type]))result.push({id:ids[i],label:chipByType[c.type]?.name||c.type});
+        continue;
+      }
       let plus=0,j=i+1;
-      while(j<ids.length&&isModifierCard(cardAt(ids[j]))){plus+=10;j++}
+      if(isEligibleChip(chipByType[c.type]))while(j<ids.length&&isModifierCard(cardAt(ids[j]))){plus+=10;j++}
       result.push({id:ids[i],label:`${chipByType[c.type]?.name||c.type}${plus?` +${plus}`:''}`});
     }
     return result;
