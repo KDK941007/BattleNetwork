@@ -19,9 +19,8 @@
       z-index:13;
       pointer-events:none;
       opacity:0;
-      background:rgba(74,255,135,.72);
-      box-shadow:inset 0 0 26px rgba(235,255,241,1),0 0 24px 8px rgba(83,255,143,.88);
-      mix-blend-mode:screen;
+      background:rgba(46,255,104,.46);
+      box-shadow:inset 0 0 24px rgba(102,255,145,.92),0 0 26px 9px rgba(48,255,104,.88);
       animation:recoveryPlayerTint .9s ease-in-out both;
     }
     .recoverySparkParticle{
@@ -32,9 +31,9 @@
       pointer-events:none;
       opacity:0;
       border-radius:2px;
-      background:#d5ffdf;
-      box-shadow:0 0 8px 3px rgba(185,255,204,1),0 0 17px 7px rgba(83,255,143,.9);
-      transform:translate(-50%,-50%) rotate(45deg) scale(.5);
+      background:#78ff9d;
+      box-shadow:0 0 8px 3px rgba(92,255,136,1),0 0 17px 7px rgba(38,255,98,.9);
+      transform:translate(-50%,-50%) rotate(45deg) scale(calc(.5 * var(--spark-scale,1)));
       animation:recoverySparkBlink .9s ease-in-out both;
     }
     .recoverySparkParticle::before,
@@ -44,43 +43,53 @@
       left:50%;
       top:50%;
       border-radius:3px;
-      background:#f1fff4;
-      box-shadow:0 0 7px rgba(225,255,234,1);
+      background:#a7ffbd;
+      box-shadow:0 0 7px rgba(72,255,121,1);
       transform:translate(-50%,-50%) rotate(-45deg);
     }
     .recoverySparkParticle::before{width:3px;height:21px}
     .recoverySparkParticle::after{width:21px;height:3px}
 
     @keyframes recoveryPlayerFlash{
-      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
-      18%{filter:brightness(2.05) saturate(1.7);box-shadow:0 0 0 4px rgba(185,255,204,1),0 0 36px 15px rgba(83,255,143,.98)}
-      38%{filter:brightness(1.12) saturate(1.1);box-shadow:0 0 15px rgba(83,255,143,.34)}
-      58%{filter:brightness(1.95) saturate(1.65);box-shadow:0 0 0 4px rgba(185,255,204,.98),0 0 34px 14px rgba(83,255,143,.94)}
-      78%{filter:brightness(1.1) saturate(1.08);box-shadow:0 0 14px rgba(83,255,143,.3)}
-      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px rgba(48,255,104,.16)}
+      18%{filter:brightness(1.72) saturate(1.42);box-shadow:0 0 0 4px rgba(92,255,136,.98),0 0 36px 15px rgba(38,255,98,.96)}
+      38%{filter:brightness(1.08) saturate(1.05);box-shadow:0 0 15px rgba(38,255,98,.3)}
+      58%{filter:brightness(1.66) saturate(1.38);box-shadow:0 0 0 4px rgba(92,255,136,.96),0 0 34px 14px rgba(38,255,98,.92)}
+      78%{filter:brightness(1.06) saturate(1.04);box-shadow:0 0 14px rgba(38,255,98,.28)}
+      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px rgba(48,255,104,.16)}
     }
     @keyframes recoveryPlayerTint{
       0%{opacity:0}
-      18%{opacity:1}
-      38%{opacity:.16}
-      58%{opacity:.95}
-      78%{opacity:.14}
+      18%{opacity:.92}
+      38%{opacity:.1}
+      58%{opacity:.86}
+      78%{opacity:.08}
       100%{opacity:0}
     }
     @keyframes recoverySparkBlink{
-      0%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(.4)}
-      18%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(1.15)}
-      38%{opacity:.14;transform:translate(-50%,-50%) rotate(45deg) scale(.65)}
-      58%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(1.05)}
-      78%{opacity:.12;transform:translate(-50%,-50%) rotate(45deg) scale(.6)}
-      100%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(.4)}
+      0%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(calc(.38 * var(--spark-scale,1)))}
+      18%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(calc(1.12 * var(--spark-scale,1)))}
+      38%{opacity:.12;transform:translate(-50%,-50%) rotate(45deg) scale(calc(.62 * var(--spark-scale,1)))}
+      58%{opacity:1;transform:translate(-50%,-50%) rotate(45deg) scale(calc(1.02 * var(--spark-scale,1)))}
+      78%{opacity:.1;transform:translate(-50%,-50%) rotate(45deg) scale(calc(.56 * var(--spark-scale,1)))}
+      100%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(calc(.38 * var(--spark-scale,1)))}
     }
   `;
   document.head.appendChild(style);
 
-  const points=[
-    [-12,10],[16,-8],[50,-16],[84,-8],[112,10],[120,38],
-    [116,72],[88,106],[50,116],[12,106],[-16,72],[-20,38]
+  const sparks=[
+    {x:-28,y:18,scale:.78,delay:42},
+    {x:14,y:-24,scale:1.02,delay:6},
+    {x:76,y:-32,scale:.72,delay:138},
+    {x:132,y:4,scale:1.12,delay:72},
+    {x:106,y:32,scale:.68,delay:188},
+    {x:146,y:57,scale:.94,delay:24},
+    {x:124,y:101,scale:.8,delay:126},
+    {x:74,y:128,scale:1.08,delay:58},
+    {x:18,y:114,scale:.7,delay:174},
+    {x:-32,y:94,scale:1,delay:92},
+    {x:-8,y:61,scale:.76,delay:214},
+    {x:-46,y:36,scale:.9,delay:148}
   ];
   let cleanupTimer=0;
 
@@ -100,16 +109,17 @@
     void player.offsetWidth;
     player.classList.add('recoverySparkGlow');
 
-    points.forEach(([x,y],index)=>{
+    sparks.forEach(({x,y,scale,delay})=>{
       const particle=document.createElement('span');
       particle.className='recoverySparkParticle';
       particle.style.left=`${x}%`;
       particle.style.top=`${y}%`;
-      particle.style.animationDelay=`${index*18}ms`;
+      particle.style.setProperty('--spark-scale',String(scale));
+      particle.style.animationDelay=`${delay}ms`;
       player.appendChild(particle);
     });
 
-    cleanupTimer=setTimeout(clearEffect,1200);
+    cleanupTimer=setTimeout(clearEffect,1250);
     return true;
   }
 
