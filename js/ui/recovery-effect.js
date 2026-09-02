@@ -6,7 +6,8 @@
   style.id='recovery10DirectEffectStyle';
   style.textContent=`
     .recoveryRiseRing{display:none!important}
-    .healPulse{
+    .healPulse,.recoveryFrontPulse{
+      position:absolute!important;
       width:175px!important;
       height:220px!important;
       border:0!important;
@@ -17,14 +18,20 @@
       background-size:175px 220px!important;
       box-shadow:none!important;
       opacity:0!important;
-      z-index:3!important;
       will-change:opacity;
       transform:translate(-44.5px,-121px)!important;
       transform-origin:center;
       animation:recoveryRingStackBlink .95s ease-in-out forwards!important;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='175' height='220' viewBox='0 0 175 220'%3E%3Cg fill='none' stroke='%2370ff9e' stroke-width='4'%3E%3Cellipse cx='87.5' cy='200' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='178' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='156' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='134' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='112' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='90' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='68' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='46' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='24' rx='83' ry='18'/%3E%3C/g%3E%3C/svg%3E")!important;
       filter:drop-shadow(0 0 7px rgba(83,255,143,.9));
       pointer-events:none!important;
+    }
+    .healPulse{
+      z-index:4!important;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='175' height='220' viewBox='0 0 175 220'%3E%3Cg fill='none' stroke='%2370ff9e' stroke-width='4'%3E%3Cellipse cx='87.5' cy='200' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='178' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='156' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='134' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='112' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='90' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='68' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='46' rx='83' ry='18'/%3E%3Cellipse cx='87.5' cy='24' rx='83' ry='18'/%3E%3C/g%3E%3C/svg%3E")!important;
+    }
+    .recoveryFrontPulse{
+      z-index:6!important;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='175' height='220' viewBox='0 0 175 220'%3E%3Cg fill='none' stroke='%2370ff9e' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M4.5 200 A83 18 0 0 0 170.5 200'/%3E%3Cpath d='M4.5 178 A83 18 0 0 0 170.5 178'/%3E%3Cpath d='M4.5 156 A83 18 0 0 0 170.5 156'/%3E%3Cpath d='M4.5 134 A83 18 0 0 0 170.5 134'/%3E%3Cpath d='M4.5 112 A83 18 0 0 0 170.5 112'/%3E%3Cpath d='M4.5 90 A83 18 0 0 0 170.5 90'/%3E%3Cpath d='M4.5 68 A83 18 0 0 0 170.5 68'/%3E%3Cpath d='M4.5 46 A83 18 0 0 0 170.5 46'/%3E%3Cpath d='M4.5 24 A83 18 0 0 0 170.5 24'/%3E%3C/g%3E%3C/svg%3E")!important;
     }
     @keyframes recoveryRingStackBlink{
       0%{opacity:0}
@@ -37,20 +44,31 @@
 
     .player{z-index:5!important}
     .player.recoveryEffectGlow{
-      animation:recoveryDirectPlayerGlow .95s ease-in-out both!important;
       isolation:isolate;
+      animation:recoveryDirectPlayerGlow .95s ease-in-out both!important;
     }
-    .player.recoveryEffectGlow::before{
+    .player.recoveryEffectGlow::before,
+    .player.recoveryEffectGlow::after{
       content:"";
       position:absolute;
-      inset:-18px;
-      border-radius:52px;
-      z-index:-1;
       pointer-events:none;
       opacity:0;
-      background:radial-gradient(ellipse at center,rgba(116,255,164,.72) 0%,rgba(83,255,143,.42) 38%,rgba(83,255,143,0) 74%);
-      box-shadow:0 0 20px 8px rgba(112,255,158,.78),0 0 44px 16px rgba(83,255,143,.44);
       animation:recoveryPlayerAuraBlink .95s ease-in-out both!important;
+    }
+    .player.recoveryEffectGlow::before{
+      inset:-20px;
+      border-radius:54px;
+      z-index:-1;
+      background:radial-gradient(ellipse at center,rgba(120,255,166,.9) 0%,rgba(83,255,143,.52) 38%,rgba(83,255,143,0) 74%);
+      box-shadow:0 0 24px 10px rgba(112,255,158,.9),0 0 50px 18px rgba(83,255,143,.56);
+    }
+    .player.recoveryEffectGlow::after{
+      inset:-2px;
+      border-radius:inherit;
+      z-index:1;
+      background:rgba(92,255,146,.38);
+      box-shadow:inset 0 0 18px rgba(190,255,210,.95),0 0 20px 7px rgba(83,255,143,.78);
+      mix-blend-mode:screen;
     }
     @keyframes recoveryPlayerAuraBlink{
       0%{opacity:0}
@@ -61,35 +79,17 @@
       100%{opacity:0}
     }
     @keyframes recoveryDirectPlayerGlow{
-      0%{
-        filter:brightness(1) saturate(1) drop-shadow(0 0 0 rgba(112,255,158,0));
-        box-shadow:0 0 12px #40cbff;
-      }
-      18%{
-        filter:brightness(1.9) saturate(1.55) drop-shadow(0 0 12px rgba(112,255,158,1)) drop-shadow(0 0 26px rgba(83,255,143,1));
-        box-shadow:0 0 26px rgba(120,255,158,1),0 0 52px rgba(83,255,143,.95);
-      }
-      38%{
-        filter:brightness(1.12) saturate(1.08) drop-shadow(0 0 4px rgba(112,255,158,.32));
-        box-shadow:0 0 14px rgba(83,255,143,.32);
-      }
-      58%{
-        filter:brightness(1.85) saturate(1.5) drop-shadow(0 0 12px rgba(112,255,158,1)) drop-shadow(0 0 24px rgba(83,255,143,.92));
-        box-shadow:0 0 25px rgba(120,255,158,1),0 0 48px rgba(83,255,143,.9);
-      }
-      78%{
-        filter:brightness(1.1) saturate(1.05) drop-shadow(0 0 4px rgba(112,255,158,.25));
-        box-shadow:0 0 14px rgba(83,255,143,.25);
-      }
-      100%{
-        filter:brightness(1) saturate(1) drop-shadow(0 0 0 rgba(112,255,158,0));
-        box-shadow:0 0 12px #40cbff;
-      }
+      0%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
+      18%{filter:brightness(2.05) saturate(1.65) drop-shadow(0 0 12px rgba(112,255,158,1));box-shadow:0 0 30px rgba(120,255,158,1),0 0 58px rgba(83,255,143,.98)}
+      38%{filter:brightness(1.15) saturate(1.1);box-shadow:0 0 14px rgba(83,255,143,.35)}
+      58%{filter:brightness(2) saturate(1.6) drop-shadow(0 0 12px rgba(112,255,158,1));box-shadow:0 0 28px rgba(120,255,158,1),0 0 54px rgba(83,255,143,.94)}
+      78%{filter:brightness(1.12) saturate(1.08);box-shadow:0 0 14px rgba(83,255,143,.28)}
+      100%{filter:brightness(1) saturate(1);box-shadow:0 0 12px #40cbff}
     }
   `;
   document.head.appendChild(style);
 
-  function installGlowTrigger(){
+  function installRecoveryEffect(){
     const scene=document.getElementById('scene');
     const player=document.getElementById('player');
     if(!scene||!player)return;
@@ -103,12 +103,23 @@
       glowTimer=setTimeout(()=>player.classList.remove('recoveryEffectGlow'),1000);
     };
 
+    const addFrontArcs=source=>{
+      source.style.setProperty('z-index','4','important');
+      player.style.setProperty('z-index','5','important');
+      const front=document.createElement('div');
+      front.className='recoveryFrontPulse';
+      front.style.left=source.style.left;
+      front.style.top=source.style.top;
+      scene.appendChild(front);
+      setTimeout(()=>front.remove(),700);
+    };
+
     const observer=new MutationObserver(mutations=>{
       for(const mutation of mutations){
         for(const node of mutation.addedNodes){
           if(node instanceof HTMLElement&&node.classList.contains('healPulse')){
             triggerGlow();
-            return;
+            addFrontArcs(node);
           }
         }
       }
@@ -116,6 +127,6 @@
     observer.observe(scene,{childList:true});
   }
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installGlowTrigger,{once:true});
-  else installGlowTrigger();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installRecoveryEffect,{once:true});
+  else installRecoveryEffect();
 })();
