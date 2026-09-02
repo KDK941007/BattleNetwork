@@ -74,31 +74,31 @@
     };
   }
 
-  const ATTACK10_TYPE='ATTACK10';
-  function isModifierCard(card){return card?.type===ATTACK10_TYPE}
-  function isEligibleChip(chip){const power=Number(chip?.power);return Number.isFinite(power)&&power>0}
-  function findSelectedTargetIndex(selectedIds,cardAt,chipByType){
-    for(let i=selectedIds.length-1;i>=0;i--){
-      const selectedCard=cardAt(selectedIds[i]);
-      if(isModifierCard(selectedCard))continue;
-      return isEligibleChip(chipByType[selectedCard?.type])?i:-1;
-    }
-    return -1;
+  // Shared Attack+ modifier handling.
+  // Legacy runtime types use ATTACK<number> (e.g. ATTACK10 / ATTACK30),
+  // so additional Attack+ chips only need their runtime card type to follow that rule.
+  function getModifierBonus(card){
+    const match=/^ATTACK(\d+)$/.exec(String(card?.type||''));
+    if(!match)return 0;
+    const bonus=Number(match[1]);
+    return Number.isFinite(bonus)&&bonus>0?bonus:0;
   }
+  function isModifierCard(card){return getModifierBonus(card)>0}
+  function isEligibleChip(chip){const power=Number(chip?.power);return Number.isFinite(power)&&power>0}
   function canAddModifier(){return true}
   function consumeAttached(queue,cardAt,discard){
-    let count=0;
+    let totalBonus=0;
     while(queue.length){
-      const nextId=queue[0],nextCard=cardAt(nextId);
-      if(!isModifierCard(nextCard))break;
-      queue.shift();discard?.add?.(nextId);count++;
+      const nextId=queue[0],nextCard=cardAt(nextId),bonus=getModifierBonus(nextCard);
+      if(!(bonus>0))break;
+      queue.shift();discard?.add?.(nextId);totalBonus+=bonus;
     }
-    return count;
+    return totalBonus;
   }
-  function applyPower(chip,count){
-    const base=Number(chip?.power);
-    if(!Number.isFinite(base)||count<=0)return chip;
-    return Object.freeze({...chip,power:base+10*count,attackPlus10Count:count});
+  function applyPower(chip,totalBonus){
+    const base=Number(chip?.power),bonus=Number(totalBonus);
+    if(!Number.isFinite(base)||!Number.isFinite(bonus)||bonus<=0)return chip;
+    return Object.freeze({...chip,power:base+bonus,attackPlusBonus:bonus});
   }
   function getDisplayEntries(ids,cardAt,chipByType){
     const result=[];
@@ -113,46 +113,52 @@
       }
       const chip=chipByType[c.type],name=chip?.name||c.type;
       let plus=0,j=i+1;
-      if(isEligibleChip(chip))while(j<ids.length&&isModifierCard(cardAt(ids[j]))){plus+=10;j++}
+      if(isEligibleChip(chip))while(j<ids.length){
+        const bonus=getModifierBonus(cardAt(ids[j]));
+        if(!(bonus>0))break;
+        plus+=bonus;j++;
+      }
       const basePower=Number(chip?.power),hasPower=Number.isFinite(basePower)&&basePower>0;
       result.push({id:ids[i],label:hasPower?`${name} ${basePower}${plus?`+${plus}`:''}`:name});
     }
     return result;
   }
   function ensureCustomStyles(){
-    if(document.getElementById('attack10CustomStyle'))return;
-    const style=document.createElement('style');style.id='attack10CustomStyle';
-    style.textContent='.chipCard.attack10Target{box-shadow:0 0 0 2px rgba(255,226,96,.95),0 0 14px rgba(255,196,45,.7)}.chipCard .attack10Badge{position:absolute;right:6px;top:6px;z-index:5;padding:2px 6px;border-radius:10px;background:rgba(20,12,0,.88);border:1px solid #ffe36b;color:#fff2a8;font-size:12px;font-weight:900;line-height:1.2}.hand{position:relative}.attack10Links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:8}.attack10Links line{stroke:#ffe36b;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(255,211,68,.8))}.attack10Links polygon{fill:#ffe36b;filter:drop-shadow(0 0 3px rgba(255,211,68,.8))}.queue .q:first-child:not(.empty){border-color:#ffe36b;background:#5b470c;color:#fff7c2;box-shadow:0 0 8px rgba(255,218,75,.5);font-weight:900}';
+    if(document.getElementById('attackPlusCustomStyle'))return;
+    const style=document.createElement('style');style.id='attackPlusCustomStyle';
+    style.textContent='.chipCard.attackPlusTarget{box-shadow:0 0 0 2px rgba(255,226,96,.95),0 0 14px rgba(255,196,45,.7)}.chipCard .attackPlusBadge{position:absolute;right:6px;top:6px;z-index:5;padding:2px 6px;border-radius:10px;background:rgba(20,12,0,.88);border:1px solid #ffe36b;color:#fff2a8;font-size:12px;font-weight:900;line-height:1.2}.hand{position:relative}.attackPlusLinks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:8}.attackPlusLinks line{stroke:#ffe36b;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(255,211,68,.8))}.attackPlusLinks polygon{fill:#ffe36b;filter:drop-shadow(0 0 3px rgba(255,211,68,.8))}.queue .q:first-child:not(.empty){border-color:#ffe36b;background:#5b470c;color:#fff7c2;box-shadow:0 0 8px rgba(255,218,75,.5);font-weight:900}';
     document.head.appendChild(style);
   }
   function decorateCustom(hand,selectedIds,cardAt,chipByType){
     if(!hand)return;ensureCustomStyles();
-    hand.querySelectorAll('.attack10Badge').forEach(el=>el.remove());
-    hand.querySelectorAll('.chipCard.attack10Target').forEach(el=>el.classList.remove('attack10Target'));
-    hand.querySelector('.attack10Links')?.remove();
+    hand.querySelectorAll('.attackPlusBadge').forEach(el=>el.remove());
+    hand.querySelectorAll('.chipCard.attackPlusTarget').forEach(el=>el.classList.remove('attackPlusTarget'));
+    hand.querySelector('.attackPlusLinks')?.remove();
     const selectedSet=new Set(selectedIds);
     const cardElements=[...hand.querySelectorAll('.chipCard')];
     const elementById=new Map();
     cardElements.forEach(el=>{const id=Number(el.dataset.cardId);if(Number.isFinite(id))elementById.set(id,el)});
     const links=[];
     for(let i=0;i<selectedIds.length;i++){
-      const modifierId=selectedIds[i],modifierCard=cardAt(modifierId);
-      if(!isModifierCard(modifierCard))continue;
+      const modifierId=selectedIds[i],modifierCard=cardAt(modifierId),bonus=getModifierBonus(modifierCard);
+      if(!(bonus>0))continue;
       let targetIndex=i-1;
       while(targetIndex>=0&&isModifierCard(cardAt(selectedIds[targetIndex])))targetIndex--;
       if(targetIndex<0)continue;
       const targetId=selectedIds[targetIndex],targetCard=cardAt(targetId);
       if(!isEligibleChip(chipByType[targetCard?.type]))continue;
-      links.push([modifierId,targetId]);
+      links.push([modifierId,targetId,bonus]);
     }
-    const grouped=new Map();links.forEach(([,targetId])=>grouped.set(targetId,(grouped.get(targetId)||0)+10));
-    grouped.forEach((plus,targetId)=>{const targetEl=elementById.get(targetId);if(!targetEl)return;targetEl.classList.add('attack10Target');const badge=document.createElement('span');badge.className='attack10Badge';badge.textContent=`+${plus}`;targetEl.appendChild(badge)});
+    const grouped=new Map();links.forEach(([,targetId,bonus])=>grouped.set(targetId,(grouped.get(targetId)||0)+bonus));
+    grouped.forEach((plus,targetId)=>{const targetEl=elementById.get(targetId);if(!targetEl)return;targetEl.classList.add('attackPlusTarget');const badge=document.createElement('span');badge.className='attackPlusBadge';badge.textContent=`+${plus}`;targetEl.appendChild(badge)});
     if(!links.length)return;
-    const handRect=hand.getBoundingClientRect(),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','attack10Links');svg.setAttribute('viewBox',`0 0 ${Math.max(1,handRect.width)} ${Math.max(1,handRect.height)}`);svg.setAttribute('preserveAspectRatio','none');
+    const handRect=hand.getBoundingClientRect(),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','attackPlusLinks');svg.setAttribute('viewBox',`0 0 ${Math.max(1,handRect.width)} ${Math.max(1,handRect.height)}`);svg.setAttribute('preserveAspectRatio','none');
     links.forEach(([modifierId,targetId])=>{const from=elementById.get(modifierId),to=elementById.get(targetId);if(!from||!to||!selectedSet.has(modifierId)||!selectedSet.has(targetId))return;const a=from.getBoundingClientRect(),b=to.getBoundingClientRect(),x1=a.left-handRect.left+a.width/2,y1=a.top-handRect.top+a.height/2,x2=b.left-handRect.left+b.width/2,y2=b.top-handRect.top+b.height/2,dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,endX=x2-ux*Math.min(28,b.width*.22),endY=y2-uy*Math.min(28,b.height*.22);const line=document.createElementNS(svg.namespaceURI,'line');line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',endX);line.setAttribute('y2',endY);svg.appendChild(line);const size=9,px=endX,py=endY,leftX=px-ux*size-uy*size*.65,leftY=py-uy*size+ux*size*.65,rightX=px-ux*size+uy*size*.65,rightY=py-uy*size-ux*size*.65,arrow=document.createElementNS(svg.namespaceURI,'polygon');arrow.setAttribute('points',`${px},${py} ${leftX},${leftY} ${rightX},${rightY}`);svg.appendChild(arrow)});
     hand.appendChild(svg);
   }
-  window.BattleNetworkAttack10=Object.freeze({isModifierCard,isEligibleChip,canAddModifier,consumeAttached,applyPower,getDisplayEntries,decorateCustom});
+  const attackPlus=Object.freeze({getModifierBonus,isModifierCard,isEligibleChip,canAddModifier,consumeAttached,applyPower,getDisplayEntries,decorateCustom});
+  window.BattleNetworkAttackPlus=attackPlus;
+  window.BattleNetworkAttack10=attackPlus;
   window.BattleNetworkFolder={getFolder,getFolderEntries,getEquippedFolderId,equipFolder,getTestTarget,toLegacyCards,installCurrentBattleBridge};
   installCurrentBattleBridge();
 })();
