@@ -1,5 +1,4 @@
 (()=>{
-  const FIELD=window.BattleNetworkField;
   const MASTER=window.BattleNetworkMaster;
   const FOLDER=window.BattleNetworkFolder;
   if(!MASTER||!FOLDER)throw new Error('BattleNetworkMiniBombTest: required master/folder service is missing.');
@@ -63,7 +62,7 @@
     if(!bomb)return result;
     Object.defineProperty(bomb,'throwDistanceTiles',{enumerable:true,configurable:true,get:()=>3});
     Object.defineProperty(bomb,'radiusTiles',{enumerable:true,configurable:true,get:()=>getSettings().diameterTiles/2});
-    Object.defineProperty(bomb,'radius',{enumerable:true,configurable:true,get:()=>FIELD?.toWorldDistance?FIELD.toWorldDistance(getSettings().diameterTiles/2):undefined});
+    Object.defineProperty(bomb,'radius',{enumerable:true,configurable:true,get:()=>window.BattleNetworkField?.toWorldDistance?window.BattleNetworkField.toWorldDistance(getSettings().diameterTiles/2):undefined});
     bomb.rangeText='向いている方向の固定3マス先へ投げる';
     return result;
   };
@@ -71,7 +70,7 @@
   function installPanel(){
     const wrap=document.querySelector('[data-test-only="enemy-debug-tools"]');
     const tools=wrap?.children?.[1];
-    if(!tools||document.getElementById('miniBombTestPanel'))return;
+    if(!tools||document.getElementById('miniBombTestPanel'))return false;
     const panel=document.createElement('div');panel.id='miniBombTestPanel';
     panel.style.cssText='display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid rgba(255,211,82,.68);border-radius:7px;background:rgba(48,36,6,.8);font-variant-numeric:tabular-nums;box-sizing:border-box;';
     const title=document.createElement('strong');title.textContent='ミニボム';title.style.cssText='font-size:14px;color:#fff5bd;';
@@ -91,7 +90,14 @@
     panel.append(title,fixed,label,buttons,note);
     const detail=tools.lastElementChild;detail?tools.insertBefore(panel,detail):tools.appendChild(panel);
     subscribe(render);
+    return true;
   }
 
-  setTimeout(installPanel,0);
+  function installPanelWhenReady(){
+    if(installPanel())return;
+    const observer=new MutationObserver(()=>{if(installPanel())observer.disconnect()});
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installPanelWhenReady,{once:true});
+  else installPanelWhenReady();
 })();
