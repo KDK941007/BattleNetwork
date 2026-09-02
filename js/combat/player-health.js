@@ -21,6 +21,11 @@
     return current;
   }
 
+  function notifyRecoveryEffect(result){
+    try{window.BattleNetworkRecoveryEffect?.trigger?.(result)}catch(error){console.error('BattleNetwork recovery effect failed.',error)}
+    return result;
+  }
+
   function subscribe(listener){
     if(typeof listener!=='function')return()=>{};
     listeners.add(listener);
@@ -96,12 +101,13 @@
     const afterHp=Math.min(before.maxHp,before.hp+healing);
     const appliedHealing=afterHp-before.hp;
     if(appliedHealing<=0){
-      return Object.freeze({ok:true,reason:'FULL_HP',requestedHealing:healing,appliedHealing:0,beforeHp:before.hp,afterHp:before.hp,...before});
+      const result=Object.freeze({ok:true,reason:'FULL_HP',requestedHealing:healing,appliedHealing:0,beforeHp:before.hp,afterHp:before.hp,...before});
+      return notifyRecoveryEffect(result);
     }
 
     state.hp=afterHp;
     const after=emit();
-    return Object.freeze({
+    const result=Object.freeze({
       ok:true,
       reason:null,
       requestedHealing:healing,
@@ -110,6 +116,7 @@
       afterHp,
       ...after
     });
+    return notifyRecoveryEffect(result);
   }
 
   window.BattleNetworkPlayerHealth=Object.freeze({
