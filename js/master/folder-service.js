@@ -3,18 +3,13 @@
   const STORAGE_KEY='battleNetworkEquippedFolderId';
 
   // Chip-detail/effect-review test rule:
-  // expose only the chips currently under review plus the minimum chips required for verification.
+  // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
     type:'AIRSHOT',
     chipId:'CHIP_EXE4_S004',
     codes:Object.freeze(['A']),
-    requiredCards:Object.freeze([
-      Object.freeze({type:'AIRSHOT',code:'A',chipId:'CHIP_EXE4_S004'}),
-      Object.freeze({type:'BOMB',code:'B',chipId:'CHIP_0004'}),
-      Object.freeze({type:'SWORD',code:'S',chipId:'CHIP_0002'}),
-      Object.freeze({type:'WIDE',code:'S',chipId:'CHIP_0003'})
-    ])
+    requiredCards:Object.freeze([])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
@@ -75,9 +70,6 @@
     };
   }
 
-  // Shared Attack+ modifier handling.
-  // Legacy runtime types use ATTACK<number> (e.g. ATTACK10 / ATTACK30),
-  // so additional Attack+ chips only need their runtime card type to follow that rule.
   function getModifierBonus(card){
     const match=/^ATTACK(\d+)$/.exec(String(card?.type||''));
     if(!match)return 0;
