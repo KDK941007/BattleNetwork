@@ -2,14 +2,19 @@
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
 
-  // Chip-detail test rule:
-  // expose only the chip under test plus the minimum chips required for its effect to function.
+  // Chip-detail/effect-review test rule:
+  // expose only the chips currently under review plus the minimum chips required for verification.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'RECOVER',
-    chipId:'CHIP_0005',
-    codes:Object.freeze(['A','L']),
-    requiredCards:Object.freeze([])
+    type:'AIRSHOT',
+    chipId:'CHIP_EXE4_S004',
+    codes:Object.freeze(['A']),
+    requiredCards:Object.freeze([
+      Object.freeze({type:'AIRSHOT',code:'A',chipId:'CHIP_EXE4_S004'}),
+      Object.freeze({type:'BOMB',code:'B',chipId:'CHIP_0004'}),
+      Object.freeze({type:'SWORD',code:'S',chipId:'CHIP_0002'}),
+      Object.freeze({type:'WIDE',code:'S',chipId:'CHIP_0003'})
+    ])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
