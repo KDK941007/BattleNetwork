@@ -25,73 +25,88 @@
       border:0!important;
       pointer-events:none!important;
       transform-origin:center!important;
-      width:86px!important;
-      height:40px!important;
+      width:104px!important;
+      height:72px!important;
       border-radius:50%!important;
-      background:radial-gradient(ellipse at 70% 50%,rgba(249,255,255,.99) 0 10%,rgba(188,248,255,.94) 19%,rgba(103,226,247,.78) 38%,rgba(54,188,224,.26) 62%,transparent 73%)!important;
-      box-shadow:0 0 12px rgba(134,241,255,.95),0 0 25px rgba(64,207,239,.66)!important;
+      background:radial-gradient(ellipse at 70% 50%,rgba(252,255,255,.99) 0 11%,rgba(196,251,255,.97) 20%,rgba(116,233,251,.88) 39%,rgba(62,198,232,.48) 61%,rgba(53,174,211,.12) 74%,transparent 80%)!important;
+      box-shadow:0 0 18px rgba(166,248,255,.98),0 0 38px rgba(64,215,245,.88),0 0 62px rgba(52,189,228,.45)!important;
+      filter:saturate(1.08);
     }
 
-    /* A-1: 圧縮空気弾＋細い風の尾 */
+    /* A-1: 圧縮空気弾＋太い風の尾 */
     .battle[data-airshot-effect="A"] .bullet.cannon::before{
-      content:"";position:absolute;right:66%;top:50%;width:132px;height:44px;transform:translateY(-50%);
+      content:"";position:absolute;right:62%;top:50%;width:190px;height:104px;transform:translateY(-50%);
       background:
-        linear-gradient(90deg,transparent 0%,rgba(89,211,239,.10) 26%,rgba(150,239,255,.78) 77%,rgba(231,255,255,.96) 100%) 0 7px/100% 5px no-repeat,
-        linear-gradient(90deg,transparent 0%,rgba(69,195,228,.07) 18%,rgba(117,225,247,.58) 70%,rgba(208,251,255,.90) 100%) 0 19px/88% 4px no-repeat,
-        linear-gradient(90deg,transparent 0%,rgba(79,201,231,.05) 30%,rgba(109,218,243,.48) 75%,rgba(194,246,255,.82) 100%) 0 31px/74% 4px no-repeat;
-      clip-path:polygon(0 24%,100% 0,100% 100%,0 76%);
-      filter:drop-shadow(0 0 4px rgba(93,225,250,.45));
+        linear-gradient(90deg,transparent 0%,rgba(61,194,228,.10) 15%,rgba(119,229,250,.58) 58%,rgba(218,252,255,.98) 100%) 0 8px/100% 13px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(53,181,219,.08) 12%,rgba(104,219,245,.52) 54%,rgba(201,249,255,.96) 100%) 0 31px/92% 11px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(70,194,228,.08) 18%,rgba(123,226,248,.56) 62%,rgba(218,252,255,.94) 100%) 0 55px/97% 12px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(48,171,213,.06) 16%,rgba(91,208,239,.48) 58%,rgba(191,244,252,.88) 100%) 0 79px/82% 10px no-repeat;
+      clip-path:polygon(0 14%,100% 0,100% 100%,0 86%);
+      filter:drop-shadow(0 0 8px rgba(111,233,252,.82));
+      opacity:.98;
     }
     .battle[data-airshot-effect="A"] .bullet.cannon::after{
-      content:"";position:absolute;left:-8px;top:50%;width:40px;height:40px;border:3px solid rgba(176,247,255,.72);border-radius:50%;
-      transform:translate(-50%,-50%) scaleX(.40);box-shadow:0 0 10px rgba(101,231,255,.58),inset 0 0 8px rgba(168,245,255,.35);
+      content:"";position:absolute;left:-8px;top:50%;width:78px;height:86px;border:7px solid rgba(202,252,255,.90);border-radius:50%;
+      transform:translate(-50%,-50%) scaleX(.42);box-shadow:0 0 16px rgba(136,240,255,.88),inset 0 0 14px rgba(176,248,255,.58),0 0 30px rgba(74,209,242,.48);
     }
 
-    /* A-2: 圧縮空気弾＋二重らせん風 */
+    /* A-2: 圧縮空気弾＋太い二重らせん風 */
     .battle[data-airshot-effect="B"] .bullet.cannon{
-      box-shadow:0 0 14px rgba(145,244,255,.98),0 0 30px rgba(59,205,239,.74)!important;
+      box-shadow:0 0 20px rgba(175,250,255,1),0 0 42px rgba(59,214,245,.92),0 0 70px rgba(48,184,226,.48)!important;
     }
     .battle[data-airshot-effect="B"] .bullet.cannon::before,
     .battle[data-airshot-effect="B"] .bullet.cannon::after{
-      content:"";position:absolute;right:58%;width:138px;height:34px;border-radius:50%;background:transparent;
-      filter:drop-shadow(0 0 5px rgba(108,230,250,.72));
+      content:"";position:absolute;right:53%;width:198px;height:74px;border-radius:50%;background:transparent;
+      filter:drop-shadow(0 0 9px rgba(124,238,255,.92));
     }
     .battle[data-airshot-effect="B"] .bullet.cannon::before{
-      top:-6px;border-top:4px solid rgba(209,252,255,.94);border-right:2px solid rgba(119,230,249,.42);
-      transform:rotate(6deg) scaleY(.74);
-      box-shadow:0 -7px 0 -4px rgba(93,211,240,.42),0 7px 0 -4px rgba(123,236,252,.36);
+      top:-24px;
+      border-top:10px solid rgba(226,254,255,.98);
+      border-right:6px solid rgba(137,238,252,.72);
+      border-left:4px solid rgba(94,217,244,.38);
+      transform:rotate(7deg) scaleY(.86);
+      box-shadow:0 -15px 0 -8px rgba(100,223,247,.72),0 15px 0 -8px rgba(153,244,255,.62),0 0 18px rgba(83,215,243,.38);
     }
     .battle[data-airshot-effect="B"] .bullet.cannon::after{
-      bottom:-6px;border-bottom:4px solid rgba(141,239,255,.9);border-right:2px solid rgba(98,218,244,.38);
-      transform:rotate(-6deg) scaleY(.74);
-      box-shadow:0 7px 0 -4px rgba(70,196,232,.42),0 -7px 0 -4px rgba(168,246,255,.32);
+      bottom:-24px;
+      border-bottom:10px solid rgba(169,246,255,.97);
+      border-right:6px solid rgba(111,229,249,.68);
+      border-left:4px solid rgba(73,202,236,.34);
+      transform:rotate(-7deg) scaleY(.86);
+      box-shadow:0 15px 0 -8px rgba(82,208,239,.72),0 -15px 0 -8px rgba(184,250,255,.56),0 0 18px rgba(67,202,235,.34);
     }
 
-    /* A-3: 圧縮空気弾＋霧状の風圧 */
+    /* A-3: 圧縮空気弾＋濃い霧状風圧 */
     .battle[data-airshot-effect="C"] .bullet.cannon{
-      background:radial-gradient(ellipse at 68% 50%,rgba(248,255,255,.93) 0 8%,rgba(188,247,255,.76) 20%,rgba(93,219,244,.42) 43%,rgba(65,188,220,.12) 66%,transparent 76%)!important;
-      box-shadow:0 0 14px rgba(159,245,255,.76),0 0 34px rgba(84,207,235,.45)!important;
-      filter:blur(.15px);
+      background:radial-gradient(ellipse at 68% 50%,rgba(251,255,255,.98) 0 9%,rgba(207,252,255,.92) 20%,rgba(118,231,249,.74) 42%,rgba(71,199,229,.33) 65%,transparent 80%)!important;
+      box-shadow:0 0 22px rgba(177,250,255,.94),0 0 50px rgba(92,220,244,.68),0 0 78px rgba(64,185,221,.34)!important;
+      filter:blur(.2px) saturate(1.05);
     }
     .battle[data-airshot-effect="C"] .bullet.cannon::before{
-      content:"";position:absolute;right:58%;top:50%;width:152px;height:58px;transform:translateY(-50%);
+      content:"";position:absolute;right:48%;top:50%;width:220px;height:124px;transform:translateY(-50%);
       background:
-        radial-gradient(ellipse at 88% 50%,rgba(196,248,255,.48) 0 12%,rgba(112,226,246,.28) 28%,transparent 55%),
-        radial-gradient(ellipse at 54% 35%,rgba(141,235,250,.26) 0 15%,transparent 50%),
-        radial-gradient(ellipse at 28% 67%,rgba(104,214,239,.19) 0 17%,transparent 54%);
-      filter:blur(5px);opacity:.9;
+        radial-gradient(ellipse at 90% 50%,rgba(220,253,255,.70) 0 16%,rgba(135,235,251,.42) 34%,transparent 61%),
+        radial-gradient(ellipse at 66% 28%,rgba(161,242,253,.42) 0 18%,rgba(95,215,241,.20) 42%,transparent 64%),
+        radial-gradient(ellipse at 48% 74%,rgba(136,232,248,.38) 0 20%,rgba(73,201,233,.18) 44%,transparent 66%),
+        radial-gradient(ellipse at 22% 46%,rgba(103,216,241,.29) 0 18%,transparent 58%);
+      filter:blur(8px);opacity:1;
     }
     .battle[data-airshot-effect="C"] .bullet.cannon::after{
-      content:"";position:absolute;left:50%;top:50%;width:108px;height:58px;border:3px solid rgba(181,247,255,.48);border-radius:50%;
-      transform:translate(-50%,-50%) scaleX(.48);box-shadow:0 0 13px rgba(119,231,250,.45);opacity:.78;
+      content:"";position:absolute;right:38%;top:50%;width:188px;height:102px;border-radius:50%;
+      border-top:9px solid rgba(214,253,255,.88);
+      border-bottom:9px solid rgba(126,232,251,.72);
+      border-left:5px solid rgba(83,205,237,.32);
+      transform:translateY(-50%) scaleY(.72);
+      box-shadow:0 0 15px rgba(136,238,253,.72),inset 0 0 18px rgba(107,226,248,.28);
+      opacity:.94;
     }
   `;
   document.head.appendChild(style);
 
   const patterns=Object.freeze({
-    A:'A-1：圧縮空気弾＋細い風の尾',
-    B:'A-2：圧縮空気弾＋二重らせん風',
-    C:'A-3：圧縮空気弾＋霧状の風圧'
+    A:'A-1：圧縮空気弾＋太い風の尾',
+    B:'A-2：圧縮空気弾＋太い二重らせん風',
+    C:'A-3：圧縮空気弾＋濃い霧状風圧'
   });
   let selected='A';
 
