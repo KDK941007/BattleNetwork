@@ -3,13 +3,19 @@
   const STORAGE_KEY='battleNetworkEquippedFolderId';
 
   // Chip-detail/effect-review test rule:
-  // review one chip at a time. The active target is repeated so it can be fired many times.
+  // Vulcan is the active target, with one AreaSteal card kept in the hand for range verification.
   const TEST_TARGET=Object.freeze({
     enabled:true,
     type:'VULCAN1',
     chipId:'CHIP_EXE4_S005',
     codes:Object.freeze(['V']),
-    requiredCards:Object.freeze([])
+    requiredCards:Object.freeze([
+      Object.freeze({type:'AREASTEAL',code:'S',chipId:'CHIP_EXE4_S119'}),
+      Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
+      Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
+      Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
+      Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'})
+    ])
   });
 
   const LEGACY_TYPE_BY_CHIP_ID=Object.freeze({
