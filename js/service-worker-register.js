@@ -1,4 +1,9 @@
 (()=>{
+  const fix=document.createElement('script');
+  fix.src='./js/ui/airshot-projectile-fix.js?v=1';
+  fix.async=false;
+  document.head.appendChild(fix);
+
   if(!('serviceWorker' in navigator)) return;
   let reloading=false;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
@@ -8,7 +13,7 @@
   });
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./sw.js?v=159',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./sw.js?v=160',{scope:'./',updateViaCache:'none'});
       await registration.update();
     }catch(error){
       console.warn(error);
