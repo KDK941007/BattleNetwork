@@ -1,24 +1,53 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene)return;
+  if(!scene||scene.dataset.swordEffectHook==='v2')return;
+  scene.dataset.swordEffectHook='v2';
 
-  const PX=.72,PY=.36;
+  const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
+  let activeEffects=0;
 
-  function facingAngle(){
-    const facing=window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
-    const dx=Number(facing.x),dy=Number(facing.y);
-    const sx=(dx-dy)*PX,sy=(dx+dy)*PY;
-    return Math.atan2(sy,sx)*180/Math.PI-37;
+  const style=document.createElement('style');
+  style.id='swordEffectDirectStyle';
+  style.textContent=`
+    #scene.swordSlashPlaying #meleePreview{opacity:0!important}
+    #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%}
+  `;
+  document.head.appendChild(style);
+
+  function currentContext(){return window.BattleNetworkCombatRange?.getLastAttackContext?.()||null}
+  function isSwordContext(){
+    const context=currentContext();
+    if(context?.sourceType==='CHIP'&&context?.sourceId===SWORD_ID)return true;
+    const target=window.BattleNetworkFolder?.getTestTarget?.();
+    return target?.enabled===true&&target?.type==='SWORD';
   }
 
-  function stroke(ctx,draw,color,width,alpha=1,blur=0){
+  function projectedAngle(){
+    const direction=currentContext()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
+    const dx=Number(direction.x),dy=Number(direction.y);
+    if(!Number.isFinite(dx)||!Number.isFinite(dy))return 0;
+    const sx=(dx-dy)*PX,sy=(dx+dy)*PY;
+    return Math.atan2(sy,sx)*180/Math.PI;
+  }
+
+  function bodyPath(ctx){
+    ctx.moveTo(32,86);
+    ctx.bezierCurveTo(154,91,332,102,438,126);
+    ctx.bezierCurveTo(472,134,487,149,477,166);
+    ctx.bezierCurveTo(449,208,337,236,67,229);
+    ctx.bezierCurveTo(165,206,235,181,266,155);
+    ctx.bezierCurveTo(229,124,144,101,32,86);
+    ctx.closePath();
+  }
+
+  function stroke(ctx,draw,color,width,alpha,blur=0){
     ctx.save();
     ctx.globalAlpha=alpha;
     ctx.strokeStyle=color;
     ctx.lineWidth=width;
     ctx.lineCap='round';
     ctx.lineJoin='round';
-    ctx.shadowColor='rgba(123,229,255,.96)';
+    ctx.shadowColor='rgba(114,224,255,.95)';
     ctx.shadowBlur=blur;
     ctx.beginPath();
     draw(ctx);
@@ -26,116 +55,121 @@
     ctx.restore();
   }
 
-  function drawSlash(ctx,w,h,p){
-    const reveal=Math.min(w,w*(.05+1.04*(1-Math.pow(1-p,3))));
-    const fade=p<.72?1:Math.max(0,1-(p-.72)/.28);
+  function drawFrame(ctx,progress){
+    const reveal=Math.min(1,progress/.24);
+    const fade=progress<.68?1:Math.max(0,(1-progress)/.32);
+    const revealX=18+482*(1-Math.pow(1-reveal,3));
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0,0,reveal,h);
+    ctx.rect(0,0,revealX,320);
     ctx.clip();
 
-    const fill=ctx.createLinearGradient(18,198,346,18);
-    fill.addColorStop(0,'rgba(79,207,250,0)');
-    fill.addColorStop(.13,'rgba(95,218,255,.30)');
-    fill.addColorStop(.45,'rgba(155,237,255,.62)');
-    fill.addColorStop(.76,'rgba(220,252,255,.78)');
-    fill.addColorStop(1,'rgba(145,231,255,0)');
+    const outer=ctx.createLinearGradient(35,92,480,190);
+    outer.addColorStop(0,'rgba(80,207,247,.10)');
+    outer.addColorStop(.20,'rgba(99,222,255,.54)');
+    outer.addColorStop(.58,'rgba(151,237,255,.78)');
+    outer.addColorStop(.84,'rgba(201,249,255,.88)');
+    outer.addColorStop(1,'rgba(132,227,255,.58)');
 
     ctx.save();
-    ctx.globalAlpha=.95*fade;
-    ctx.fillStyle=fill;
-    ctx.shadowColor='rgba(104,220,255,.95)';
+    ctx.globalAlpha=.96*fade;
+    ctx.fillStyle=outer;
+    ctx.shadowColor='rgba(89,214,255,.88)';
     ctx.shadowBlur=24;
     ctx.beginPath();
-    ctx.moveTo(14,201);
-    ctx.bezierCurveTo(80,211,215,153,350,16);
-    ctx.bezierCurveTo(268,117,151,163,51,176);
-    ctx.bezierCurveTo(34,178,21,190,14,201);
+    bodyPath(ctx);
+    ctx.fill();
+    ctx.restore();
+
+    const inner=ctx.createLinearGradient(70,110,455,155);
+    inner.addColorStop(0,'rgba(180,247,255,.12)');
+    inner.addColorStop(.48,'rgba(219,253,255,.66)');
+    inner.addColorStop(1,'rgba(245,255,255,.92)');
+    ctx.save();
+    ctx.globalAlpha=.82*fade;
+    ctx.fillStyle=inner;
+    ctx.beginPath();
+    ctx.moveTo(58,103);
+    ctx.bezierCurveTo(188,104,345,113,439,135);
+    ctx.bezierCurveTo(459,140,466,149,459,158);
+    ctx.bezierCurveTo(423,176,352,188,272,194);
+    ctx.bezierCurveTo(287,177,292,163,279,151);
+    ctx.bezierCurveTo(239,126,158,110,58,103);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
 
-    const main=c=>{c.moveTo(16,200);c.bezierCurveTo(87,212,221,149,350,16)};
-    stroke(ctx,main,'rgba(73,199,245,.42)',34,.72*fade,26);
-    stroke(ctx,main,'rgba(111,224,255,.88)',21,.98*fade,16);
-    stroke(ctx,main,'rgba(231,254,255,1)',9.5,fade,9);
-    stroke(ctx,main,'rgba(111,220,252,1)',2.8,.98*fade,2);
+    stroke(ctx,c=>{c.moveTo(45,90);c.bezierCurveTo(174,94,343,105,441,128);c.bezierCurveTo(461,133,473,142,476,151)},'rgba(245,255,255,.98)',7.5,.95*fade,8);
+    stroke(ctx,c=>{c.moveTo(63,111);c.bezierCurveTo(192,114,341,122,435,142)},'rgba(198,248,255,.92)',3.2,.85*fade,5);
+    stroke(ctx,c=>{c.moveTo(75,224);c.bezierCurveTo(191,209,320,196,438,169)},'rgba(89,214,252,.92)',5.5,.72*fade,9);
 
-    const trail1=c=>{c.moveTo(12,216);c.bezierCurveTo(94,217,199,172,308,70)};
-    const trail2=c=>{c.moveTo(36,229);c.bezierCurveTo(120,218,209,178,274,118)};
-    const trail3=c=>{c.moveTo(60,190);c.bezierCurveTo(141,186,237,137,330,42)};
-    stroke(ctx,trail1,'rgba(94,218,255,.80)',7.5,.78*fade,10);
-    stroke(ctx,trail1,'rgba(232,254,255,.95)',2.5,.86*fade,3);
-    stroke(ctx,trail2,'rgba(102,215,251,.66)',5,.64*fade,7);
-    stroke(ctx,trail3,'rgba(190,246,255,.82)',3.5,.70*fade,5);
-
-    stroke(ctx,c=>{c.moveTo(280,112);c.quadraticCurveTo(322,62,356,8)},'rgba(232,254,255,.98)',4.6,.9*fade,8);
-    stroke(ctx,c=>{c.moveTo(291,124);c.quadraticCurveTo(326,80,356,43)},'rgba(139,230,255,.76)',2.4,.68*fade,4);
-
-    const spark=(x1,y1,x2,y2,wid,a)=>stroke(ctx,c=>{c.moveTo(x1,y1);c.lineTo(x2,y2)},'rgba(207,250,255,.96)',wid,a*fade,4);
-    spark(48,169,86,149,2.2,.62);
-    spark(82,210,132,184,1.8,.54);
-    spark(245,104,284,73,1.9,.58);
-    spark(300,59,334,30,1.6,.62);
+    stroke(ctx,c=>{c.moveTo(101,193);c.bezierCurveTo(181,183,236,170,281,153)},'rgba(229,254,255,.82)',3.1,.70*fade,5);
+    stroke(ctx,c=>{c.moveTo(145,206);c.bezierCurveTo(246,191,340,174,414,154)},'rgba(128,231,255,.72)',2.4,.64*fade,4);
+    stroke(ctx,c=>{c.moveTo(185,126);c.bezierCurveTo(266,128,340,136,407,149)},'rgba(238,255,255,.78)',2.3,.62*fade,4);
 
     ctx.restore();
   }
 
-  function decorateSlash(slash){
-    if(!(slash instanceof HTMLElement)||!slash.classList.contains('slash'))return false;
-    if(slash.dataset.directSwordEffect==='1')return true;
-    slash.dataset.directSwordEffect='1';
+  function renderSwordFx(sourceNode){
+    const width=parseFloat(sourceNode.style.width)||160;
+    const height=parseFloat(sourceNode.style.height)||90;
+    const left=parseFloat(sourceNode.style.left)||0;
+    const top=parseFloat(sourceNode.style.top)||0;
+    const centerX=left+width/2;
+    const centerY=top+height/2;
 
-    slash.style.setProperty('border','0','important');
-    slash.style.setProperty('border-radius','0','important');
-    slash.style.setProperty('background','transparent','important');
-    slash.style.setProperty('box-shadow','none','important');
-    slash.style.setProperty('animation','none','important');
-    slash.style.setProperty('overflow','visible','important');
-    slash.style.setProperty('pointer-events','none','important');
-    slash.replaceChildren();
+    sourceNode.style.setProperty('display','none','important');
 
     const canvas=document.createElement('canvas');
-    canvas.width=720;
-    canvas.height=480;
-    canvas.style.cssText='position:absolute;left:50%;top:50%;width:360px;height:240px;pointer-events:none;transform-origin:center;filter:drop-shadow(0 0 10px rgba(110,224,255,.95));mix-blend-mode:screen;';
-    canvas.style.transform=`translate(-50%,-50%) rotate(${facingAngle().toFixed(2)}deg)`;
-    slash.appendChild(canvas);
+    const cssWidth=520,cssHeight=320,dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
+    canvas.className='swordSlashFx';
+    canvas.width=Math.round(cssWidth*dpr);
+    canvas.height=Math.round(cssHeight*dpr);
+    canvas.style.width=cssWidth+'px';
+    canvas.style.height=cssHeight+'px';
+    canvas.style.left=(centerX-cssWidth/2)+'px';
+    canvas.style.top=(centerY-cssHeight/2-8)+'px';
+    canvas.style.transform=`rotate(${projectedAngle().toFixed(2)}deg)`;
+
+    nativeAppendChild(canvas);
+    activeEffects++;
+    scene.classList.add('swordSlashPlaying');
 
     const ctx=canvas.getContext('2d');
-    if(!ctx)return true;
-    const started=performance.now();
-    const duration=330;
-    const frame=now=>{
-      if(!canvas.isConnected)return;
-      const p=Math.min(1,(now-started)/duration);
+    if(!ctx){finish();return}
+    const started=performance.now(),duration=390;
+    let finished=false;
+
+    function finish(){
+      if(finished)return;
+      finished=true;
+      canvas.remove();
+      activeEffects=Math.max(0,activeEffects-1);
+      if(activeEffects===0)scene.classList.remove('swordSlashPlaying');
+    }
+
+    function frame(now){
+      if(!canvas.isConnected){finish();return}
+      const progress=Math.min(1,(now-started)/duration);
       ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.setTransform(2,0,0,2,0,0);
-      drawSlash(ctx,360,240,p);
-      if(p<1)requestAnimationFrame(frame);
-    };
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      drawFrame(ctx,progress);
+      if(progress<1)requestAnimationFrame(frame);else finish();
+    }
     requestAnimationFrame(frame);
-    return true;
   }
 
   const nativeAppendChild=scene.appendChild.bind(scene);
   scene.appendChild=function(node){
-    const result=nativeAppendChild(node);
-    if(node instanceof HTMLElement&&node.classList.contains('slash'))decorateSlash(node);
-    return result;
+    if(node instanceof HTMLElement&&node.classList.contains('slash')&&isSwordContext()){
+      const result=nativeAppendChild(node);
+      renderSwordFx(node);
+      return result;
+    }
+    return nativeAppendChild(node);
   };
 
-  const observer=new MutationObserver(records=>{
-    for(const record of records){
-      for(const node of record.addedNodes){
-        if(node instanceof HTMLElement&&node.classList.contains('slash'))decorateSlash(node);
-      }
-    }
-  });
-  observer.observe(scene,{childList:true});
-  scene.querySelectorAll('.slash').forEach(decorateSlash);
-
-  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V1',decorateSlash});
+  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V2'});
 })();
