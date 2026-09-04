@@ -6,9 +6,9 @@
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'BOMB',
-    chipId:'CHIP_0004',
-    codes:Object.freeze(['B']),
+    type:'VULCAN1',
+    chipId:'CHIP_EXE4_S005',
+    codes:Object.freeze(['V']),
     requiredCards:Object.freeze([])
   });
 
