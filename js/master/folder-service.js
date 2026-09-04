@@ -3,14 +3,15 @@
   const STORAGE_KEY='battleNetworkEquippedFolderId';
 
   // Chip-detail/effect-review test rule:
-  // Vulcan is the active target, with one AreaSteal card kept in the hand for range verification.
+  // Vulcan is the active target, with one wildcard AreaSteal and one Attack+10 kept in the hand for verification.
   const TEST_TARGET=Object.freeze({
     enabled:true,
     type:'VULCAN1',
     chipId:'CHIP_EXE4_S005',
     codes:Object.freeze(['V']),
     requiredCards:Object.freeze([
-      Object.freeze({type:'AREASTEAL',code:'S',chipId:'CHIP_EXE4_S119'}),
+      Object.freeze({type:'AREASTEAL',code:'*',chipId:'CHIP_EXE4_S119'}),
+      Object.freeze({type:'ATTACK10',code:'*',chipId:'CHIP_EXE4_S148'}),
       Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
       Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
       Object.freeze({type:'VULCAN1',code:'V',chipId:'CHIP_EXE4_S005'}),
