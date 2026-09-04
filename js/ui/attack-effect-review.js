@@ -7,6 +7,9 @@
   const SWORD_ID='CHIP_0002';
   const PX=.72,PY=.36;
 
+  const swordTestActive=window.BattleNetworkFolder?.getTestTarget?.()?.enabled===true&&window.BattleNetworkFolder?.getTestTarget?.()?.type==='SWORD';
+  scene.classList.toggle('swordEffectReviewActive',swordTestActive);
+
   document.getElementById('attackEffectReviewStyle')?.remove();
   const style=document.createElement('style');
   style.id='attackEffectReviewStyle';
@@ -54,24 +57,57 @@
       box-shadow:0 0 15px rgba(136,238,253,.72),inset 0 0 18px rgba(107,226,248,.28);
       opacity:.94;
     }
-    .slash.swordCanvasEffect{
+
+    .scene.swordEffectReviewActive .slash{
       overflow:visible!important;
       border:0!important;
       border-radius:0!important;
       background:transparent!important;
       box-shadow:none!important;
       animation:none!important;
+      pointer-events:none!important;
+    }
+    .scene.swordEffectReviewActive .slash:not(.swordCanvasEffect)::before{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:310px;
+      height:175px;
+      transform:translate(-50%,-50%) rotate(-20deg);
+      border-radius:50%;
+      border-top:24px solid rgba(123,229,255,.82);
+      border-right:8px solid rgba(205,249,255,.58);
+      border-left:0;
+      border-bottom:0;
+      filter:drop-shadow(0 0 10px rgba(104,222,255,.92));
+      box-shadow:inset 0 12px 18px rgba(223,253,255,.24);
+    }
+    .scene.swordEffectReviewActive .slash:not(.swordCanvasEffect)::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:294px;
+      height:164px;
+      transform:translate(-50%,-50%) rotate(-20deg);
+      border-radius:50%;
+      border-top:6px solid rgba(238,255,255,.98);
+      border-right:3px solid rgba(171,241,255,.72);
+      border-left:0;
+      border-bottom:0;
+      filter:drop-shadow(0 0 5px rgba(184,248,255,.95));
     }
     .slash.swordCanvasEffect .swordSlashCanvas{
       position:absolute;
       left:50%;
       top:50%;
-      width:320px;
-      height:210px;
+      width:340px;
+      height:220px;
       pointer-events:none;
       transform-origin:center;
       mix-blend-mode:screen;
-      filter:drop-shadow(0 0 8px rgba(119,224,255,.9));
+      filter:drop-shadow(0 0 9px rgba(119,224,255,.95));
     }
   `;
   document.head.appendChild(style);
@@ -81,7 +117,7 @@
   function isSwordContext(){
     const c=context();
     if(c?.sourceType==='CHIP'&&c?.sourceId===SWORD_ID)return true;
-    return window.BattleNetworkFolder?.getTestTarget?.()?.enabled===true&&window.BattleNetworkFolder?.getTestTarget?.()?.type==='SWORD';
+    return swordTestActive;
   }
 
   function decorateAirShot(projectile){
@@ -135,5 +171,5 @@
   observer.observe(scene,{childList:true,subtree:true});
   document.querySelectorAll('#scene .slash').forEach(decorateSword);
   window.BattleNetworkAirShotEffect=Object.freeze({mode:'A3_FINAL',decorate:decorateAirShot});
-  window.BattleNetworkSwordEffect=Object.freeze({mode:'CANVAS_PALE_CYAN_CRESCENT_V2',decorate:decorateSword});
+  window.BattleNetworkSwordEffect=Object.freeze({mode:'CANVAS_PALE_CYAN_CRESCENT_V3',decorate:decorateSword});
 })();
