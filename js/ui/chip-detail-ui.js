@@ -35,7 +35,7 @@
     CHIP_EXE4_S004:{type:'射撃',direction:'自由方向',distance:`${AIRSHOT_RANGE_TILES}マス`,shape:'直線・敵1体'},
     CHIP_EXE4_S005:{type:'射撃',direction:'自由方向',distance:`${VULCAN_RANGE_TILES}マス`,shape:'直線・3連射／ヒット時に直後1マスへ誘爆'},
     CHIP_EXE4_S106:{type:'地形操作',direction:'前方',distance:'1マス',shape:'正面1マス'},
-    CHIP_EXE4_S119:{type:'移動',direction:'上下左右・斜めの8方向',distance:`各方向 最大${AREA_STEAL_RANGE_TILES}マス`,shape:'8方向の直線上にある選択可能マス'},
+    CHIP_EXE4_S119:{type:'移動',direction:'全方向',distance:`${AREA_STEAL_RANGE_TILES}マス以内`,shape:'周囲4マス以内の選択可能マス（斜め含む）'},
     CHIP_EXE4_S148:{type:'数値付加',direction:'直前チップ',distance:'--',shape:null}
   });
 
@@ -49,8 +49,8 @@
       rangeDescription:`自由方向・直線／射程${VULCAN_RANGE_TILES}マス・3連射／ヒット時に直後1マスへ誘爆`
     },
     CHIP_EXE4_S119:{
-      description:`上下左右・斜めの8方向へ、それぞれ最大${AREA_STEAL_RANGE_TILES}マス先までの選択可能なマスを選び、そのマスの中心へ瞬間移動する。途中のマスの状態は問わず、移動先が立てない穴パネル、敵や置き物などで占有されたマスの場合は選択できない。選択時間は2秒。`,
-      rangeDescription:`上下左右・斜め8方向／各方向最大${AREA_STEAL_RANGE_TILES}マス／選択可能なマスへ瞬間移動`
+      description:`現在地から${AREA_STEAL_RANGE_TILES}マス以内の選択可能なマスを選び、そのマスの中心へ瞬間移動する。現在地、立てない穴パネル、敵や置き物などで占有されたマスは選択できない。選択時間は2秒。`,
+      rangeDescription:`現在地から${AREA_STEAL_RANGE_TILES}マス以内（斜め含む）／選択可能なマスへ瞬間移動`
     }
   });
 
@@ -176,13 +176,17 @@
   function renderAreaSteal(board){
     const size=AREA_STEAL_GRID_SIZE,center=AREA_STEAL_RANGE_TILES;
     board.classList.add('rangeGridBoardAreaSteal');
-    for(let row=0;row<size;row++)for(let col=0;col<size;col++){
-      const dr=row-center,dc=col-center,ar=Math.abs(dr),ac=Math.abs(dc);
-      if((dr===0&&dc===0)||!(dr===0||dc===0||ar===ac))continue;
-      addCell(board,'rangeGridSelect',col,row,size,size);
-    }
+    for(let row=0;row<size;row++)for(let col=0;col<size;col++)if(!(row===center&&col===center))addCell(board,'rangeGridSelect',col,row,size,size);
     board.appendChild(playerMarker(center,center,size,size));
-    labels(board,`8方向 / 各最大${AREA_STEAL_RANGE_TILES}マス`,'8方向');
+    labels(board,`現在地から ${AREA_STEAL_RANGE_TILES}マス以内 / 選択不可マス除外`,'全方向');
+  }
+  function fitAreaStealBoard(board){
+    if(!rangeViz||!board)return;
+    const fit=()=>{
+      const style=getComputedStyle(rangeViz),padX=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0),padY=(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0),availableWidth=Math.max(0,rangeViz.clientWidth-padX),availableHeight=Math.max(0,rangeViz.clientHeight-padY),size=Math.floor(Math.min(230,availableWidth,availableHeight));
+      if(size>0)board.style.width=`${size}px`;
+    };
+    fit();requestAnimationFrame(fit);
   }
   function renderAttackPlus(board){
     board.appendChild(playerMarker(CENTER_COL,CENTER_ROW));const modifier=document.createElement('span');modifier.className='rangeGridModifier';modifier.textContent='+10';board.appendChild(modifier);labels(board,'直前の攻撃チップへ+10','数値付加');
@@ -217,6 +221,7 @@
       board.appendChild(playerMarker(CENTER_COL,CENTER_ROW));labels(board,detailText(chip).rangeDescription||'範囲情報なし','模式図');
     }
     rangeViz.className='rangeViz rangeGridViz';rangeViz.replaceChildren(board);
+    if(chip.chipId==='CHIP_EXE4_S119')fitAreaStealBoard(board);
   }
 
   function renderChip(chip,{setName=true}={}){
