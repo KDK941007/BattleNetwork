@@ -117,12 +117,13 @@
   }
 
   function injectInitialFolderReview(){
-    if(!window.BattleNetworkFolder?.getTestTarget?.().enabled)return;
+    // Never replace the CUSTOM hand while a focused chip test is active.
+    // The battle folder service owns that hand (e.g. Vulcan + one AreaSteal).
+    if(window.BattleNetworkFolder?.getTestTarget?.()?.enabled===true)return;
     if(!reviewEntries.length||isReviewHand())return;
-    const cards=reviewEntries.map((entry,index)=>createReviewCard(entry,index+1)).filter(Boolean);
-    hand.replaceChildren(...cards);
-    const folderInfo=document.getElementById('folderInfo');
-    if(folderInfo)folderInfo.textContent=`初期フォルダ ${cards.length}種`;
+    // Initial-folder review injection is intentionally disabled in normal play too;
+    // it must not replace the actual battle hand. Keep helpers in this file for an
+    // explicit future detail-review mode instead of mutating CUSTOM automatically.
   }
 
   const observer=new MutationObserver(()=>queueMicrotask(injectInitialFolderReview));
