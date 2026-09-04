@@ -29,13 +29,44 @@
   function airShotSpeed(){return 4000}function vulcan1Speed(){return 4000}function spreadGunSpeed(){return 4000}
   function cannonSpeed(){const value=Number(window.BattleNetworkTestSettings?.getCannonSettings?.().projectileSpeed);return Number.isFinite(value)&&value>0?value:2000}
   function pushAirShotEnemy(enemyId,direction){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated)return false;const dir=RANGE.normalizeDirection(direction);const distance=FIELD.toWorldDistance(1);const result=ENEMY.setPosition(enemyId,enemy.x+dir.x*distance,enemy.y+dir.y*distance);return result?.applied===true}
+  function eightDirectionStep(direction){
+    const dir=RANGE.normalizeDirection(direction),stepAngle=Math.PI/4,index=Math.round(Math.atan2(dir.y,dir.x)/stepAngle),angle=index*stepAngle;
+    return{x:Math.round(Math.cos(angle)),y:Math.round(Math.sin(angle))};
+  }
+  function getVulcanInductionTile(enemy,direction){
+    if(!enemy)return null;
+    const hitTile=FIELD.worldToTile(enemy.x,enemy.y),step=eightDirectionStep(direction),row=hitTile.row+step.y,col=hitTile.col+step.x;
+    return FIELD.getTile(row,col);
+  }
+  function triggerVulcanInduction(tile,damage,excludeEnemyId=null){
+    if(!tile)return Object.freeze([]);
+    const hits=[];
+    for(const occupantId of FIELD.getOccupantsAt?.(tile.row,tile.col)||[]){
+      const match=/^enemy:(\d+)$/.exec(String(occupantId));
+      if(!match)continue;
+      const enemyId=Number(match[1]);
+      if(enemyId===excludeEnemyId)continue;
+      const enemy=ENEMY.getEnemy(enemyId);
+      if(!enemy||enemy.isDefeated)continue;
+      damageAndFlash(enemy,damage);hits.push(enemyId);
+    }
+    window.dispatchEvent(new CustomEvent('battlenetwork:vulcan-induction',{detail:Object.freeze({row:tile.row,col:tile.col,damage:Number(damage)||0,enemyIds:Object.freeze(hits.slice())})}));
+    return Object.freeze(hits);
+  }
   function scheduleCannon(attack){
     const airShot=isAirShot(attack),vulcan1=isVulcan1(attack),spreadGun=isSpreadGun(attack),cannon=isCannon(attack);const speed=airShot?airShotSpeed():vulcan1?vulcan1Speed():spreadGun?spreadGunSpeed():cannon?cannonSpeed():behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',2000);if(!(speed>0))return;
     const first=getFirstCannonHit(attack);if(!first)return;if(spreadGun)trace('SPREAD:scheduled',`${first.distance.toFixed(0)}u`);
-    setTimeout(()=>{if(spreadGun)trace('SPREAD:directHit:start');const result=damageAndFlash(first.enemy,attack.damage);if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,first.enemy);trace('SPREAD:directHit:end')}},first.distance/speed*1000)
+    setTimeout(()=>{
+      if(spreadGun)trace('SPREAD:directHit:start');
+      const inductionTile=vulcan1?getVulcanInductionTile(first.enemy,attack.shape.direction):null;
+      const result=damageAndFlash(first.enemy,attack.damage);
+      if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);
+      if(vulcan1&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id);
+      if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,first.enemy);trace('SPREAD:directHit:end')}
+    },first.distance/speed*1000)
   }
   function scheduleBomb(attack){const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);setTimeout(()=>flashHits(attack.shape,attack.damage),Math.max(0,delay)*1000)}
   function resolveBehavior(input){if(!input)return;const attack=input.shape?input:{shape:input,damage:null};const shape=attack.shape;if(!shape)return;if(isSpreadGun(attack))trace('SPREAD:attackObserved');if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage);return}if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack)}
   function observeAttackRange(){const combatRange=window.BattleNetworkCombatRange;const attack=combatRange?.getLastAttackContext?.()||null;if(attack&&attack!==lastObservedAttack){lastObservedAttack=attack;resolveBehavior(attack)}requestAnimationFrame(observeAttackRange)}
-  window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior,getFirstCannonHit});requestAnimationFrame(observeAttackRange);
+  window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior,getFirstCannonHit,getVulcanInductionTile,triggerVulcanInduction});requestAnimationFrame(observeAttackRange);
 })();
