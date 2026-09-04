@@ -26,13 +26,12 @@
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
   function playerLandingBounds(center){const hit=PLAYER.getHitBox?.();if(!hit)return null;const halfW=Number(hit.width)/2,halfH=Number(hit.height)/2,offsetX=Number(hit.offsetX)||0,offsetY=Number(hit.offsetY)||0,cx=center.x+offsetX,cy=center.y+offsetY;return{left:cx-halfW,right:cx+halfW,top:cy-halfH,bottom:cy+halfH,width:Number(hit.width),height:Number(hit.height),centerX:cx,centerY:cy}}
   function getSettings(){return{rangeTiles:RANGE_TILES,selectionTimeSec:SELECTION_TIME_SEC}}
-  function isInEightDirectionRange(row,col,origin,rangeTiles=RANGE_TILES){
-    const dr=row-origin.row,dc=col-origin.col,ar=Math.abs(dr),ac=Math.abs(dc);
-    if((dr===0&&dc===0)||Math.max(ar,ac)>rangeTiles)return false;
-    return dr===0||dc===0||ar===ac;
+  function isInRange(row,col,origin,rangeTiles=RANGE_TILES){
+    const dr=Math.abs(row-origin.row),dc=Math.abs(col-origin.col);
+    return !(dr===0&&dc===0)&&Math.max(dr,dc)<=rangeTiles;
   }
   function isSelectable(row,col,origin,allowHole,rangeTiles=RANGE_TILES){
-    if(!isInEightDirectionRange(row,col,origin,rangeTiles))return false;
+    if(!isInRange(row,col,origin,rangeTiles))return false;
     const tile=FIELD.getTile(row,col);if(!tile)return false;
     if(tile.currentTerrain===FIELD.TERRAIN.HOLE&&!allowHole)return false;
     const occupied=(FIELD.getOccupantsAt?.(row,col)||[]).some(id=>id!=='player');if(occupied)return false;
@@ -103,5 +102,5 @@
     event.preventDefault();event.stopImmediatePropagation();
   },true);
 
-  window.BattleNetworkAreaSteal=Object.freeze({begin,isActive:()=>active,cancel:finish,getSettings:()=>Object.freeze(getSettings()),isInRange:(row,col,origin)=>isInEightDirectionRange(row,col,origin,RANGE_TILES)});
+  window.BattleNetworkAreaSteal=Object.freeze({begin,isActive:()=>active,cancel:finish,getSettings:()=>Object.freeze(getSettings()),isInRange:(row,col,origin)=>isInRange(row,col,origin,RANGE_TILES)});
 })();
