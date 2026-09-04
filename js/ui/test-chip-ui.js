@@ -4,11 +4,10 @@
   const hand=document.getElementById('hand');
   const modal=document.getElementById('chipDetailModal');
   if(!master||!hand||!modal)return;
-  if(window.BattleNetworkFolder?.getTestTarget?.().enabled)return;
 
-  const TEST_CHIP_IDS=['TEST_9001','TEST_9002','TEST_9003'];
   const LONG_PRESS_MS=520;
   const chipsById=new Map((data.CHIP_MASTER||[]).map(chip=>[chip.chipId,chip]));
+  const initialFolder=(data.FOLDER_MASTER||[]).find(row=>row.defaultFlg)||data.FOLDER_MASTER?.[0]||null;
 
   function attrHtml(chipId){
     const attr=master.getPrimaryAttribute(chipId);
@@ -16,57 +15,41 @@
     return `<img class="attrIcon" src="${attr.iconPath}" alt="${attr.attributeName||''}" draggable="false">`;
   }
 
-  function rangeVizClass(chip){
-    if(chip.rangeTypeId==='LINE_FORWARD')return 'cannon';
-    if(chip.rangeTypeId==='FRONT_RECT')return 'sword';
-    if(chip.rangeTypeId==='THROW_AOE')return 'bomb';
-    if(chip.rangeTypeId==='SELF')return 'recover';
-    return '';
-  }
-
   function showDetail(chip){
+    if(window.BattleNetworkChipDetail?.openByChipId?.(chip.chipId))return;
+
     const art=document.getElementById('detailArt');
     const detailName=document.getElementById('detailName');
     const detailDesc=document.getElementById('detailDesc');
     const detailRangeText=document.getElementById('detailRangeText');
-    const detailRange=document.getElementById('detailRange');
-    const detailPower=document.getElementById('detailPower');
-
-    if(!art||!detailName||!detailDesc||!detailRangeText||!detailRange)return;
+    if(!art||!detailName||!detailDesc||!detailRangeText)return;
 
     detailName.textContent=chip.chipName;
     const imagePath=master.getChipImagePath(chip);
     art.innerHTML=imagePath?`<img src="${imagePath}" alt="${chip.chipName}" draggable="false">`:'';
     detailDesc.textContent=chip.description||'';
     detailRangeText.textContent=chip.rangeDescription||'';
-    detailRange.className=`rangeViz ${rangeVizClass(chip)}`.trim();
-
-    if(detailPower){
-      const value=master.getChipValues(chip.chipId).find(row=>row.displayFlg!==false);
-      detailPower.textContent=value?`${value.valueType?.displayLabel||''}：${value.value??'--'}`:'';
-    }
-
     modal.classList.add('open');
     modal.querySelector('.chipDetail')?.scrollTo({top:0,left:0,behavior:'auto'});
   }
 
-  function bindLongPress(card,chip){
+  function bindDetailOpen(card,chip){
     let timer=null;
     let startX=0;
     let startY=0;
+    let longPressed=false;
     const clear=()=>{
-      if(timer){
-        clearTimeout(timer);
-        timer=null;
-      }
+      if(timer){clearTimeout(timer);timer=null}
     };
 
     card.addEventListener('pointerdown',event=>{
       startX=event.clientX;
       startY=event.clientY;
+      longPressed=false;
       clear();
       timer=setTimeout(()=>{
         timer=null;
+        longPressed=true;
         showDetail(chip);
       },LONG_PRESS_MS);
     });
@@ -79,44 +62,70 @@
     card.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
+      longPressed=false;
     });
   }
 
-  function createTestCard(chip,slotNo){
+  function displayValue(chipId){
+    const value=master.getChipValues(chipId).find(row=>row.displayFlg!==false);
+    if(!value)return '--';
+    if(value.valueMode==='VARIABLE')return '可変';
+    return value.value??'--';
+  }
+
+  function createReviewCard(entry,slotNo){
+    const chip=chipsById.get(entry.chipId);
+    if(!chip)return null;
     const card=document.createElement('button');
-    const code=master.getChipCodes(chip.chipId)[0]?.codeValue||'-';
     card.type='button';
-    card.className='chipCard testChipPreview';
-    card.dataset.testChipId=chip.chipId;
-    card.setAttribute('aria-label',`${chip.chipName} 動作確認用`);
+    card.className='chipCard detailReviewChip';
+    card.dataset.detailReviewChipId=chip.chipId;
+    card.setAttribute('aria-label',`${chip.chipName} 詳細確認用`);
     const imagePath=master.getChipImagePath(chip);
     card.innerHTML=`
       <span class="slotNo">${slotNo}</span>
       <span class="chipName">${chip.chipName}</span>
       <span class="chipArt">${imagePath?`<img src="${imagePath}" alt="${chip.chipName}" draggable="false">`:''}</span>
       <span class="chipMeta">
-        <span class="chipCode">${code}</span>
+        <span class="chipCode">${entry.codeId||'-'}</span>
         <span class="chipAttr">${attrHtml(chip.chipId)}</span>
-        <span class="chipValue">TEST</span>
+        <span class="chipValue">${displayValue(chip.chipId)}</span>
       </span>`;
-    bindLongPress(card,chip);
+    bindDetailOpen(card,chip);
     return card;
   }
 
-  function injectTestCards(){
-    const children=[...hand.children];
-    TEST_CHIP_IDS.forEach((chipId,index)=>{
-      const slotIndex=5+index;
-      const chip=chipsById.get(chipId);
-      const current=children[slotIndex];
-      if(!chip||!current)return;
-      if(current.dataset?.testChipId===chipId)return;
-      if(!current.classList.contains('empty'))return;
-      current.replaceWith(createTestCard(chip,slotIndex+1));
-    });
+  function getInitialUniqueEntries(){
+    if(!initialFolder)return [];
+    const seen=new Set();
+    return (data.FOLDER_CHIP_RELATION||[])
+      .filter(row=>row.folderId===initialFolder.folderId)
+      .sort((a,b)=>a.slotNo-b.slotNo)
+      .filter(row=>{
+        if(seen.has(row.chipId))return false;
+        seen.add(row.chipId);
+        return true;
+      });
   }
 
-  const observer=new MutationObserver(()=>queueMicrotask(injectTestCards));
+  const reviewEntries=getInitialUniqueEntries();
+  const reviewIds=reviewEntries.map(row=>row.chipId);
+
+  function isReviewHand(){
+    const children=[...hand.children];
+    return children.length===reviewIds.length&&children.every((child,index)=>child.dataset.detailReviewChipId===reviewIds[index]);
+  }
+
+  function injectInitialFolderReview(){
+    if(!window.BattleNetworkFolder?.getTestTarget?.().enabled)return;
+    if(!reviewEntries.length||isReviewHand())return;
+    const cards=reviewEntries.map((entry,index)=>createReviewCard(entry,index+1)).filter(Boolean);
+    hand.replaceChildren(...cards);
+    const folderInfo=document.getElementById('folderInfo');
+    if(folderInfo)folderInfo.textContent=`初期フォルダ ${cards.length}種`;
+  }
+
+  const observer=new MutationObserver(()=>queueMicrotask(injectInitialFolderReview));
   observer.observe(hand,{childList:true});
-  injectTestCards();
+  injectInitialFolderReview();
 })();
