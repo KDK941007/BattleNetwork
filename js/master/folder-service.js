@@ -6,9 +6,9 @@
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'AIRSHOT',
-    chipId:'CHIP_EXE4_S004',
-    codes:Object.freeze(['A']),
+    type:'BOMB',
+    chipId:'CHIP_0004',
+    codes:Object.freeze(['B']),
     requiredCards:Object.freeze([])
   });
 
