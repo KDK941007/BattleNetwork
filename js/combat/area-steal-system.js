@@ -26,8 +26,13 @@
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
   function playerLandingBounds(center){const hit=PLAYER.getHitBox?.();if(!hit)return null;const halfW=Number(hit.width)/2,halfH=Number(hit.height)/2,offsetX=Number(hit.offsetX)||0,offsetY=Number(hit.offsetY)||0,cx=center.x+offsetX,cy=center.y+offsetY;return{left:cx-halfW,right:cx+halfW,top:cy-halfH,bottom:cy+halfH,width:Number(hit.width),height:Number(hit.height),centerX:cx,centerY:cy}}
   function getSettings(){return{rangeTiles:RANGE_TILES,selectionTimeSec:SELECTION_TIME_SEC}}
-  function isSelectable(row,col,origin,allowHole){
-    if(row===origin.row&&col===origin.col)return false;
+  function isInEightDirectionRange(row,col,origin,rangeTiles=RANGE_TILES){
+    const dr=row-origin.row,dc=col-origin.col,ar=Math.abs(dr),ac=Math.abs(dc);
+    if((dr===0&&dc===0)||Math.max(ar,ac)>rangeTiles)return false;
+    return dr===0||dc===0||ar===ac;
+  }
+  function isSelectable(row,col,origin,allowHole,rangeTiles=RANGE_TILES){
+    if(!isInEightDirectionRange(row,col,origin,rangeTiles))return false;
     const tile=FIELD.getTile(row,col);if(!tile)return false;
     if(tile.currentTerrain===FIELD.TERRAIN.HOLE&&!allowHole)return false;
     const occupied=(FIELD.getOccupantsAt?.(row,col)||[]).some(id=>id!=='player');if(occupied)return false;
@@ -49,14 +54,20 @@
   }
   function cleanupVisuals(){shade?.remove();svg?.remove();shade=null;svg=null}
   function finish(){if(!active)return;active=false;if(timer!==null){clearTimeout(timer);timer=null}cleanupVisuals();setControlsPassThrough(false);AI.resume(PAUSE_REASON);PLAYER.resumeAfterChipSelection?.()}
-  function choose(row,col,allowHole){if(!active)return false;const origin=FIELD.worldToTile(PLAYER.getPosition().x,PLAYER.getPosition().y);if(!isSelectable(row,col,origin,allowHole))return false;const moved=PLAYER.teleportToTile?.(row,col,{allowHole})===true;if(moved)finish();return moved}
+  function choose(row,col,allowHole){
+    if(!active)return false;
+    const settings=getSettings(),origin=FIELD.worldToTile(PLAYER.getPosition().x,PLAYER.getPosition().y);
+    if(!isSelectable(row,col,origin,allowHole,settings.rangeTiles))return false;
+    const moved=PLAYER.teleportToTile?.(row,col,{allowHole})===true;
+    if(moved)finish();
+    return moved;
+  }
   function renderCells(origin,rangeTiles,allowHole){
     shade=document.createElement('div');shade.dataset.areaStealShade='true';shade.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:48;background:rgba(0,4,14,.68);pointer-events:auto;touch-action:none;`;
     svg=document.createElementNS(SVG_NS,'svg');svg.dataset.areaStealLayer='true';svg.setAttribute('viewBox',`0 0 ${SW} ${SH}`);svg.style.cssText=`position:absolute;left:0;top:0;width:${SW}px;height:${SH}px;z-index:49;overflow:visible;pointer-events:auto;touch-action:none;`;
     const rowMin=Math.max(0,origin.row-rangeTiles),rowMax=Math.min(FIELD.GRID_ROWS-1,origin.row+rangeTiles),colMin=Math.max(0,origin.col-rangeTiles),colMax=Math.min(FIELD.GRID_COLS-1,origin.col+rangeTiles);
     for(let row=rowMin;row<=rowMax;row++)for(let col=colMin;col<=colMax;col++){
-      if(Math.max(Math.abs(row-origin.row),Math.abs(col-origin.col))>rangeTiles)continue;
-      if(!isSelectable(row,col,origin,allowHole))continue;
+      if(!isSelectable(row,col,origin,allowHole,rangeTiles))continue;
       const cell=document.createElementNS(SVG_NS,'polygon');cell.dataset.areaStealCell='true';cell.dataset.row=String(row);cell.dataset.col=String(col);cell.setAttribute('points',polygonPoints(row,col));cell.setAttribute('fill','rgba(80,238,255,.48)');cell.setAttribute('stroke','rgba(196,253,255,.98)');cell.setAttribute('stroke-width','5');cell.setAttribute('vector-effect','non-scaling-stroke');cell.style.cssText='pointer-events:all;cursor:pointer;touch-action:none;';svg.appendChild(cell);
     }
     svg.addEventListener('pointerdown',event=>{
@@ -92,5 +103,5 @@
     event.preventDefault();event.stopImmediatePropagation();
   },true);
 
-  window.BattleNetworkAreaSteal=Object.freeze({begin,isActive:()=>active,cancel:finish,getSettings:()=>Object.freeze(getSettings())});
+  window.BattleNetworkAreaSteal=Object.freeze({begin,isActive:()=>active,cancel:finish,getSettings:()=>Object.freeze(getSettings()),isInRange:(row,col,origin)=>isInEightDirectionRange(row,col,origin,RANGE_TILES)});
 })();
