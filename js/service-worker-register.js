@@ -1,6 +1,6 @@
 (()=>{
   const fix=document.createElement('script');
-  fix.src='./js/ui/airshot-projectile-fix.js?v=2';
+  fix.src='./js/ui/airshot-projectile-fix.js?v=3';
   fix.async=false;
   document.head.appendChild(fix);
 
@@ -13,7 +13,7 @@
   });
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./sw.js?v=161',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./sw.js?v=162',{scope:'./',updateViaCache:'none'});
       await registration.update();
     }catch(error){
       console.warn(error);
