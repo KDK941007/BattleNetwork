@@ -9,7 +9,7 @@
   style.id='attackEffectReviewStyle';
   style.textContent=`
     .attackEffectReview{
-      position:absolute;right:8px;top:8px;z-index:76;width:min(318px,45vw);
+      position:absolute;right:8px;top:8px;z-index:76;width:min(310px,44vw);
       padding:8px;border:1px solid rgba(119,228,255,.82);border-radius:10px;
       background:rgba(4,22,31,.94);box-shadow:0 8px 24px rgba(0,0,0,.42),inset 0 0 0 1px rgba(173,244,255,.08);
       color:#effdff;pointer-events:auto;touch-action:none;
@@ -19,37 +19,94 @@
     .attackEffectReview button{min-width:0;height:34px;padding:0 6px;border:1px solid #39748a;border-radius:7px;background:#0b3040;color:#eaffff;font-size:11px;font-weight:1000;touch-action:none}
     .attackEffectReview button.active{border-color:#ffe66d;background:#59470d;color:#fff5b6;box-shadow:0 0 9px rgba(255,221,87,.42)}
     .attackEffectReviewDesc{font-size:10px;font-weight:900;color:#d8f8ff;line-height:1.4}
-    .airshotWindCanvas{position:absolute;inset:0;z-index:17;width:100%;height:100%;pointer-events:none;touch-action:none}
 
     .battle[data-airshot-effect] .bullet.cannon{
       overflow:visible!important;
+      border:0!important;
       pointer-events:none!important;
-      width:120px!important;
-      height:82px!important;
-      border-radius:50%!important;
-      border:2px solid rgba(220,253,255,.72)!important;
-      background:radial-gradient(ellipse at 72% 50%,rgba(255,255,255,.99) 0 10%,rgba(216,253,255,.98) 17%,rgba(135,238,252,.90) 34%,rgba(67,202,235,.50) 56%,rgba(45,168,210,.16) 72%,transparent 82%)!important;
-      box-shadow:0 0 18px rgba(190,251,255,.98),0 0 42px rgba(74,220,247,.88),0 0 72px rgba(56,190,228,.48)!important;
       transform-origin:center!important;
-      animation:airshotCoreBreath .18s ease-in-out infinite alternate;
+      width:104px!important;
+      height:72px!important;
+      border-radius:50%!important;
+      background:radial-gradient(ellipse at 70% 50%,rgba(252,255,255,.99) 0 11%,rgba(196,251,255,.97) 20%,rgba(116,233,251,.88) 39%,rgba(62,198,232,.48) 61%,rgba(53,174,211,.12) 74%,transparent 80%)!important;
+      box-shadow:0 0 18px rgba(166,248,255,.98),0 0 38px rgba(64,215,245,.88),0 0 62px rgba(52,189,228,.45)!important;
+      filter:saturate(1.08);
     }
-    .battle[data-airshot-effect] .bullet.cannon::before,
-    .battle[data-airshot-effect] .bullet.cannon::after{content:none!important}
+
+    /* A-1: 圧縮空気弾＋太い風の尾 */
+    .battle[data-airshot-effect="A"] .bullet.cannon::before{
+      content:"";position:absolute;right:62%;top:50%;width:190px;height:104px;transform:translateY(-50%);
+      background:
+        linear-gradient(90deg,transparent 0%,rgba(61,194,228,.10) 15%,rgba(119,229,250,.58) 58%,rgba(218,252,255,.98) 100%) 0 8px/100% 13px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(53,181,219,.08) 12%,rgba(104,219,245,.52) 54%,rgba(201,249,255,.96) 100%) 0 31px/92% 11px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(70,194,228,.08) 18%,rgba(123,226,248,.56) 62%,rgba(218,252,255,.94) 100%) 0 55px/97% 12px no-repeat,
+        linear-gradient(90deg,transparent 0%,rgba(48,171,213,.06) 16%,rgba(91,208,239,.48) 58%,rgba(191,244,252,.88) 100%) 0 79px/82% 10px no-repeat;
+      clip-path:polygon(0 14%,100% 0,100% 100%,0 86%);
+      filter:drop-shadow(0 0 8px rgba(111,233,252,.82));
+      opacity:.98;
+    }
+    .battle[data-airshot-effect="A"] .bullet.cannon::after{
+      content:"";position:absolute;left:-8px;top:50%;width:78px;height:86px;border:7px solid rgba(202,252,255,.90);border-radius:50%;
+      transform:translate(-50%,-50%) scaleX(.42);box-shadow:0 0 16px rgba(136,240,255,.88),inset 0 0 14px rgba(176,248,255,.58),0 0 30px rgba(74,209,242,.48);
+    }
+
+    /* A-2: 圧縮空気弾＋太い二重らせん風 */
     .battle[data-airshot-effect="B"] .bullet.cannon{
-      box-shadow:0 0 22px rgba(205,253,255,1),0 0 48px rgba(76,226,250,.95),0 0 82px rgba(50,188,230,.56)!important;
+      box-shadow:0 0 20px rgba(175,250,255,1),0 0 42px rgba(59,214,245,.92),0 0 70px rgba(48,184,226,.48)!important;
     }
+    .battle[data-airshot-effect="B"] .bullet.cannon::before,
+    .battle[data-airshot-effect="B"] .bullet.cannon::after{
+      content:"";position:absolute;right:53%;width:198px;height:74px;border-radius:50%;background:transparent;
+      filter:drop-shadow(0 0 9px rgba(124,238,255,.92));
+    }
+    .battle[data-airshot-effect="B"] .bullet.cannon::before{
+      top:-24px;
+      border-top:10px solid rgba(226,254,255,.98);
+      border-right:6px solid rgba(137,238,252,.72);
+      border-left:4px solid rgba(94,217,244,.38);
+      transform:rotate(7deg) scaleY(.86);
+      box-shadow:0 -15px 0 -8px rgba(100,223,247,.72),0 15px 0 -8px rgba(153,244,255,.62),0 0 18px rgba(83,215,243,.38);
+    }
+    .battle[data-airshot-effect="B"] .bullet.cannon::after{
+      bottom:-24px;
+      border-bottom:10px solid rgba(169,246,255,.97);
+      border-right:6px solid rgba(111,229,249,.68);
+      border-left:4px solid rgba(73,202,236,.34);
+      transform:rotate(-7deg) scaleY(.86);
+      box-shadow:0 15px 0 -8px rgba(82,208,239,.72),0 -15px 0 -8px rgba(184,250,255,.56),0 0 18px rgba(67,202,235,.34);
+    }
+
+    /* A-3: 圧縮空気弾＋濃い霧状風圧 */
     .battle[data-airshot-effect="C"] .bullet.cannon{
-      background:radial-gradient(ellipse at 70% 50%,rgba(255,255,255,.98) 0 9%,rgba(207,251,255,.92) 18%,rgba(115,230,249,.72) 38%,rgba(70,198,230,.34) 61%,transparent 82%)!important;
-      box-shadow:0 0 24px rgba(198,252,255,.94),0 0 58px rgba(97,224,246,.78),0 0 92px rgba(56,178,218,.42)!important;
+      background:radial-gradient(ellipse at 68% 50%,rgba(251,255,255,.98) 0 9%,rgba(207,252,255,.92) 20%,rgba(118,231,249,.74) 42%,rgba(71,199,229,.33) 65%,transparent 80%)!important;
+      box-shadow:0 0 22px rgba(177,250,255,.94),0 0 50px rgba(92,220,244,.68),0 0 78px rgba(64,185,221,.34)!important;
+      filter:blur(.2px) saturate(1.05);
     }
-    @keyframes airshotCoreBreath{from{filter:brightness(.92) saturate(1.04)}to{filter:brightness(1.18) saturate(1.15)}}
+    .battle[data-airshot-effect="C"] .bullet.cannon::before{
+      content:"";position:absolute;right:48%;top:50%;width:220px;height:124px;transform:translateY(-50%);
+      background:
+        radial-gradient(ellipse at 90% 50%,rgba(220,253,255,.70) 0 16%,rgba(135,235,251,.42) 34%,transparent 61%),
+        radial-gradient(ellipse at 66% 28%,rgba(161,242,253,.42) 0 18%,rgba(95,215,241,.20) 42%,transparent 64%),
+        radial-gradient(ellipse at 48% 74%,rgba(136,232,248,.38) 0 20%,rgba(73,201,233,.18) 44%,transparent 66%),
+        radial-gradient(ellipse at 22% 46%,rgba(103,216,241,.29) 0 18%,transparent 58%);
+      filter:blur(8px);opacity:1;
+    }
+    .battle[data-airshot-effect="C"] .bullet.cannon::after{
+      content:"";position:absolute;right:38%;top:50%;width:188px;height:102px;border-radius:50%;
+      border-top:9px solid rgba(214,253,255,.88);
+      border-bottom:9px solid rgba(126,232,251,.72);
+      border-left:5px solid rgba(83,205,237,.32);
+      transform:translateY(-50%) scaleY(.72);
+      box-shadow:0 0 15px rgba(136,238,253,.72),inset 0 0 18px rgba(107,226,248,.28);
+      opacity:.94;
+    }
   `;
   document.head.appendChild(style);
 
   const patterns=Object.freeze({
-    A:'A：直線的な強風',
-    B:'B：渦巻く圧縮風',
-    C:'C：暴風・乱流'
+    A:'A-1：圧縮空気弾＋太い風の尾',
+    B:'A-2：圧縮空気弾＋太い二重らせん風',
+    C:'A-3：圧縮空気弾＋濃い霧状風圧'
   });
   let selected='A';
 
@@ -58,232 +115,32 @@
   panel.innerHTML=`
     <div class="attackEffectReviewTitle">エアシュート 風エフェクト比較</div>
     <div class="attackEffectReviewPatterns">
-      <button type="button" data-pattern="A">A 強風</button>
-      <button type="button" data-pattern="B">B 渦風</button>
-      <button type="button" data-pattern="C">C 乱流</button>
+      <button type="button" data-pattern="A">A-1</button>
+      <button type="button" data-pattern="B">A-2</button>
+      <button type="button" data-pattern="C">A-3</button>
     </div>
     <div class="attackEffectReviewDesc"></div>`;
   battle.appendChild(panel);
 
-  const canvas=document.createElement('canvas');
-  canvas.className='airshotWindCanvas';
-  canvas.setAttribute('aria-hidden','true');
-  battle.appendChild(canvas);
-  const ctx=canvas.getContext('2d',{alpha:true});
-  if(!ctx)return;
-
   const desc=panel.querySelector('.attackEffectReviewDesc');
-  const particles=[];
-  const tracked=new Map();
-  let cssWidth=1,cssHeight=1,dpr=1,lastFrame=performance.now();
-
-  const random=(min,max)=>min+Math.random()*(max-min);
-  const clamp01=value=>Math.max(0,Math.min(1,value));
-
-  function resizeCanvas(){
-    const rect=battle.getBoundingClientRect();
-    cssWidth=Math.max(1,rect.width);
-    cssHeight=Math.max(1,rect.height);
-    dpr=Math.min(2,window.devicePixelRatio||1);
-    canvas.width=Math.round(cssWidth*dpr);
-    canvas.height=Math.round(cssHeight*dpr);
-    canvas.style.width=`${cssWidth}px`;
-    canvas.style.height=`${cssHeight}px`;
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  resizeCanvas();
-  new ResizeObserver(resizeCanvas).observe(battle);
-
-  function angleFromProjectile(projectile){
-    const match=/rotate\((-?[\d.]+)deg\)/.exec(projectile.style.transform||'');
-    const degrees=match?Number(match[1]):0;
-    return Number.isFinite(degrees)?degrees*Math.PI/180:0;
-  }
-
-  function projectileState(projectile){
-    const battleRect=battle.getBoundingClientRect();
-    const rect=projectile.getBoundingClientRect();
-    const angle=angleFromProjectile(projectile);
-    const dx=Math.cos(angle),dy=Math.sin(angle),px=-dy,py=dx;
-    return{
-      x:rect.left-battleRect.left+rect.width/2,
-      y:rect.top-battleRect.top+rect.height/2,
-      dx,dy,px,py,angle
-    };
-  }
-
-  function addParticle(p){
-    particles.push(p);
-    if(particles.length>150)particles.splice(0,particles.length-150);
-  }
-
-  function spawnStraightWind(s){
-    for(let i=0;i<4;i++){
-      const lateral=random(-42,42);
-      const back=random(24,78);
-      addParticle({
-        mode:'line',x:s.x-s.dx*back+s.px*lateral,y:s.y-s.dy*back+s.py*lateral,
-        dx:s.dx,dy:s.dy,px:s.px,py:s.py,
-        vx:-s.dx*random(85,145)+s.px*random(-16,16),vy:-s.dy*random(85,145)+s.py*random(-16,16),
-        life:0,maxLife:random(.28,.42),length:random(72,150),width:random(10,19),bend:random(-18,18),alpha:random(.58,.94)
-      });
-    }
-  }
-
-  function spawnSpiralWind(s,now){
-    const phase=now*.010;
-    for(let i=0;i<5;i++){
-      const sign=i%2?1:-1;
-      const offset=random(24,52)*sign;
-      const back=random(20,72);
-      addParticle({
-        mode:'spiral',x:s.x-s.dx*back+s.px*offset,y:s.y-s.dy*back+s.py*offset,
-        dx:s.dx,dy:s.dy,px:s.px,py:s.py,
-        vx:-s.dx*random(70,120),vy:-s.dy*random(70,120),
-        life:0,maxLife:random(.34,.50),length:random(82,148),width:random(11,20),bend:random(38,72)*sign,
-        phase:phase+random(0,Math.PI*2),alpha:random(.62,.96)
-      });
-    }
-  }
-
-  function spawnTurbulence(s){
-    for(let i=0;i<6;i++){
-      const lateral=random(-64,64);
-      const back=random(12,90);
-      addParticle({
-        mode:i%3===0?'curl':'turb',x:s.x-s.dx*back+s.px*lateral,y:s.y-s.dy*back+s.py*lateral,
-        dx:s.dx,dy:s.dy,px:s.px,py:s.py,
-        vx:-s.dx*random(48,112)+s.px*random(-48,48),vy:-s.dy*random(48,112)+s.py*random(-48,48),
-        life:0,maxLife:random(.36,.58),length:random(66,142),width:random(12,23),bend:random(-78,78),
-        phase:random(0,Math.PI*2),alpha:random(.46,.86)
-      });
-    }
-  }
-
-  function spawnUseWind(s,now){
-    if(selected==='A')spawnStraightWind(s);
-    else if(selected==='B')spawnSpiralWind(s,now);
-    else spawnTurbulence(s);
-  }
-
-  function spawnEndBurst(s){
-    const count=selected==='C'?15:11;
-    for(let i=0;i<count;i++){
-      const fan=random(-.72,.72);
-      const cos=Math.cos(fan),sin=Math.sin(fan);
-      const dx=s.dx*cos+s.px*sin,dy=s.dy*cos+s.py*sin;
-      addParticle({
-        mode:selected==='B'?'spiral':'burst',x:s.x+dx*12,y:s.y+dy*12,
-        dx,dy,px:-dy,py:dx,vx:dx*random(60,150),vy:dy*random(60,150),
-        life:0,maxLife:random(.22,.42),length:random(46,100),width:random(9,18),bend:random(-32,32),phase:random(0,Math.PI*2),alpha:random(.50,.92)
-      });
-    }
-  }
-
-  function strokeWind(p,age){
-    const fade=1-age;
-    const x=p.x,y=p.y;
-    let side=p.bend||0;
-    if(p.mode==='spiral')side*=Math.sin((p.phase||0)+age*Math.PI*2.8);
-    if(p.mode==='turb'||p.mode==='curl')side*=.55+Math.sin((p.phase||0)+age*Math.PI*3.2)*.45;
-    const endX=x-p.dx*p.length+p.px*side;
-    const endY=y-p.dy*p.length+p.py*side;
-    const controlX=x-p.dx*p.length*.48+p.px*side*1.28;
-    const controlY=y-p.dy*p.length*.48+p.py*side*1.28;
-    const alpha=p.alpha*fade;
-    const width=p.width*(.72+age*.45);
-
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-    ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(controlX,controlY,endX,endY);
-    ctx.strokeStyle=`rgba(71,201,236,${alpha*.26})`;ctx.lineWidth=width*1.85;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(controlX,controlY,endX,endY);
-    ctx.strokeStyle=`rgba(151,238,252,${alpha*.66})`;ctx.lineWidth=width;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(controlX,controlY,endX,endY);
-    ctx.strokeStyle=`rgba(239,255,255,${alpha*.88})`;ctx.lineWidth=Math.max(2,width*.32);ctx.stroke();
-
-    if(p.mode==='curl'){
-      const r=18+age*26;
-      ctx.beginPath();ctx.arc(x,y,r,(p.phase||0)+age*2.2,(p.phase||0)+Math.PI*1.45+age*2.2);
-      ctx.strokeStyle=`rgba(191,248,255,${alpha*.62})`;ctx.lineWidth=Math.max(4,width*.55);ctx.stroke();
-    }
-  }
-
-  function drawCoreWind(projectiles,now){
-    projectiles.forEach(projectile=>{
-      const s=projectileState(projectile);
-      const pulse=.5+.5*Math.sin(now*.018);
-      if(selected==='B'){
-        for(let i=0;i<2;i++){
-          const r=38+i*19+pulse*7;
-          ctx.beginPath();ctx.ellipse(s.x,s.y,r,r*.48,s.angle,Math.PI*.08+i*.35,Math.PI*1.64+i*.35);
-          ctx.strokeStyle=`rgba(${i?'117,227,248':'224,254,255'},${.72-i*.18})`;ctx.lineWidth=9-i*2;ctx.stroke();
-        }
-      }else if(selected==='C'){
-        for(let i=0;i<3;i++){
-          const r=42+i*21+pulse*9;
-          ctx.beginPath();ctx.arc(s.x+s.px*(i-1)*13,s.y+s.py*(i-1)*13,r,-.7,.8);
-          ctx.strokeStyle=`rgba(166,241,252,${.44-i*.08})`;ctx.lineWidth=11-i*2;ctx.stroke();
-        }
-      }else{
-        ctx.beginPath();ctx.ellipse(s.x-s.dx*18,s.y-s.dy*18,50+pulse*6,27+pulse*3,s.angle,Math.PI*.55,Math.PI*1.45);
-        ctx.strokeStyle='rgba(220,253,255,.66)';ctx.lineWidth=9;ctx.stroke();
-      }
-    });
-  }
-
   function applyPattern(pattern){
     if(!patterns[pattern])return;
     selected=pattern;
     battle.dataset.airshotEffect=pattern;
-    particles.length=0;
     panel.querySelectorAll('[data-pattern]').forEach(button=>button.classList.toggle('active',button.dataset.pattern===pattern));
-    desc.textContent=`${patterns[pattern]}　※実際に撃つエアシュートへ反映`;
+    desc.textContent=`${patterns[pattern]}　※次に撃つエアシュートへ反映`;
   }
 
   panel.addEventListener('pointerdown',event=>event.stopPropagation());
   panel.addEventListener('click',event=>{
     const button=event.target.closest('[data-pattern]');
     if(!button)return;
-    event.preventDefault();event.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
     applyPattern(button.dataset.pattern);
   });
 
-  function loop(now){
-    const dt=Math.min(.05,Math.max(0,(now-lastFrame)/1000));
-    lastFrame=now;
-    ctx.clearRect(0,0,cssWidth,cssHeight);
-
-    const projectiles=[...battle.querySelectorAll('.bullet.cannon')];
-    const active=new Set(projectiles);
-    projectiles.forEach(projectile=>{
-      const s=projectileState(projectile);
-      let state=tracked.get(projectile);
-      if(!state){state={...s,lastSpawn:0};tracked.set(projectile,state)}
-      Object.assign(state,s);
-      const interval=selected==='C'?22:selected==='B'?24:26;
-      if(now-state.lastSpawn>=interval){spawnUseWind(s,now);state.lastSpawn=now}
-    });
-
-    for(const [projectile,state] of tracked){
-      if(active.has(projectile))continue;
-      spawnEndBurst(state);tracked.delete(projectile);
-    }
-
-    for(let i=particles.length-1;i>=0;i--){
-      const p=particles[i];p.life+=dt;
-      if(p.life>=p.maxLife){particles.splice(i,1);continue}
-      p.x+=p.vx*dt;p.y+=p.vy*dt;
-      const age=clamp01(p.life/p.maxLife);
-      strokeWind(p,age);
-    }
-    drawCoreWind(projectiles,now);
-    requestAnimationFrame(loop);
-  }
-
   applyPattern(selected);
-  requestAnimationFrame(loop);
-
   window.BattleNetworkAttackEffectReview=Object.freeze({
     getChip:()=> 'AIRSHOT',
     getPattern:()=>selected,
