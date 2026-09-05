@@ -1,20 +1,20 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v4')return;
-  scene.dataset.swordEffectHook='v4';
+  if(!scene||scene.dataset.swordEffectHook==='v5')return;
+  scene.dataset.swordEffectHook='v5';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
-  const SIZE_PATTERNS=Object.freeze({LARGE:1,MEDIUM:.8,SMALL:.6});
-  let sizePattern='LARGE',activeEffects=0,sizePatternControl=null;
+  const SWORD_SCALE_X=.6,POSITION_STEP=10,POSITION_MIN=-100,POSITION_MAX=200;
+  let forwardOffset=0,activeEffects=0,positionControl=null;
 
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
     #scene.swordSlashPlaying #meleePreview{opacity:0!important}
     #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%}
-    #battle .swordSizePatternTest{position:absolute;right:10px;top:58px;z-index:71;display:flex;align-items:center;gap:5px;padding:5px 6px;border:1px solid rgba(255,255,255,.5);border-radius:7px;background:rgba(8,12,20,.9);color:#fff;font:900 11px/1 system-ui,sans-serif;pointer-events:auto}
-    #battle .swordSizePatternTest button{min-width:38px;height:30px;padding:0 8px;border:1px solid #8eeaff;border-radius:5px;background:#0c4053;color:#eaffff;font:900 12px/1 system-ui,sans-serif}
-    #battle .swordSizePatternTest button.active{border-color:#ffe27a;background:#5a430c;color:#fff7c9;box-shadow:0 0 8px rgba(255,219,92,.55)}
+    #battle .swordPositionTest{position:absolute;right:10px;top:58px;z-index:71;display:flex;align-items:center;gap:5px;padding:5px 6px;border:1px solid rgba(255,255,255,.5);border-radius:7px;background:rgba(8,12,20,.9);color:#fff;font:900 11px/1 system-ui,sans-serif;pointer-events:auto}
+    #battle .swordPositionTest button{min-width:48px;height:30px;padding:0 8px;border:1px solid #8eeaff;border-radius:5px;background:#0c4053;color:#eaffff;font:900 12px/1 system-ui,sans-serif}
+    #battle .swordPositionTest strong{display:inline-block;min-width:48px;text-align:center;color:#fff7c9;font-variant-numeric:tabular-nums}
   `;
   document.head.appendChild(style);
 
@@ -26,15 +26,18 @@
     return target?.enabled===true&&target?.type==='SWORD';
   }
   function isSwordTestMode(){const target=window.BattleNetworkFolder?.getTestTarget?.();return target?.enabled===true&&target?.type==='SWORD'}
-  function setSizePattern(pattern){const key=String(pattern||'').toUpperCase();sizePattern=SIZE_PATTERNS[key]?key:'LARGE';syncSizePatternControl();return sizePattern}
-  function getSizePattern(){return sizePattern}
+  function clampOffset(value){return Math.max(POSITION_MIN,Math.min(POSITION_MAX,Math.round(Number(value)||0)))}
+  function setForwardOffset(value){forwardOffset=clampOffset(value);syncPositionControl();return forwardOffset}
+  function adjustForwardOffset(delta){return setForwardOffset(forwardOffset+(Number(delta)||0))}
+  function getForwardOffset(){return forwardOffset}
 
-  function projectedAngle(){
+  function projectedDirection(){
     const direction=currentContext()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
     const dx=Number(direction.x),dy=Number(direction.y);
-    if(!Number.isFinite(dx)||!Number.isFinite(dy))return 0;
+    if(!Number.isFinite(dx)||!Number.isFinite(dy))return {angle:0,x:1,y:0};
     const sx=(dx-dy)*PX,sy=(dx+dy)*PY;
-    return Math.atan2(sy,sx)*180/Math.PI;
+    const length=Math.hypot(sx,sy)||1;
+    return {angle:Math.atan2(sy,sx)*180/Math.PI,x:sx/length,y:sy/length};
   }
 
   function bodyPath(ctx){
@@ -127,21 +130,21 @@
     const top=parseFloat(sourceNode.style.top)||0;
     const centerX=left+width/2;
     const centerY=top+height/2;
-    const scaleX=SIZE_PATTERNS[sizePattern];
+    const projection=projectedDirection();
 
     sourceNode.style.setProperty('display','none','important');
 
     const canvas=document.createElement('canvas');
     const cssWidth=520,cssHeight=320,dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
     canvas.className='swordSlashFx';
-    canvas.dataset.sizePattern=sizePattern;
+    canvas.dataset.forwardOffset=String(forwardOffset);
     canvas.width=Math.round(cssWidth*dpr);
     canvas.height=Math.round(cssHeight*dpr);
     canvas.style.width=cssWidth+'px';
     canvas.style.height=cssHeight+'px';
-    canvas.style.left=(centerX-cssWidth/2)+'px';
-    canvas.style.top=(centerY-cssHeight/2-8)+'px';
-    canvas.style.transform=`rotate(${projectedAngle().toFixed(2)}deg)`;
+    canvas.style.left=(centerX-cssWidth/2+projection.x*forwardOffset)+'px';
+    canvas.style.top=(centerY-cssHeight/2-8+projection.y*forwardOffset)+'px';
+    canvas.style.transform=`rotate(${projection.angle.toFixed(2)}deg)`;
 
     nativeAppendChild(canvas);
     activeEffects++;
@@ -166,40 +169,34 @@
       ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      drawFrame(ctx,progress,scaleX);
+      drawFrame(ctx,progress,SWORD_SCALE_X);
       if(progress<1)requestAnimationFrame(frame);else finish();
     }
     requestAnimationFrame(frame);
   }
 
-  function syncSizePatternControl(){
-    if(!sizePatternControl)return;
-    sizePatternControl.querySelectorAll('button').forEach(button=>{
-      const active=button.dataset.sizePattern===sizePattern;
-      button.classList.toggle('active',active);
-      button.setAttribute('aria-pressed',active?'true':'false');
-    });
+  function syncPositionControl(){
+    if(!positionControl)return;
+    const value=positionControl.querySelector('strong');
+    if(value)value.textContent=`${forwardOffset>=0?'+':''}${forwardOffset}px`;
+    const buttons=positionControl.querySelectorAll('button');
+    if(buttons[0])buttons[0].disabled=forwardOffset<=POSITION_MIN;
+    if(buttons[1])buttons[1].disabled=forwardOffset>=POSITION_MAX;
   }
-  function installSizePatternControl(){
+  function installPositionControl(){
     if(!isSwordTestMode())return;
     const battle=document.getElementById('battle');
-    if(!battle||document.querySelector('.swordSizePatternTest'))return;
-    const wrap=document.createElement('div'),label=document.createElement('span');
-    wrap.className='swordSizePatternTest';
-    wrap.dataset.testOnly='sword-size-pattern';
-    label.textContent='SWORD 横';
-    wrap.appendChild(label);
-    [['LARGE','大'],['MEDIUM','中'],['SMALL','小']].forEach(([key,text])=>{
-      const button=document.createElement('button');
-      button.type='button';
-      button.dataset.sizePattern=key;
-      button.textContent=text;
-      button.addEventListener('click',()=>setSizePattern(key));
-      wrap.appendChild(button);
-    });
+    if(!battle||document.querySelector('.swordPositionTest'))return;
+    const wrap=document.createElement('div'),label=document.createElement('span'),back=document.createElement('button'),value=document.createElement('strong'),forward=document.createElement('button');
+    wrap.className='swordPositionTest';
+    wrap.dataset.testOnly='sword-position';
+    label.textContent='SWORD 前後';
+    back.type='button';back.textContent='-10';back.addEventListener('click',()=>adjustForwardOffset(-POSITION_STEP));
+    forward.type='button';forward.textContent='+10';forward.addEventListener('click',()=>adjustForwardOffset(POSITION_STEP));
+    wrap.append(label,back,value,forward);
     battle.appendChild(wrap);
-    sizePatternControl=wrap;
-    syncSizePatternControl();
+    positionControl=wrap;
+    syncPositionControl();
   }
 
   const nativeAppendChild=scene.appendChild.bind(scene);
@@ -212,6 +209,6 @@
     return nativeAppendChild(node);
   };
 
-  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V4_SIZE_PATTERNS_X',getSizePattern,setSizePattern,getSizePatterns:()=>SIZE_PATTERNS});
-  installSizePatternControl();
+  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V5_POSITION_TEST',scaleX:SWORD_SCALE_X,getForwardOffset,setForwardOffset,adjustForwardOffset});
+  installPositionControl();
 })();
