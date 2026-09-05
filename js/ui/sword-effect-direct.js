@@ -1,17 +1,20 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v6')return;
-  scene.dataset.swordEffectHook='v6';
+  if(!scene||scene.dataset.swordEffectHook==='v7')return;
+  scene.dataset.swordEffectHook='v7';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
   const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
+  const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
+  const nativeAppendChild=scene.appendChild.bind(scene);
+  const surfacePool=[];
   let activeEffects=0;
 
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
     #scene.swordSlashPlaying #meleePreview{opacity:0!important}
-    #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%}
+    #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%;will-change:clip-path,opacity,transform}
   `;
   document.head.appendChild(style);
 
@@ -66,20 +69,7 @@
     ctx.restore();
   }
 
-  function drawFrame(ctx,progress,scaleX){
-    const reveal=Math.min(1,progress/.24);
-    const fade=progress<.68?1:Math.max(0,(1-progress)/.32);
-    const revealX=18+482*(1-Math.pow(1-reveal,3));
-    const anchorX=32;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0,0,revealX,320);
-    ctx.clip();
-    ctx.translate(anchorX,0);
-    ctx.scale(scaleX,1);
-    ctx.translate(-anchorX,0);
-
+  function drawStaticSlash(ctx){
     const outer=ctx.createLinearGradient(35,92,480,190);
     outer.addColorStop(0,'rgba(80,207,247,.10)');
     outer.addColorStop(.20,'rgba(99,222,255,.54)');
@@ -88,7 +78,7 @@
     outer.addColorStop(1,'rgba(132,227,255,.58)');
 
     ctx.save();
-    ctx.globalAlpha=.96*fade;
+    ctx.globalAlpha=.96;
     ctx.fillStyle=outer;
     ctx.shadowColor='rgba(89,214,255,.88)';
     ctx.shadowBlur=24;
@@ -102,7 +92,7 @@
     inner.addColorStop(.48,'rgba(219,253,255,.66)');
     inner.addColorStop(1,'rgba(245,255,255,.92)');
     ctx.save();
-    ctx.globalAlpha=.82*fade;
+    ctx.globalAlpha=.82;
     ctx.fillStyle=inner;
     ctx.beginPath();
     ctx.moveTo(58,103);
@@ -115,13 +105,60 @@
     ctx.fill();
     ctx.restore();
 
-    stroke(ctx,c=>{c.moveTo(45,90);c.bezierCurveTo(174,94,343,105,441,128);c.bezierCurveTo(461,133,473,142,476,151)},'rgba(245,255,255,.98)',7.5,.95*fade,8);
-    stroke(ctx,c=>{c.moveTo(63,111);c.bezierCurveTo(192,114,341,122,435,142)},'rgba(198,248,255,.92)',3.2,.85*fade,5);
-    stroke(ctx,c=>{c.moveTo(75,224);c.bezierCurveTo(191,209,320,196,438,169)},'rgba(89,214,252,.92)',5.5,.72*fade,9);
-    stroke(ctx,c=>{c.moveTo(101,193);c.bezierCurveTo(181,183,236,170,281,153)},'rgba(229,254,255,.82)',3.1,.70*fade,5);
-    stroke(ctx,c=>{c.moveTo(145,206);c.bezierCurveTo(246,191,340,174,414,154)},'rgba(128,231,255,.72)',2.4,.64*fade,4);
-    stroke(ctx,c=>{c.moveTo(185,126);c.bezierCurveTo(266,128,340,136,407,149)},'rgba(238,255,255,.78)',2.3,.62*fade,4);
+    stroke(ctx,c=>{c.moveTo(45,90);c.bezierCurveTo(174,94,343,105,441,128);c.bezierCurveTo(461,133,473,142,476,151)},'rgba(245,255,255,.98)',7.5,.95,8);
+    stroke(ctx,c=>{c.moveTo(63,111);c.bezierCurveTo(192,114,341,122,435,142)},'rgba(198,248,255,.92)',3.2,.85,5);
+    stroke(ctx,c=>{c.moveTo(75,224);c.bezierCurveTo(191,209,320,196,438,169)},'rgba(89,214,252,.92)',5.5,.72,9);
+    stroke(ctx,c=>{c.moveTo(101,193);c.bezierCurveTo(181,183,236,170,281,153)},'rgba(229,254,255,.82)',3.1,.70,5);
+    stroke(ctx,c=>{c.moveTo(145,206);c.bezierCurveTo(246,191,340,174,414,154)},'rgba(128,231,255,.72)',2.4,.64,4);
+    stroke(ctx,c=>{c.moveTo(185,126);c.bezierCurveTo(266,128,340,136,407,149)},'rgba(238,255,255,.78)',2.3,.62,4);
+  }
+
+  function createStaticSprite(){
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(CSS_WIDTH*DPR);
+    canvas.height=Math.round(CSS_HEIGHT*DPR);
+    const ctx=canvas.getContext('2d');
+    if(!ctx)return null;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    drawStaticSlash(ctx);
+    return canvas;
+  }
+
+  const staticSprite=createStaticSprite();
+
+  function createSurface(){
+    const canvas=document.createElement('canvas');
+    canvas.className='swordSlashFx';
+    canvas.width=Math.round(CSS_WIDTH*DPR);
+    canvas.height=Math.round(CSS_HEIGHT*DPR);
+    canvas.style.width=CSS_WIDTH+'px';
+    canvas.style.height=CSS_HEIGHT+'px';
+    canvas.style.display='none';
+    const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true})||canvas.getContext('2d');
+    const surface={canvas,ctx,busy:false,animation:null};
+    nativeAppendChild(canvas);
+    surfacePool.push(surface);
+    return surface;
+  }
+
+  createSurface();
+  createSurface();
+
+  function acquireSurface(){return surfacePool.find(surface=>!surface.busy)||createSurface()}
+
+  function paintSurface(surface,projection){
+    const ctx=surface.ctx;
+    if(!ctx||!staticSprite)return false;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,surface.canvas.width,surface.canvas.height);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.save();
+    ctx.translate(32,0);
+    ctx.scale(projection.scaleX,1);
+    ctx.translate(-32,0);
+    ctx.drawImage(staticSprite,0,0,CSS_WIDTH,CSS_HEIGHT);
     ctx.restore();
+    return true;
   }
 
   function renderSwordFx(sourceNode){
@@ -135,49 +172,52 @@
 
     sourceNode.style.setProperty('display','none','important');
 
-    const canvas=document.createElement('canvas');
-    const cssWidth=520,cssHeight=320,dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
-    canvas.className='swordSlashFx';
+    const surface=acquireSurface(),canvas=surface.canvas;
+    surface.busy=true;
+    if(surface.animation){surface.animation.cancel();surface.animation=null}
+    if(!paintSurface(surface,projection)){surface.busy=false;return}
+
     canvas.dataset.forwardOffset=String(FORWARD_OFFSET);
     canvas.dataset.directionScale=projection.directionScale.toFixed(3);
-    canvas.width=Math.round(cssWidth*dpr);
-    canvas.height=Math.round(cssHeight*dpr);
-    canvas.style.width=cssWidth+'px';
-    canvas.style.height=cssHeight+'px';
-    canvas.style.left=(centerX-cssWidth/2+projection.x*FORWARD_OFFSET)+'px';
-    canvas.style.top=(centerY-cssHeight/2-8+projection.y*FORWARD_OFFSET)+'px';
+    canvas.style.left=(centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET)+'px';
+    canvas.style.top=(centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET)+'px';
     canvas.style.transform=`rotate(${projection.angle.toFixed(2)}deg)`;
+    canvas.style.clipPath='inset(0 502px 0 0)';
+    canvas.style.opacity='1';
+    canvas.style.display='block';
 
-    nativeAppendChild(canvas);
     activeEffects++;
     scene.classList.add('swordSlashPlaying');
-
-    const ctx=canvas.getContext('2d');
-    if(!ctx){finish();return}
-    const started=performance.now(),duration=390;
     let finished=false;
 
     function finish(){
       if(finished)return;
       finished=true;
-      canvas.remove();
+      canvas.style.display='none';
+      canvas.style.opacity='1';
+      canvas.style.clipPath='inset(0 20px 0 0)';
+      surface.busy=false;
+      surface.animation=null;
       activeEffects=Math.max(0,activeEffects-1);
       if(activeEffects===0)scene.classList.remove('swordSlashPlaying');
     }
 
-    function frame(now){
-      if(!canvas.isConnected){finish();return}
-      const progress=Math.min(1,(now-started)/duration);
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      drawFrame(ctx,progress,projection.scaleX);
-      if(progress<1)requestAnimationFrame(frame);else finish();
+    if(typeof canvas.animate==='function'){
+      const animation=canvas.animate([
+        {clipPath:'inset(0 502px 0 0)',opacity:1,offset:0,easing:'cubic-bezier(.22,1,.36,1)'},
+        {clipPath:'inset(0 20px 0 0)',opacity:1,offset:.24},
+        {clipPath:'inset(0 20px 0 0)',opacity:1,offset:.68},
+        {clipPath:'inset(0 20px 0 0)',opacity:0,offset:1}
+      ],{duration:DURATION,fill:'forwards',easing:'linear'});
+      surface.animation=animation;
+      animation.onfinish=finish;
+      animation.oncancel=()=>{if(!finished)finish()};
+    }else{
+      canvas.style.clipPath='inset(0 20px 0 0)';
+      setTimeout(finish,DURATION);
     }
-    requestAnimationFrame(frame);
   }
 
-  const nativeAppendChild=scene.appendChild.bind(scene);
   scene.appendChild=function(node){
     if(node instanceof HTMLElement&&node.classList.contains('slash')&&isSwordContext()){
       const result=nativeAppendChild(node);
@@ -188,9 +228,10 @@
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V6_DIRECTION_PERSPECTIVE',
+    version:'DIRECT_CANVAS_V7_CACHED',
     scaleX:SWORD_SCALE_X,
     forwardOffset:FORWARD_OFFSET,
-    getProjection:()=>projectedDirection()
+    getProjection:()=>projectedDirection(),
+    renderer:'STATIC_CACHE_WAAPI'
   });
 })();
