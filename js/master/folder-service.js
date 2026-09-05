@@ -6,8 +6,8 @@
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'SWORD',
-    chipId:'CHIP_0002',
+    type:'WIDE',
+    chipId:'CHIP_0003',
     codes:Object.freeze(['S']),
     requiredCards:Object.freeze([])
   });
