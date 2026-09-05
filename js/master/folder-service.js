@@ -1,13 +1,31 @@
 (()=>{
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
+  const LONG_SWORD_ID='CHIP_EXE4_S056';
+
+  // Effect-review support only: reuse the confirmed Sword battle runtime so LongSword's
+  // visual effect can be reviewed without introducing new LongSword gameplay constants.
+  const master=window.BattleNetworkMaster;
+  if(master?.createGameCompatibilityData&&!master.__longSwordReviewCompatInstalled){
+    const nativeCreateGameCompatibilityData=master.createGameCompatibilityData.bind(master);
+    master.createGameCompatibilityData=()=>{
+      const compat=nativeCreateGameCompatibilityData();
+      const sword=compat?.CHIP?.SWORD;
+      if(sword&&!compat.CHIP.LONG){
+        const longChip=master.getChip?.(LONG_SWORD_ID);
+        compat.CHIP.LONG=Object.freeze({...sword,chipId:LONG_SWORD_ID,name:longChip?.chipName||'ロングソード'});
+      }
+      return compat;
+    };
+    master.__longSwordReviewCompatInstalled=true;
+  }
 
   // Chip-detail/effect-review test rule:
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'WIDE',
-    chipId:'CHIP_0003',
+    type:'LONG',
+    chipId:LONG_SWORD_ID,
     codes:Object.freeze(['S']),
     requiredCards:Object.freeze([])
   });
