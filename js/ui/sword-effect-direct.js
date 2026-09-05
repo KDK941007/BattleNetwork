@@ -1,20 +1,17 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v5')return;
-  scene.dataset.swordEffectHook='v5';
+  if(!scene||scene.dataset.swordEffectHook==='v6')return;
+  scene.dataset.swordEffectHook='v6';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
-  const SWORD_SCALE_X=.6,POSITION_STEP=10,POSITION_MIN=-100,POSITION_MAX=200;
-  let forwardOffset=0,activeEffects=0,positionControl=null;
+  const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
+  let activeEffects=0;
 
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
     #scene.swordSlashPlaying #meleePreview{opacity:0!important}
     #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%}
-    #battle .swordPositionTest{position:absolute;right:10px;top:58px;z-index:71;display:flex;align-items:center;gap:5px;padding:5px 6px;border:1px solid rgba(255,255,255,.5);border-radius:7px;background:rgba(8,12,20,.9);color:#fff;font:900 11px/1 system-ui,sans-serif;pointer-events:auto}
-    #battle .swordPositionTest button{min-width:48px;height:30px;padding:0 8px;border:1px solid #8eeaff;border-radius:5px;background:#0c4053;color:#eaffff;font:900 12px/1 system-ui,sans-serif}
-    #battle .swordPositionTest strong{display:inline-block;min-width:48px;text-align:center;color:#fff7c9;font-variant-numeric:tabular-nums}
   `;
   document.head.appendChild(style);
 
@@ -25,19 +22,23 @@
     const target=window.BattleNetworkFolder?.getTestTarget?.();
     return target?.enabled===true&&target?.type==='SWORD';
   }
-  function isSwordTestMode(){const target=window.BattleNetworkFolder?.getTestTarget?.();return target?.enabled===true&&target?.type==='SWORD'}
-  function clampOffset(value){return Math.max(POSITION_MIN,Math.min(POSITION_MAX,Math.round(Number(value)||0)))}
-  function setForwardOffset(value){forwardOffset=clampOffset(value);syncPositionControl();return forwardOffset}
-  function adjustForwardOffset(delta){return setForwardOffset(forwardOffset+(Number(delta)||0))}
-  function getForwardOffset(){return forwardOffset}
 
   function projectedDirection(){
     const direction=currentContext()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
-    const dx=Number(direction.x),dy=Number(direction.y);
-    if(!Number.isFinite(dx)||!Number.isFinite(dy))return {angle:0,x:1,y:0};
+    let dx=Number(direction.x),dy=Number(direction.y);
+    if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.0001){dx=1;dy=0}
+    const worldLength=Math.hypot(dx,dy)||1;
+    dx/=worldLength;dy/=worldLength;
     const sx=(dx-dy)*PX,sy=(dx+dy)*PY;
-    const length=Math.hypot(sx,sy)||1;
-    return {angle:Math.atan2(sy,sx)*180/Math.PI,x:sx/length,y:sy/length};
+    const projectedLength=Math.hypot(sx,sy)||1;
+    const directionScale=Math.max(.5,Math.min(1,projectedLength/MAX_PROJECTED_LENGTH));
+    return {
+      angle:Math.atan2(sy,sx)*180/Math.PI,
+      x:sx/projectedLength,
+      y:sy/projectedLength,
+      scaleX:SWORD_SCALE_X*directionScale,
+      directionScale
+    };
   }
 
   function bodyPath(ctx){
@@ -137,13 +138,14 @@
     const canvas=document.createElement('canvas');
     const cssWidth=520,cssHeight=320,dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
     canvas.className='swordSlashFx';
-    canvas.dataset.forwardOffset=String(forwardOffset);
+    canvas.dataset.forwardOffset=String(FORWARD_OFFSET);
+    canvas.dataset.directionScale=projection.directionScale.toFixed(3);
     canvas.width=Math.round(cssWidth*dpr);
     canvas.height=Math.round(cssHeight*dpr);
     canvas.style.width=cssWidth+'px';
     canvas.style.height=cssHeight+'px';
-    canvas.style.left=(centerX-cssWidth/2+projection.x*forwardOffset)+'px';
-    canvas.style.top=(centerY-cssHeight/2-8+projection.y*forwardOffset)+'px';
+    canvas.style.left=(centerX-cssWidth/2+projection.x*FORWARD_OFFSET)+'px';
+    canvas.style.top=(centerY-cssHeight/2-8+projection.y*FORWARD_OFFSET)+'px';
     canvas.style.transform=`rotate(${projection.angle.toFixed(2)}deg)`;
 
     nativeAppendChild(canvas);
@@ -169,34 +171,10 @@
       ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      drawFrame(ctx,progress,SWORD_SCALE_X);
+      drawFrame(ctx,progress,projection.scaleX);
       if(progress<1)requestAnimationFrame(frame);else finish();
     }
     requestAnimationFrame(frame);
-  }
-
-  function syncPositionControl(){
-    if(!positionControl)return;
-    const value=positionControl.querySelector('strong');
-    if(value)value.textContent=`${forwardOffset>=0?'+':''}${forwardOffset}px`;
-    const buttons=positionControl.querySelectorAll('button');
-    if(buttons[0])buttons[0].disabled=forwardOffset<=POSITION_MIN;
-    if(buttons[1])buttons[1].disabled=forwardOffset>=POSITION_MAX;
-  }
-  function installPositionControl(){
-    if(!isSwordTestMode())return;
-    const battle=document.getElementById('battle');
-    if(!battle||document.querySelector('.swordPositionTest'))return;
-    const wrap=document.createElement('div'),label=document.createElement('span'),back=document.createElement('button'),value=document.createElement('strong'),forward=document.createElement('button');
-    wrap.className='swordPositionTest';
-    wrap.dataset.testOnly='sword-position';
-    label.textContent='SWORD 前後';
-    back.type='button';back.textContent='-10';back.addEventListener('click',()=>adjustForwardOffset(-POSITION_STEP));
-    forward.type='button';forward.textContent='+10';forward.addEventListener('click',()=>adjustForwardOffset(POSITION_STEP));
-    wrap.append(label,back,value,forward);
-    battle.appendChild(wrap);
-    positionControl=wrap;
-    syncPositionControl();
   }
 
   const nativeAppendChild=scene.appendChild.bind(scene);
@@ -209,6 +187,10 @@
     return nativeAppendChild(node);
   };
 
-  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V5_POSITION_TEST',scaleX:SWORD_SCALE_X,getForwardOffset,setForwardOffset,adjustForwardOffset});
-  installPositionControl();
+  window.BattleNetworkSwordEffectDirect=Object.freeze({
+    version:'DIRECT_CANVAS_V6_DIRECTION_PERSPECTIVE',
+    scaleX:SWORD_SCALE_X,
+    forwardOffset:FORWARD_OFFSET,
+    getProjection:()=>projectedDirection()
+  });
 })();
