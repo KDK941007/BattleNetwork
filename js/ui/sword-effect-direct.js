@@ -1,16 +1,20 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v2')return;
-  scene.dataset.swordEffectHook='v2';
+  if(!scene||scene.dataset.swordEffectHook==='v3')return;
+  scene.dataset.swordEffectHook='v3';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
-  let activeEffects=0;
+  const SIZE_PATTERNS=Object.freeze({LARGE:1,MEDIUM:.8,SMALL:.6});
+  let sizePattern='LARGE',activeEffects=0,sizePatternControl=null;
 
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
     #scene.swordSlashPlaying #meleePreview{opacity:0!important}
     #scene .swordSlashFx{position:absolute;z-index:9;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:50% 50%}
+    #battle .swordSizePatternTest{position:absolute;right:10px;top:58px;z-index:71;display:flex;align-items:center;gap:5px;padding:5px 6px;border:1px solid rgba(255,255,255,.5);border-radius:7px;background:rgba(8,12,20,.9);color:#fff;font:900 11px/1 system-ui,sans-serif;pointer-events:auto}
+    #battle .swordSizePatternTest button{min-width:38px;height:30px;padding:0 8px;border:1px solid #8eeaff;border-radius:5px;background:#0c4053;color:#eaffff;font:900 12px/1 system-ui,sans-serif}
+    #battle .swordSizePatternTest button.active{border-color:#ffe27a;background:#5a430c;color:#fff7c9;box-shadow:0 0 8px rgba(255,219,92,.55)}
   `;
   document.head.appendChild(style);
 
@@ -21,6 +25,9 @@
     const target=window.BattleNetworkFolder?.getTestTarget?.();
     return target?.enabled===true&&target?.type==='SWORD';
   }
+  function isSwordTestMode(){const target=window.BattleNetworkFolder?.getTestTarget?.();return target?.enabled===true&&target?.type==='SWORD'}
+  function setSizePattern(pattern){const key=String(pattern||'').toUpperCase();sizePattern=SIZE_PATTERNS[key]?key:'LARGE';syncSizePatternControl();return sizePattern}
+  function getSizePattern(){return sizePattern}
 
   function projectedAngle(){
     const direction=currentContext()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
@@ -55,7 +62,7 @@
     ctx.restore();
   }
 
-  function drawFrame(ctx,progress){
+  function drawFrame(ctx,progress,scaleY){
     const reveal=Math.min(1,progress/.24);
     const fade=progress<.68?1:Math.max(0,(1-progress)/.32);
     const revealX=18+482*(1-Math.pow(1-reveal,3));
@@ -64,6 +71,9 @@
     ctx.beginPath();
     ctx.rect(0,0,revealX,320);
     ctx.clip();
+    ctx.translate(0,160);
+    ctx.scale(1,scaleY);
+    ctx.translate(0,-160);
 
     const outer=ctx.createLinearGradient(35,92,480,190);
     outer.addColorStop(0,'rgba(80,207,247,.10)');
@@ -103,11 +113,9 @@
     stroke(ctx,c=>{c.moveTo(45,90);c.bezierCurveTo(174,94,343,105,441,128);c.bezierCurveTo(461,133,473,142,476,151)},'rgba(245,255,255,.98)',7.5,.95*fade,8);
     stroke(ctx,c=>{c.moveTo(63,111);c.bezierCurveTo(192,114,341,122,435,142)},'rgba(198,248,255,.92)',3.2,.85*fade,5);
     stroke(ctx,c=>{c.moveTo(75,224);c.bezierCurveTo(191,209,320,196,438,169)},'rgba(89,214,252,.92)',5.5,.72*fade,9);
-
     stroke(ctx,c=>{c.moveTo(101,193);c.bezierCurveTo(181,183,236,170,281,153)},'rgba(229,254,255,.82)',3.1,.70*fade,5);
     stroke(ctx,c=>{c.moveTo(145,206);c.bezierCurveTo(246,191,340,174,414,154)},'rgba(128,231,255,.72)',2.4,.64*fade,4);
     stroke(ctx,c=>{c.moveTo(185,126);c.bezierCurveTo(266,128,340,136,407,149)},'rgba(238,255,255,.78)',2.3,.62*fade,4);
-
     ctx.restore();
   }
 
@@ -118,12 +126,14 @@
     const top=parseFloat(sourceNode.style.top)||0;
     const centerX=left+width/2;
     const centerY=top+height/2;
+    const scaleY=SIZE_PATTERNS[sizePattern];
 
     sourceNode.style.setProperty('display','none','important');
 
     const canvas=document.createElement('canvas');
     const cssWidth=520,cssHeight=320,dpr=Math.min(2,Math.max(1,window.devicePixelRatio||1));
     canvas.className='swordSlashFx';
+    canvas.dataset.sizePattern=sizePattern;
     canvas.width=Math.round(cssWidth*dpr);
     canvas.height=Math.round(cssHeight*dpr);
     canvas.style.width=cssWidth+'px';
@@ -155,10 +165,40 @@
       ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      drawFrame(ctx,progress);
+      drawFrame(ctx,progress,scaleY);
       if(progress<1)requestAnimationFrame(frame);else finish();
     }
     requestAnimationFrame(frame);
+  }
+
+  function syncSizePatternControl(){
+    if(!sizePatternControl)return;
+    sizePatternControl.querySelectorAll('button').forEach(button=>{
+      const active=button.dataset.sizePattern===sizePattern;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',active?'true':'false');
+    });
+  }
+  function installSizePatternControl(){
+    if(!isSwordTestMode())return;
+    const battle=document.getElementById('battle');
+    if(!battle||document.querySelector('.swordSizePatternTest'))return;
+    const wrap=document.createElement('div'),label=document.createElement('span');
+    wrap.className='swordSizePatternTest';
+    wrap.dataset.testOnly='sword-size-pattern';
+    label.textContent='SWORD 縦';
+    wrap.appendChild(label);
+    [['LARGE','大'],['MEDIUM','中'],['SMALL','小']].forEach(([key,text])=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.dataset.sizePattern=key;
+      button.textContent=text;
+      button.addEventListener('click',()=>setSizePattern(key));
+      wrap.appendChild(button);
+    });
+    battle.appendChild(wrap);
+    sizePatternControl=wrap;
+    syncSizePatternControl();
   }
 
   const nativeAppendChild=scene.appendChild.bind(scene);
@@ -171,5 +211,6 @@
     return nativeAppendChild(node);
   };
 
-  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V2'});
+  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V3_SIZE_PATTERNS',getSizePattern,setSizePattern,getSizePatterns:()=>SIZE_PATTERNS});
+  installSizePatternControl();
 })();
