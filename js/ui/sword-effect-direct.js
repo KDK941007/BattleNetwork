@@ -1,7 +1,7 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v3')return;
-  scene.dataset.swordEffectHook='v3';
+  if(!scene||scene.dataset.swordEffectHook==='v4')return;
+  scene.dataset.swordEffectHook='v4';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
   const SIZE_PATTERNS=Object.freeze({LARGE:1,MEDIUM:.8,SMALL:.6});
@@ -62,18 +62,19 @@
     ctx.restore();
   }
 
-  function drawFrame(ctx,progress,scaleY){
+  function drawFrame(ctx,progress,scaleX){
     const reveal=Math.min(1,progress/.24);
     const fade=progress<.68?1:Math.max(0,(1-progress)/.32);
     const revealX=18+482*(1-Math.pow(1-reveal,3));
+    const anchorX=32;
 
     ctx.save();
     ctx.beginPath();
     ctx.rect(0,0,revealX,320);
     ctx.clip();
-    ctx.translate(0,160);
-    ctx.scale(1,scaleY);
-    ctx.translate(0,-160);
+    ctx.translate(anchorX,0);
+    ctx.scale(scaleX,1);
+    ctx.translate(-anchorX,0);
 
     const outer=ctx.createLinearGradient(35,92,480,190);
     outer.addColorStop(0,'rgba(80,207,247,.10)');
@@ -126,7 +127,7 @@
     const top=parseFloat(sourceNode.style.top)||0;
     const centerX=left+width/2;
     const centerY=top+height/2;
-    const scaleY=SIZE_PATTERNS[sizePattern];
+    const scaleX=SIZE_PATTERNS[sizePattern];
 
     sourceNode.style.setProperty('display','none','important');
 
@@ -165,7 +166,7 @@
       ctx.setTransform(1,0,0,1,0,0);
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      drawFrame(ctx,progress,scaleY);
+      drawFrame(ctx,progress,scaleX);
       if(progress<1)requestAnimationFrame(frame);else finish();
     }
     requestAnimationFrame(frame);
@@ -186,7 +187,7 @@
     const wrap=document.createElement('div'),label=document.createElement('span');
     wrap.className='swordSizePatternTest';
     wrap.dataset.testOnly='sword-size-pattern';
-    label.textContent='SWORD 縦';
+    label.textContent='SWORD 横';
     wrap.appendChild(label);
     [['LARGE','大'],['MEDIUM','中'],['SMALL','小']].forEach(([key,text])=>{
       const button=document.createElement('button');
@@ -211,6 +212,6 @@
     return nativeAppendChild(node);
   };
 
-  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V3_SIZE_PATTERNS',getSizePattern,setSizePattern,getSizePatterns:()=>SIZE_PATTERNS});
+  window.BattleNetworkSwordEffectDirect=Object.freeze({version:'DIRECT_CANVAS_V4_SIZE_PATTERNS_X',getSizePattern,setSizePattern,getSizePatterns:()=>SIZE_PATTERNS});
   installSizePatternControl();
 })();
