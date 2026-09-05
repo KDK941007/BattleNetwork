@@ -1,10 +1,10 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v10')return;
-  scene.dataset.swordEffectHook='v10';
+  if(!scene||scene.dataset.swordEffectHook==='v11')return;
+  scene.dataset.swordEffectHook='v11';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003';
-  const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
+  const SWORD_SCALE_X=.6,WIDE_SCALE_X_MULTIPLIER=3,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
   const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
   const nativeAppendChild=scene.appendChild.bind(scene);
   const meleePreview=document.getElementById('meleePreview');
@@ -14,13 +14,13 @@
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
-    #scene .swordSlashFxLayer{position:absolute;left:0;top:0;width:${CSS_WIDTH}px;height:${CSS_HEIGHT}px;z-index:9;pointer-events:none;opacity:0;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
+    #scene .swordSlashFxLayer{position:absolute;left:0;top:0;width:${CSS_WIDTH}px;height:${CSS_HEIGHT}px;z-index:9;pointer-events:none;opacity:0;overflow:visible;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
     #scene .swordSlashFx{display:block;width:${CSS_WIDTH}px;height:${CSS_HEIGHT}px;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:32px 50%;will-change:transform;backface-visibility:hidden}
   `;
   document.head.appendChild(style);
 
   function currentContext(){return window.BattleNetworkCombatRange?.getLastAttackContext?.()||null}
-  function currentSlashProfile(){
+  function currentSlashType(){
     const context=currentContext();
     if(context?.sourceType==='CHIP'){
       if(context.sourceId===SWORD_ID)return 'SWORD';
@@ -50,25 +50,13 @@
     };
   }
 
-  function swordBodyPath(ctx){
+  function bodyPath(ctx){
     ctx.moveTo(32,86);
     ctx.bezierCurveTo(154,91,332,102,438,126);
     ctx.bezierCurveTo(472,134,487,149,477,166);
     ctx.bezierCurveTo(449,208,337,236,67,229);
     ctx.bezierCurveTo(165,206,235,181,266,155);
     ctx.bezierCurveTo(229,124,144,101,32,86);
-    ctx.closePath();
-  }
-
-  function wideBodyPath(ctx){
-    ctx.moveTo(28,44);
-    ctx.bezierCurveTo(132,49,285,65,412,98);
-    ctx.bezierCurveTo(464,112,493,134,492,157);
-    ctx.bezierCurveTo(489,190,452,220,393,245);
-    ctx.bezierCurveTo(319,277,228,293,128,284);
-    ctx.bezierCurveTo(94,281,65,274,43,264);
-    ctx.bezierCurveTo(126,228,195,192,250,155);
-    ctx.bezierCurveTo(210,112,132,70,28,44);
     ctx.closePath();
   }
 
@@ -87,24 +75,21 @@
     ctx.restore();
   }
 
-  function outerGradient(ctx,y1=92,y2=190){
-    const gradient=ctx.createLinearGradient(35,y1,480,y2);
-    gradient.addColorStop(0,'rgba(80,207,247,.10)');
-    gradient.addColorStop(.20,'rgba(99,222,255,.54)');
-    gradient.addColorStop(.58,'rgba(151,237,255,.78)');
-    gradient.addColorStop(.84,'rgba(201,249,255,.88)');
-    gradient.addColorStop(1,'rgba(132,227,255,.58)');
-    return gradient;
-  }
-
   function drawSwordSlash(ctx){
+    const outer=ctx.createLinearGradient(35,92,480,190);
+    outer.addColorStop(0,'rgba(80,207,247,.10)');
+    outer.addColorStop(.20,'rgba(99,222,255,.54)');
+    outer.addColorStop(.58,'rgba(151,237,255,.78)');
+    outer.addColorStop(.84,'rgba(201,249,255,.88)');
+    outer.addColorStop(1,'rgba(132,227,255,.58)');
+
     ctx.save();
     ctx.globalAlpha=.96;
-    ctx.fillStyle=outerGradient(ctx);
+    ctx.fillStyle=outer;
     ctx.shadowColor='rgba(89,214,255,.88)';
     ctx.shadowBlur=24;
     ctx.beginPath();
-    swordBodyPath(ctx);
+    bodyPath(ctx);
     ctx.fill();
     ctx.restore();
 
@@ -134,64 +119,6 @@
     stroke(ctx,c=>{c.moveTo(185,126);c.bezierCurveTo(266,128,340,136,407,149)},'rgba(238,255,255,.78)',2.3,.62,4);
   }
 
-  function drawWideSlash(ctx){
-    ctx.save();
-    ctx.globalAlpha=.95;
-    ctx.fillStyle=outerGradient(ctx,58,255);
-    ctx.shadowColor='rgba(89,214,255,.90)';
-    ctx.shadowBlur=24;
-    ctx.beginPath();
-    wideBodyPath(ctx);
-    ctx.fill();
-    ctx.restore();
-
-    const inner=ctx.createLinearGradient(62,78,468,206);
-    inner.addColorStop(0,'rgba(171,243,255,.16)');
-    inner.addColorStop(.46,'rgba(218,253,255,.66)');
-    inner.addColorStop(.82,'rgba(246,255,255,.94)');
-    inner.addColorStop(1,'rgba(195,245,255,.60)');
-    ctx.save();
-    ctx.globalAlpha=.84;
-    ctx.fillStyle=inner;
-    ctx.beginPath();
-    ctx.moveTo(55,69);
-    ctx.bezierCurveTo(170,75,315,91,419,113);
-    ctx.bezierCurveTo(457,122,473,139,467,155);
-    ctx.bezierCurveTo(451,181,405,202,342,220);
-    ctx.bezierCurveTo(284,236,225,243,166,239);
-    ctx.bezierCurveTo(219,210,260,181,283,154);
-    ctx.bezierCurveTo(244,116,165,86,55,69);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    const core=ctx.createLinearGradient(78,96,452,168);
-    core.addColorStop(0,'rgba(216,253,255,.20)');
-    core.addColorStop(.55,'rgba(243,255,255,.82)');
-    core.addColorStop(1,'rgba(255,255,255,.98)');
-    ctx.save();
-    ctx.globalAlpha=.78;
-    ctx.fillStyle=core;
-    ctx.beginPath();
-    ctx.moveTo(72,94);
-    ctx.bezierCurveTo(188,96,329,108,429,132);
-    ctx.bezierCurveTo(446,136,453,144,449,152);
-    ctx.bezierCurveTo(426,166,392,178,350,189);
-    ctx.bezierCurveTo(313,199,275,205,239,207);
-    ctx.bezierCurveTo(268,186,287,168,298,153);
-    ctx.bezierCurveTo(255,126,180,103,72,94);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    stroke(ctx,c=>{c.moveTo(40,52);c.bezierCurveTo(166,56,322,76,421,102);c.bezierCurveTo(462,113,483,129,489,146)},'rgba(246,255,255,.98)',7.2,.94,8);
-    stroke(ctx,c=>{c.moveTo(60,78);c.bezierCurveTo(187,84,324,99,420,121)},'rgba(201,249,255,.94)',3.4,.86,5);
-    stroke(ctx,c=>{c.moveTo(53,260);c.bezierCurveTo(163,278,285,265,394,224);c.bezierCurveTo(438,207,467,188,482,168)},'rgba(83,214,252,.94)',5.8,.74,9);
-    stroke(ctx,c=>{c.moveTo(109,232);c.bezierCurveTo(190,228,259,201,304,160)},'rgba(231,254,255,.86)',3.2,.72,5);
-    stroke(ctx,c=>{c.moveTo(149,252);c.bezierCurveTo(245,248,337,218,414,183)},'rgba(127,231,255,.76)',2.5,.66,4);
-    stroke(ctx,c=>{c.moveTo(176,112);c.bezierCurveTo(264,116,346,129,416,147)},'rgba(239,255,255,.80)',2.4,.64,4);
-  }
-
   function createSurface(type){
     const layer=document.createElement('div');
     layer.className='swordSlashFxLayer';
@@ -202,7 +129,7 @@
     canvas.style.width=CSS_WIDTH+'px';
     canvas.style.height=CSS_HEIGHT+'px';
     const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true})||canvas.getContext('2d');
-    if(ctx){ctx.setTransform(DPR,0,0,DPR,0,0);if(type==='WIDE')drawWideSlash(ctx);else drawSwordSlash(ctx)}
+    if(ctx){ctx.setTransform(DPR,0,0,DPR,0,0);drawSwordSlash(ctx)}
     layer.appendChild(canvas);
     nativeAppendChild(layer);
     const surface={type,layer,canvas,busy:false,fade:null,grow:null};
@@ -235,12 +162,14 @@
 
     const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET;
     const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET;
-    const targetScaleX=projection.scaleX;
+    const widthMultiplier=type==='WIDE'?WIDE_SCALE_X_MULTIPLIER:1;
+    const targetScaleX=projection.scaleX*widthMultiplier;
     const startScaleX=Math.max(.04,targetScaleX*.18);
 
     surface.layer.dataset.effectType=type;
     surface.layer.dataset.forwardOffset=String(FORWARD_OFFSET);
     surface.layer.dataset.directionScale=projection.directionScale.toFixed(3);
+    surface.layer.dataset.widthMultiplier=String(widthMultiplier);
     surface.layer.style.transform=`translate3d(${x}px,${y}px,0) rotate(${projection.angle.toFixed(2)}deg)`;
     surface.layer.style.opacity='0';
     surface.canvas.style.transform=`scaleX(${targetScaleX})`;
@@ -283,17 +212,17 @@
 
   scene.appendChild=function(node){
     if(node instanceof HTMLElement&&node.classList.contains('slash')){
-      const type=currentSlashProfile();
+      const type=currentSlashType();
       if(type){renderSlashFx(node,type);return node}
     }
     return nativeAppendChild(node);
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V10_WIDE_SILHOUETTE',
+    version:'DIRECT_CANVAS_V11_WIDE_X3_SWORD_SHAPE',
     scaleX:SWORD_SCALE_X,
+    wideScaleXMultiplier:WIDE_SCALE_X_MULTIPLIER,
     forwardOffset:FORWARD_OFFSET,
-    wideMode:'DEDICATED_SILHOUETTE',
     getProjection:()=>projectedDirection(),
     renderer:'PREPAINTED_TRANSFORM_OPACITY'
   });
