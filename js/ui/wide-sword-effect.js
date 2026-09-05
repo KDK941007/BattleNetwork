@@ -1,8 +1,8 @@
 (()=>{
   const scene=document.getElementById('scene');
   const FIELD=window.BattleNetworkField;
-  if(!scene||!FIELD||scene.dataset.wideSwordEffect==='v1')return;
-  scene.dataset.wideSwordEffect='v1';
+  if(!scene||!FIELD||scene.dataset.wideSwordEffect==='v2')return;
+  scene.dataset.wideSwordEffect='v2';
 
   const PX=.72,PY=.36,WIDE_ID='CHIP_0003',FORWARD_OFFSET=150,DURATION=390;
   const MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY),SCALE_X=.6;
@@ -51,19 +51,29 @@
 
   function draw(ctx){
     const outer=ctx.createLinearGradient(35,y(92),480,y(190));
-    outer.addColorStop(0,'rgba(80,207,247,.10)');outer.addColorStop(.20,'rgba(99,222,255,.54)');outer.addColorStop(.58,'rgba(151,237,255,.78)');outer.addColorStop(.84,'rgba(201,249,255,.88)');outer.addColorStop(1,'rgba(132,227,255,.58)');
+    outer.addColorStop(0,'rgba(80,207,247,.10)');
+    outer.addColorStop(.20,'rgba(99,222,255,.54)');
+    outer.addColorStop(.58,'rgba(151,237,255,.78)');
+    outer.addColorStop(.84,'rgba(201,249,255,.88)');
+    outer.addColorStop(1,'rgba(132,227,255,.58)');
     ctx.save();ctx.globalAlpha=.96;ctx.fillStyle=outer;ctx.shadowColor='rgba(89,214,255,.88)';ctx.shadowBlur=24;ctx.beginPath();path(ctx);ctx.fill();ctx.restore();
 
-    const inner=ctx.createLinearGradient(70,y(110),455,y(155));
-    inner.addColorStop(0,'rgba(180,247,255,.12)');inner.addColorStop(.48,'rgba(219,253,255,.66)');inner.addColorStop(1,'rgba(245,255,255,.92)');
-    ctx.save();ctx.globalAlpha=.82;ctx.fillStyle=inner;ctx.beginPath();ctx.moveTo(58,y(103));ctx.bezierCurveTo(188,y(104),345,y(113),439,y(135));ctx.bezierCurveTo(459,y(140),466,y(149),459,y(158));ctx.bezierCurveTo(423,y(176),352,y(188),272,y(194));ctx.bezierCurveTo(287,y(177),292,y(163),279,y(151));ctx.bezierCurveTo(239,y(126),158,y(110),58,y(103));ctx.closePath();ctx.fill();ctx.restore();
+    const core=ctx.createLinearGradient(72,y(118),458,y(164));
+    core.addColorStop(0,'rgba(193,249,255,.08)');
+    core.addColorStop(.48,'rgba(226,254,255,.42)');
+    core.addColorStop(.82,'rgba(250,255,255,.68)');
+    core.addColorStop(1,'rgba(218,250,255,.38)');
+    ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=core;ctx.beginPath();
+    ctx.moveTo(76,y(118));
+    ctx.bezierCurveTo(199,y(119),346,y(126),438,y(143));
+    ctx.bezierCurveTo(453,y(146),459,y(152),455,y(157));
+    ctx.bezierCurveTo(425,y(172),371,y(184),307,y(190));
+    ctx.bezierCurveTo(293,y(180),287,y(166),279,y(153));
+    ctx.bezierCurveTo(240,y(135),164,y(122),76,y(118));
+    ctx.closePath();ctx.fill();ctx.restore();
 
-    stroke(ctx,c=>{c.moveTo(45,y(90));c.bezierCurveTo(174,y(94),343,y(105),441,y(128));c.bezierCurveTo(461,y(133),473,y(142),476,y(151))},'rgba(245,255,255,.98)',7.5,.95,8);
-    stroke(ctx,c=>{c.moveTo(63,y(111));c.bezierCurveTo(192,y(114),341,y(122),435,y(142))},'rgba(198,248,255,.92)',3.2,.85,5);
-    stroke(ctx,c=>{c.moveTo(75,y(224));c.bezierCurveTo(191,y(209),320,y(196),438,y(169))},'rgba(89,214,252,.92)',5.5,.72,9);
-    stroke(ctx,c=>{c.moveTo(101,y(193));c.bezierCurveTo(181,y(183),236,y(170),281,y(153))},'rgba(229,254,255,.82)',3.1,.70,5);
-    stroke(ctx,c=>{c.moveTo(145,y(206));c.bezierCurveTo(246,y(191),340,y(174),414,y(154))},'rgba(128,231,255,.72)',2.4,.64,4);
-    stroke(ctx,c=>{c.moveTo(185,y(126));c.bezierCurveTo(266,y(128),340,y(136),407,y(149))},'rgba(238,255,255,.78)',2.3,.62,4);
+    stroke(ctx,c=>{c.moveTo(45,y(90));c.bezierCurveTo(174,y(94),343,y(105),441,y(128));c.bezierCurveTo(461,y(133),473,y(142),476,y(151))},'rgba(247,255,255,.98)',6.8,.88,7);
+    stroke(ctx,c=>{c.moveTo(75,y(224));c.bezierCurveTo(191,y(209),320,y(196),438,y(169))},'rgba(91,216,252,.92)',4.8,.58,7);
   }
 
   function make(){
@@ -108,5 +118,5 @@
     return previousAppendChild(node);
   };
 
-  window.BattleNetworkWideSwordEffect=Object.freeze({version:'WIDE_SINGLE_RANGE_V1',layout:'SINGLE_ATTACK_WIDTH',forwardOffset:FORWARD_OFFSET});
+  window.BattleNetworkWideSwordEffect=Object.freeze({version:'WIDE_SINGLE_RANGE_V2_CLEAN_HIGHLIGHT',layout:'SINGLE_ATTACK_WIDTH',forwardOffset:FORWARD_OFFSET});
 })();
