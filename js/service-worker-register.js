@@ -8,7 +8,7 @@
   });
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./sw.js?v=193',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./sw.js?v=194',{scope:'./',updateViaCache:'none'});
       await registration.update();
     }catch(error){
       console.warn(error);
