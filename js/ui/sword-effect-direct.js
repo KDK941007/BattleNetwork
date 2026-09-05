@@ -1,9 +1,9 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v8')return;
-  scene.dataset.swordEffectHook='v8';
+  if(!scene||scene.dataset.swordEffectHook==='v9')return;
+  scene.dataset.swordEffectHook='v9';
 
-  const PX=.72,PY=.36,SWORD_ID='CHIP_0002';
+  const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003';
   const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
   const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
   const nativeAppendChild=scene.appendChild.bind(scene);
@@ -20,11 +20,16 @@
   document.head.appendChild(style);
 
   function currentContext(){return window.BattleNetworkCombatRange?.getLastAttackContext?.()||null}
-  function isSwordContext(){
+  function currentSlashProfile(){
     const context=currentContext();
-    if(context?.sourceType==='CHIP'&&context?.sourceId===SWORD_ID)return true;
+    if(context?.sourceType==='CHIP'){
+      if(context.sourceId===SWORD_ID)return Object.freeze({type:'SWORD',scaleY:1});
+      if(context.sourceId===WIDE_ID)return Object.freeze({type:'WIDE',scaleY:3});
+    }
     const target=window.BattleNetworkFolder?.getTestTarget?.();
-    return target?.enabled===true&&target?.type==='SWORD';
+    if(target?.enabled===true&&target?.type==='SWORD')return Object.freeze({type:'SWORD',scaleY:1});
+    if(target?.enabled===true&&target?.type==='WIDE')return Object.freeze({type:'WIDE',scaleY:3});
+    return null;
   }
 
   function projectedDirection(){
@@ -139,7 +144,7 @@
 
   function cancelAnimation(animation){if(animation){animation.onfinish=null;animation.oncancel=null;animation.cancel()}}
 
-  function renderSwordFx(sourceNode){
+  function renderSlashFx(sourceNode,profile){
     const width=parseFloat(sourceNode.style.width)||160;
     const height=parseFloat(sourceNode.style.height)||90;
     const left=parseFloat(sourceNode.style.left)||0;
@@ -156,14 +161,17 @@
 
     const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET;
     const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET;
-    const targetScale=projection.scaleX;
-    const startScale=Math.max(.04,targetScale*.18);
+    const targetScaleX=projection.scaleX;
+    const targetScaleY=profile.scaleY;
+    const startScaleX=Math.max(.04,targetScaleX*.18);
 
+    surface.layer.dataset.effectType=profile.type;
     surface.layer.dataset.forwardOffset=String(FORWARD_OFFSET);
     surface.layer.dataset.directionScale=projection.directionScale.toFixed(3);
+    surface.layer.dataset.scaleY=String(targetScaleY);
     surface.layer.style.transform=`translate3d(${x}px,${y}px,0) rotate(${projection.angle.toFixed(2)}deg)`;
     surface.layer.style.opacity='0';
-    surface.canvas.style.transform=`scaleX(${targetScale})`;
+    surface.canvas.style.transform=`scaleX(${targetScaleX}) scaleY(${targetScaleY})`;
 
     activeEffects++;
     if(meleePreview)meleePreview.style.opacity='0';
@@ -173,7 +181,7 @@
       if(finished)return;
       finished=true;
       surface.layer.style.opacity='0';
-      surface.canvas.style.transform=`scaleX(${targetScale})`;
+      surface.canvas.style.transform=`scaleX(${targetScaleX}) scaleY(${targetScaleY})`;
       surface.busy=false;
       surface.fade=null;
       surface.grow=null;
@@ -183,8 +191,8 @@
 
     if(typeof surface.layer.animate==='function'&&typeof surface.canvas.animate==='function'){
       surface.grow=surface.canvas.animate([
-        {transform:`scaleX(${startScale})`},
-        {transform:`scaleX(${targetScale})`}
+        {transform:`scaleX(${startScaleX}) scaleY(${targetScaleY})`},
+        {transform:`scaleX(${targetScaleX}) scaleY(${targetScaleY})`}
       ],{duration:DURATION*.24,fill:'forwards',easing:'cubic-bezier(.22,1,.36,1)'});
       surface.fade=surface.layer.animate([
         {opacity:0,offset:0},
@@ -196,23 +204,24 @@
       surface.fade.oncancel=()=>{if(!finished)finish()};
     }else{
       surface.layer.style.opacity='1';
-      surface.canvas.style.transform=`scaleX(${targetScale})`;
+      surface.canvas.style.transform=`scaleX(${targetScaleX}) scaleY(${targetScaleY})`;
       setTimeout(finish,DURATION);
     }
   }
 
   scene.appendChild=function(node){
-    if(node instanceof HTMLElement&&node.classList.contains('slash')&&isSwordContext()){
-      renderSwordFx(node);
-      return node;
+    if(node instanceof HTMLElement&&node.classList.contains('slash')){
+      const profile=currentSlashProfile();
+      if(profile){renderSlashFx(node,profile);return node}
     }
     return nativeAppendChild(node);
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V8_COMPOSITOR',
+    version:'DIRECT_CANVAS_V9_WIDESWORD',
     scaleX:SWORD_SCALE_X,
     forwardOffset:FORWARD_OFFSET,
+    wideScaleY:3,
     getProjection:()=>projectedDirection(),
     renderer:'PREPAINTED_TRANSFORM_OPACITY'
   });
