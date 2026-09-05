@@ -1,10 +1,11 @@
 (()=>{
   const scene=document.getElementById('scene');
-  if(!scene||scene.dataset.swordEffectHook==='v11')return;
-  scene.dataset.swordEffectHook='v11';
+  const FIELD=window.BattleNetworkField;
+  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v12')return;
+  scene.dataset.swordEffectHook='v12';
 
   const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003';
-  const SWORD_SCALE_X=.6,WIDE_SCALE_X_MULTIPLIER=3,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
+  const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
   const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
   const nativeAppendChild=scene.appendChild.bind(scene);
   const meleePreview=document.getElementById('meleePreview');
@@ -45,6 +46,8 @@
       angle:Math.atan2(sy,sx)*180/Math.PI,
       x:sx/projectedLength,
       y:sy/projectedLength,
+      worldX:dx,
+      worldY:dy,
       scaleX:SWORD_SCALE_X*directionScale,
       directionScale
     };
@@ -139,20 +142,43 @@
 
   createSurface('SWORD');
   createSurface('SWORD');
-  createSurface('WIDE');
-  createSurface('WIDE');
+  for(let i=0;i<6;i++)createSurface('WIDE');
 
   function acquireSurface(type){return surfacePools[type]?.find(surface=>!surface.busy)||surfacePools[type]?.[0]||null}
   function cancelAnimation(animation){if(animation){animation.onfinish=null;animation.oncancel=null;animation.cancel()}}
 
-  function renderSlashFx(sourceNode,type){
+  function attackWidthOffsets(type,projection){
+    if(type!=='WIDE')return [{x:0,y:0,lane:0}];
+    const shape=currentContext()?.shape;
+    const tileWorld=Number(FIELD.toWorldDistance?.(1));
+    const widthWorld=Number(shape?.widthWorld);
+    if(!(tileWorld>0)||!(widthWorld>0))return [{x:0,y:0,lane:0}];
+
+    const laneCount=Math.max(1,Math.round(widthWorld/tileWorld));
+    const perpendicularX=-projection.worldY;
+    const perpendicularY=projection.worldX;
+    const firstLane=-(laneCount-1)/2;
+    const offsets=[];
+    for(let i=0;i<laneCount;i++){
+      const lane=firstLane+i;
+      const worldOffsetX=perpendicularX*tileWorld*lane;
+      const worldOffsetY=perpendicularY*tileWorld*lane;
+      offsets.push({
+        x:(worldOffsetX-worldOffsetY)*PX,
+        y:(worldOffsetX+worldOffsetY)*PY,
+        lane
+      });
+    }
+    return offsets;
+  }
+
+  function renderLaneSlash(sourceNode,type,projection,laneOffset){
     const width=parseFloat(sourceNode.style.width)||160;
     const height=parseFloat(sourceNode.style.height)||90;
     const left=parseFloat(sourceNode.style.left)||0;
     const top=parseFloat(sourceNode.style.top)||0;
     const centerX=left+width/2;
     const centerY=top+height/2;
-    const projection=projectedDirection();
     const surface=acquireSurface(type);
     if(!surface)return;
 
@@ -160,16 +186,15 @@
     cancelAnimation(surface.grow);
     surface.fade=null;surface.grow=null;surface.busy=true;
 
-    const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET;
-    const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET;
-    const widthMultiplier=type==='WIDE'?WIDE_SCALE_X_MULTIPLIER:1;
-    const targetScaleX=projection.scaleX*widthMultiplier;
+    const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET+laneOffset.x;
+    const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET+laneOffset.y;
+    const targetScaleX=projection.scaleX;
     const startScaleX=Math.max(.04,targetScaleX*.18);
 
     surface.layer.dataset.effectType=type;
     surface.layer.dataset.forwardOffset=String(FORWARD_OFFSET);
     surface.layer.dataset.directionScale=projection.directionScale.toFixed(3);
-    surface.layer.dataset.widthMultiplier=String(widthMultiplier);
+    surface.layer.dataset.attackWidthLane=String(laneOffset.lane);
     surface.layer.style.transform=`translate3d(${x}px,${y}px,0) rotate(${projection.angle.toFixed(2)}deg)`;
     surface.layer.style.opacity='0';
     surface.canvas.style.transform=`scaleX(${targetScaleX})`;
@@ -210,6 +235,12 @@
     }
   }
 
+  function renderSlashFx(sourceNode,type){
+    const projection=projectedDirection();
+    const offsets=attackWidthOffsets(type,projection);
+    offsets.forEach(offset=>renderLaneSlash(sourceNode,type,projection,offset));
+  }
+
   scene.appendChild=function(node){
     if(node instanceof HTMLElement&&node.classList.contains('slash')){
       const type=currentSlashType();
@@ -219,10 +250,10 @@
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V11_WIDE_X3_SWORD_SHAPE',
+    version:'DIRECT_CANVAS_V12_WIDE_ATTACK_RANGE',
     scaleX:SWORD_SCALE_X,
-    wideScaleXMultiplier:WIDE_SCALE_X_MULTIPLIER,
     forwardOffset:FORWARD_OFFSET,
+    wideLayout:'ATTACK_WIDTH_LANES',
     getProjection:()=>projectedDirection(),
     renderer:'PREPAINTED_TRANSFORM_OPACITY'
   });
