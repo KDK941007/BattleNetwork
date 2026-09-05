@@ -1,15 +1,15 @@
 (()=>{
   const scene=document.getElementById('scene');
   const FIELD=window.BattleNetworkField;
-  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v12')return;
-  scene.dataset.swordEffectHook='v12';
+  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v13')return;
+  scene.dataset.swordEffectHook='v13';
 
-  const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003';
-  const SWORD_SCALE_X=.6,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
+  const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003',LONG_ID='CHIP_EXE4_S056';
+  const SWORD_SCALE_X=.6,LONG_SCALE_X_MULTIPLIER=2,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
   const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
   const nativeAppendChild=scene.appendChild.bind(scene);
   const meleePreview=document.getElementById('meleePreview');
-  const surfacePools={SWORD:[],WIDE:[]};
+  const surfacePools={SWORD:[],WIDE:[],LONG:[]};
   let activeEffects=0;
 
   const style=document.createElement('style');
@@ -26,10 +26,12 @@
     if(context?.sourceType==='CHIP'){
       if(context.sourceId===SWORD_ID)return 'SWORD';
       if(context.sourceId===WIDE_ID)return 'WIDE';
+      if(context.sourceId===LONG_ID)return 'LONG';
     }
     const target=window.BattleNetworkFolder?.getTestTarget?.();
     if(target?.enabled===true&&target?.type==='SWORD')return 'SWORD';
     if(target?.enabled===true&&target?.type==='WIDE')return 'WIDE';
+    if(target?.enabled===true&&target?.type==='LONG')return 'LONG';
     return null;
   }
 
@@ -143,6 +145,8 @@
   createSurface('SWORD');
   createSurface('SWORD');
   for(let i=0;i<6;i++)createSurface('WIDE');
+  createSurface('LONG');
+  createSurface('LONG');
 
   function acquireSurface(type){return surfacePools[type]?.find(surface=>!surface.busy)||surfacePools[type]?.[0]||null}
   function cancelAnimation(animation){if(animation){animation.onfinish=null;animation.oncancel=null;animation.cancel()}}
@@ -188,13 +192,15 @@
 
     const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET+laneOffset.x;
     const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET+laneOffset.y;
-    const targetScaleX=projection.scaleX;
+    const scaleMultiplier=type==='LONG'?LONG_SCALE_X_MULTIPLIER:1;
+    const targetScaleX=projection.scaleX*scaleMultiplier;
     const startScaleX=Math.max(.04,targetScaleX*.18);
 
     surface.layer.dataset.effectType=type;
     surface.layer.dataset.forwardOffset=String(FORWARD_OFFSET);
     surface.layer.dataset.directionScale=projection.directionScale.toFixed(3);
     surface.layer.dataset.attackWidthLane=String(laneOffset.lane);
+    surface.layer.dataset.scaleMultiplier=String(scaleMultiplier);
     surface.layer.style.transform=`translate3d(${x}px,${y}px,0) rotate(${projection.angle.toFixed(2)}deg)`;
     surface.layer.style.opacity='0';
     surface.canvas.style.transform=`scaleX(${targetScaleX})`;
@@ -250,8 +256,9 @@
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V12_WIDE_ATTACK_RANGE',
+    version:'DIRECT_CANVAS_V13_LONG_X2',
     scaleX:SWORD_SCALE_X,
+    longScaleXMultiplier:LONG_SCALE_X_MULTIPLIER,
     forwardOffset:FORWARD_OFFSET,
     wideLayout:'ATTACK_WIDTH_LANES',
     getProjection:()=>projectedDirection(),
