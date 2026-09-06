@@ -25,25 +25,33 @@
     const FIELD=window.BattleNetworkField;
     const COMBAT=window.BattleNetworkCombatRange;
     const PLAYER=window.BattleNetworkPlayer;
-    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v2')return;
-    scene.dataset.miniBombEffect='v2';
+    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v3')return;
+    scene.dataset.miniBombEffect='v3';
 
     const BOMB_ID='CHIP_0004';
     const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
     const ART=MASTER.createGameCompatibilityData?.().CHIP?.BOMB?.image||'./assets/chips/ミニボム.png';
     const delayValue=Number(MASTER.createGameCompatibilityData?.().CHIP?.BOMB?.explosionDelay);
-    const THROW_MS=Math.max(160,(Number.isFinite(delayValue)?delayValue:.28)*1000);
+    const BASE_DELAY_MS=Math.max(0,(Number.isFinite(delayValue)?delayValue:.28)*1000);
+    const THROW_MS=Math.max(360,BASE_DELAY_MS);
+    const SPRITE_SIZE=92,SPRITE_HALF=SPRITE_SIZE/2;
+    const SHADOW_W=62,SHADOW_H=19;
     const previousAppendChild=scene.appendChild.bind(scene);
     const pendingExplosions=[];
     const projectiles=new Map();
     let lastShotToken=null;
 
+    const artPreload=new Image();
+    artPreload.decoding='async';
+    artPreload.src=ART;
+    artPreload.decode?.().catch(()=>{});
+
     const style=document.createElement('style');
-    style.id='miniBombEffectV2Style';
+    style.id='miniBombEffectV3Style';
     style.textContent=`
-      #scene .miniBombThrowV2{position:absolute;left:0;top:0;width:116px;height:116px;z-index:11;pointer-events:none;background:transparent!important;overflow:visible;will-change:transform,opacity;backface-visibility:hidden}
-      #scene .miniBombSpriteV2{position:absolute;inset:0;background-repeat:no-repeat;background-size:145% 145%;background-position:50% 50%;clip-path:circle(42% at 50% 50%);filter:drop-shadow(0 5px 3px rgba(0,0,0,.55)) drop-shadow(0 0 10px rgba(76,183,255,.78));pointer-events:none}
-      #scene .miniBombShadowV2{position:absolute;left:0;top:0;width:78px;height:24px;z-index:9;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.48) 0 42%,rgba(0,0,0,.2) 66%,rgba(0,0,0,0) 100%);filter:blur(2px);pointer-events:none;will-change:transform,opacity}
+      #scene .miniBombThrowV3{position:absolute;left:0;top:0;width:${SPRITE_SIZE}px;height:${SPRITE_SIZE}px;z-index:11;pointer-events:none;background:transparent!important;overflow:visible;will-change:transform,opacity;backface-visibility:hidden}
+      #scene .miniBombSpriteV3{position:absolute;inset:0;background-repeat:no-repeat;background-size:145% 145%;background-position:50% 50%;clip-path:circle(42% at 50% 50%);filter:drop-shadow(0 4px 3px rgba(0,0,0,.55)) drop-shadow(0 0 8px rgba(76,183,255,.72));pointer-events:none}
+      #scene .miniBombShadowV3{position:absolute;left:0;top:0;width:${SHADOW_W}px;height:${SHADOW_H}px;z-index:9;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.48) 0 42%,rgba(0,0,0,.2) 66%,rgba(0,0,0,0) 100%);filter:blur(2px);pointer-events:none;will-change:transform,opacity}
       #scene .miniBombExplosionV2{position:absolute;z-index:12;pointer-events:none;border-radius:50%;overflow:visible;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
       #scene .miniBombBlastCoreV2,#scene .miniBombShockRingV2,#scene .miniBombBlastFlashV2{position:absolute;inset:0;border-radius:50%;pointer-events:none;transform-origin:50% 50%;will-change:transform,opacity}
       #scene .miniBombBlastCoreV2{background:radial-gradient(ellipse at center,rgba(255,255,255,1) 0 8%,rgba(255,250,178,1) 13%,rgba(255,218,75,.98) 25%,rgba(255,138,28,.96) 48%,rgba(242,60,18,.88) 67%,rgba(91,9,3,.25) 82%,rgba(62,5,2,0) 100%);box-shadow:0 0 34px rgba(255,182,54,.98),0 0 70px rgba(255,72,18,.72)}
@@ -75,40 +83,52 @@
       const token=context.shotToken;
 
       const sprite=document.createElement('div');
-      sprite.className='miniBombThrowV2';
+      sprite.className='miniBombThrowV3';
       const art=document.createElement('div');
-      art.className='miniBombSpriteV2';
+      art.className='miniBombSpriteV3';
       art.style.backgroundImage=`url("${ART}")`;
       sprite.appendChild(art);
 
       const shadow=document.createElement('div');
-      shadow.className='miniBombShadowV2';
+      shadow.className='miniBombShadowV3';
       previousAppendChild(shadow);
       previousAppendChild(sprite);
-      projectiles.set(token,{sprite,shadow});
+
+      const launchedAt=performance.now();
+      projectiles.set(token,{sprite,shadow,landingAt:launchedAt+THROW_MS});
       pendingExplosions.push({token,shape});
 
-      const sx=start.x-58,sy=start.y-116;
-      const tx=target.x-58,ty=target.y-80;
-      const mx=(sx+tx)/2,my=(sy+ty)/2-Math.min(170,110+Math.hypot(tx-sx,ty-sy)*.14);
-      const ssx=start.x-39,ssy=start.y-9;
-      const stx=target.x-39,sty=target.y-8;
+      const sx=start.x-SPRITE_HALF,sy=start.y-88;
+      const tx=target.x-SPRITE_HALF,ty=target.y-62;
+      const dx=tx-sx,dy=ty-sy;
+      const arcHeight=Math.min(205,Math.max(132,112+Math.hypot(dx,dy)*.18));
+      const times=[0,.16,.32,.5,.68,.84,1];
+      const arcFrames=times.map(t=>{
+        const x=sx+dx*t;
+        const y=sy+dy*t-4*arcHeight*t*(1-t);
+        const scale=.88+.10*(1-Math.abs(t*2-1));
+        const rotation=-8+54*t;
+        return {transform:`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${scale})`,opacity:1,offset:t};
+      });
+
+      const ssx=start.x-SHADOW_W/2,ssy=start.y-SHADOW_H/2+2;
+      const stx=target.x-SHADOW_W/2,sty=target.y-SHADOW_H/2+2;
+      const shadowFrames=times.map(t=>{
+        const x=ssx+(stx-ssx)*t;
+        const y=ssy+(sty-ssy)*t;
+        const apex=1-Math.abs(t*2-1);
+        const scale=.78-.36*apex;
+        const opacity=.46-.30*apex;
+        return {transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity,offset:t};
+      });
 
       if(typeof sprite.animate==='function'){
-        const flight=sprite.animate([
-          {transform:`translate3d(${sx}px,${sy}px,0) rotate(-12deg) scale(.78)`,opacity:1,offset:0},
-          {transform:`translate3d(${mx}px,${my}px,0) rotate(42deg) scale(1.08)`,opacity:1,offset:.5},
-          {transform:`translate3d(${tx}px,${ty}px,0) rotate(92deg) scale(.94)`,opacity:1,offset:1}
-        ],{duration:THROW_MS,fill:'forwards',easing:'cubic-bezier(.2,.68,.28,1)'});
-        flight.onfinish=()=>{sprite.style.transform=`translate3d(${tx}px,${ty}px,0) rotate(92deg) scale(.94)`};
-        shadow.animate([
-          {transform:`translate3d(${ssx}px,${ssy}px,0) scale(.58)`,opacity:.34,offset:0},
-          {transform:`translate3d(${(ssx+stx)/2}px,${(ssy+sty)/2}px,0) scale(.36)`,opacity:.16,offset:.5},
-          {transform:`translate3d(${stx}px,${sty}px,0) scale(.82)`,opacity:.48,offset:1}
-        ],{duration:THROW_MS,fill:'forwards',easing:'linear'});
+        const flight=sprite.animate(arcFrames,{duration:THROW_MS,fill:'forwards',easing:'linear'});
+        flight.onfinish=()=>{sprite.style.transform=arcFrames[arcFrames.length-1].transform};
+        shadow.animate(shadowFrames,{duration:THROW_MS,fill:'forwards',easing:'linear'});
       }else{
-        sprite.style.transform=`translate3d(${tx}px,${ty}px,0) scale(.94)`;
-        shadow.style.transform=`translate3d(${stx}px,${sty}px,0) scale(.82)`;
+        sprite.style.transform=arcFrames[arcFrames.length-1].transform;
+        shadow.style.transform=shadowFrames[shadowFrames.length-1].transform;
       }
     }
 
@@ -191,13 +211,21 @@
       setTimeout(()=>blast.remove(),780);
     }
 
+    function explodeAtLanding(pending){
+      if(!pending)return;
+      const entry=projectiles.get(pending.token);
+      const remaining=Math.max(0,(entry?.landingAt??performance.now())-performance.now());
+      const finish=()=>{removeProjectile(pending.token);renderExplosion(pending.shape)};
+      if(remaining>4)setTimeout(finish,remaining);else finish();
+    }
+
     scene.appendChild=function(node){
       if(node instanceof HTMLElement&&node.classList.contains('boom')){
         const pending=pendingExplosions.shift();
-        if(pending){removeProjectile(pending.token);renderExplosion(pending.shape)}
+        if(pending)explodeAtLanding(pending);
         else{
           const context=COMBAT.getLastAttackContext?.();
-          if(context?.sourceId===BOMB_ID){removeProjectile(context.shotToken);renderExplosion(context.shape)}
+          if(context?.sourceId===BOMB_ID)explodeAtLanding({token:context.shotToken,shape:context.shape});
         }
         return node;
       }
@@ -215,8 +243,10 @@
     requestAnimationFrame(watch);
 
     window.BattleNetworkMiniBombEffect=Object.freeze({
-      version:'MINIBOMB_THROW_CROPPED_ART_EXPLOSION_V2',
+      version:'MINIBOMB_THROW_VISIBLE_PARABOLA_V3',
       image:ART,
+      spriteSize:SPRITE_SIZE,
+      throwMs:THROW_MS,
       projection:'RANGE_CIRCLE_ISOMETRIC',
       renderer:'DOM_TRANSFORM_OPACITY'
     });
