@@ -2,9 +2,11 @@
   const data=window.BattleNetworkData||{};
   const STORAGE_KEY='battleNetworkEquippedFolderId';
   const LONG_SWORD_ID='CHIP_EXE4_S056';
+  const LONG_SWORD_RANGE_TILES=2;
+  const LONG_SWORD_WIDTH_TILES=1;
 
-  // Effect-review support only: reuse the confirmed Sword battle runtime so LongSword's
-  // visual effect can be reviewed without introducing new LongSword gameplay constants.
+  // LongSword keeps the confirmed Sword runtime and changes only its attack range:
+  // forward 2 tiles, width 1 tile.
   const master=window.BattleNetworkMaster;
   if(master?.createGameCompatibilityData&&!master.__longSwordReviewCompatInstalled){
     const nativeCreateGameCompatibilityData=master.createGameCompatibilityData.bind(master);
@@ -13,7 +15,17 @@
       const sword=compat?.CHIP?.SWORD;
       if(sword&&!compat.CHIP.LONG){
         const longChip=master.getChip?.(LONG_SWORD_ID);
-        compat.CHIP.LONG=Object.freeze({...sword,chipId:LONG_SWORD_ID,name:longChip?.chipName||'ロングソード'});
+        const range=Number.isFinite(Number(sword.range))?Number(sword.range)*LONG_SWORD_RANGE_TILES:sword.range;
+        compat.CHIP.LONG=Object.freeze({
+          ...sword,
+          chipId:LONG_SWORD_ID,
+          name:longChip?.chipName||'ロングソード',
+          rangeTiles:LONG_SWORD_RANGE_TILES,
+          widthTiles:LONG_SWORD_WIDTH_TILES,
+          range,
+          width:sword.width,
+          rangeText:'前方2マス／幅1マス'
+        });
       }
       return compat;
     };
@@ -24,9 +36,9 @@
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
     enabled:true,
-    type:'BOMB',
-    chipId:'CHIP_0004',
-    codes:Object.freeze(['B']),
+    type:'LONG',
+    chipId:LONG_SWORD_ID,
+    codes:Object.freeze(['S']),
     requiredCards:Object.freeze([])
   });
 
@@ -41,6 +53,7 @@
     CHIP_EXE4_S006:'VULCAN2',
     CHIP_EXE4_S007:'VULCAN3',
     CHIP_EXE4_S008:'SPREADGUN',
+    CHIP_EXE4_S056:'LONG',
     CHIP_EXE4_S106:'CRACKOUT',
     CHIP_EXE4_S119:'AREASTEAL',
     CHIP_EXE4_S148:'ATTACK10'
