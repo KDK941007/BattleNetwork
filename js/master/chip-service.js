@@ -22,21 +22,14 @@
     TEST_DARK:{chipId:'TEST_9003',type:'bomb',viz:'bomb'}
   };
 
-  const TEST_IMAGE_CHIP_NAME=Object.freeze({
-    TEST_9001:'ソード',
-    TEST_9002:'キャノン',
-    TEST_9003:'ミニボム'
-  });
-
   function getChip(chipId){
     return chipById.get(chipId)||null;
   }
 
   function getChipImagePath(chipOrId){
     const chip=typeof chipOrId==='string'?getChip(chipOrId):chipOrId;
-    if(!chip)return null;
-    const assetChipName=TEST_IMAGE_CHIP_NAME[chip.chipId]||chip.chipName;
-    return `./assets/chips/${assetChipName}.png`;
+    if(!chip?.chipName)return null;
+    return `./assets/chips/${chip.chipName}.png`;
   }
 
   function getChipClass(chipId){
