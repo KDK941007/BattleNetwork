@@ -5,9 +5,32 @@
   const LONG_SWORD_RANGE_TILES=2;
   const LONG_SWORD_WIDTH_TILES=1;
 
+  const master=window.BattleNetworkMaster;
+
+  // LongSword confirmed data. Only values confirmed by the source metadata or the
+  // user-approved battle specification are registered here; unconfirmed fields stay unset.
+  function ensureLongSwordMasterData(){
+    const chip=master?.getChip?.(LONG_SWORD_ID);
+    if(!chip)return;
+    chip.rangeTypeId='RECT';
+    chip.behaviorId='SWORD_SLASH';
+    chip.description='前方2マスを斬るソード系チップ。ソードより1マス遠くまで攻撃する。';
+    chip.rangeDescription='前方2マス／幅1マス';
+
+    const pushUnique=(rows,key,row)=>{
+      if(!Array.isArray(rows)||rows.some(existing=>key(existing,row)))return;
+      rows.push(row);
+    };
+    pushUnique(data.CHIP_ATTRIBUTE_RELATION,(a,b)=>a.chipId===b.chipId&&a.attributeId===b.attributeId,{chipId:LONG_SWORD_ID,attributeId:'SWORD',displayPriority:1,primaryFlg:true});
+    ['E','L','S'].forEach(codeId=>pushUnique(data.CHIP_CODE_RELATION,(a,b)=>a.chipId===b.chipId&&a.codeId===b.codeId,{chipId:LONG_SWORD_ID,codeId}));
+    pushUnique(data.CHIP_VALUE_RELATION,(a,b)=>a.chipId===b.chipId&&a.valueNo===b.valueNo,{chipId:LONG_SWORD_ID,valueNo:1,valueTypeId:'DAMAGE',value:80,valueMode:'FIXED',displayOrder:1,displayFlg:true,labelOverride:null});
+    pushUnique(data.CHIP_RANGE_PARAM_RELATION,(a,b)=>a.chipId===b.chipId&&a.paramId===b.paramId,{chipId:LONG_SWORD_ID,paramId:'LENGTH_TILES',paramValue:LONG_SWORD_RANGE_TILES});
+    pushUnique(data.CHIP_RANGE_PARAM_RELATION,(a,b)=>a.chipId===b.chipId&&a.paramId===b.paramId,{chipId:LONG_SWORD_ID,paramId:'WIDTH_TILES',paramValue:LONG_SWORD_WIDTH_TILES});
+  }
+  ensureLongSwordMasterData();
+
   // LongSword keeps the confirmed Sword runtime and changes only its attack range:
   // forward 2 tiles, width 1 tile.
-  const master=window.BattleNetworkMaster;
   if(master?.createGameCompatibilityData&&!master.__longSwordReviewCompatInstalled){
     const nativeCreateGameCompatibilityData=master.createGameCompatibilityData.bind(master);
     master.createGameCompatibilityData=()=>{
@@ -24,7 +47,9 @@
           widthTiles:LONG_SWORD_WIDTH_TILES,
           range,
           width:sword.width,
-          rangeText:'前方2マス／幅1マス'
+          image:master.getChipImagePath?.(longChip)||'./assets/chips/ロングソード.png',
+          detail:longChip?.description||'',
+          rangeText:longChip?.rangeDescription||'前方2マス／幅1マス'
         });
       }
       return compat;
