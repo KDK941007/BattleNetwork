@@ -23,8 +23,8 @@
     const FIELD=window.BattleNetworkField;
     const COMBAT=window.BattleNetworkCombatRange;
     const PLAYER=window.BattleNetworkPlayer;
-    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v7')return;
-    scene.dataset.miniBombEffect='v7';
+    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v8')return;
+    scene.dataset.miniBombEffect='v8';
 
     const BOMB_ID='CHIP_0004';
     const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
@@ -39,7 +39,7 @@
     const previousAppendChild=scene.appendChild.bind(scene);
     const pendingExplosions=[];
     const projectiles=new Map();
-    let lastShotToken=null,projectileCursor=0,explosionCursor=0;
+    let lastShotToken=null,projectileCursor=0,explosionCursor=0,prewarmed=false;
 
     const fixedRadius=FIELD.toWorldDistance(DIAMETER_TILES/2);
     const fixedRx=Math.SQRT2*fixedRadius*PX,fixedRy=Math.SQRT2*fixedRadius*PY;
@@ -51,7 +51,7 @@
     artPreload.decode?.().catch(()=>{});
 
     const style=document.createElement('style');
-    style.id='miniBombEffectV7Style';
+    style.id='miniBombEffectV8Style';
     style.textContent=`
       #scene .miniBombThrowV4{position:absolute;left:0;top:0;width:${SPRITE_SIZE}px;height:${SPRITE_SIZE}px;z-index:11;pointer-events:none;background:transparent!important;overflow:visible;will-change:transform,opacity;backface-visibility:hidden;contain:layout paint style;opacity:0;transform:${PARK}}
       #scene .miniBombSpriteV4{position:absolute;inset:0;background-repeat:no-repeat;background-size:145% 145%;background-position:50% 50%;clip-path:circle(42% at 50% 50%);filter:drop-shadow(0 4px 3px rgba(0,0,0,.55)) drop-shadow(0 0 8px rgba(76,183,255,.72));pointer-events:none}
@@ -159,6 +159,42 @@
     }
     function removeProjectile(token){const s=projectiles.get(token);if(!s)return;projectiles.delete(token);parkProjectile(s)}
 
+    function acquireExplosion(){
+      for(let i=0;i<POOL_SIZE;i++){const index=(explosionCursor+i)%POOL_SIZE,s=explosionPool[index];if(!s.busy){explosionCursor=(index+1)%POOL_SIZE;return s}}
+      const s=explosionPool[explosionCursor];explosionCursor=(explosionCursor+1)%POOL_SIZE;clearTimeout(s.releaseTimer);s.animations.forEach(a=>{a.pause();a.currentTime=0});return s;
+    }
+    function parkExplosion(surface){
+      clearTimeout(surface.releaseTimer);
+      surface.animations.forEach(a=>{a.pause();a.currentTime=0});
+      surface.blast.style.opacity='0';surface.blast.style.transform=PARK;surface.busy=false;
+    }
+
+    function prewarmVisualLayers(){
+      if(prewarmed)return;prewarmed=true;
+      projectilePool.forEach((surface,index)=>{
+        surface.sprite.style.transform=`translate3d(${80+index*110}px,80px,0)`;
+        surface.sprite.style.opacity='.001';
+        surface.shadow.style.transform=`translate3d(${80+index*110}px,170px,0)`;
+        surface.shadow.style.opacity='.001';
+      });
+      explosionPool.forEach((surface,index)=>{
+        surface.blast.style.transform=`translate3d(${160+index*260}px,160px,0)`;
+        surface.blast.style.opacity='.001';
+        surface.animations.forEach(a=>{
+          const timing=a.effect?.getTiming?.();
+          const duration=Number(timing?.duration);
+          a.pause();a.currentTime=Number.isFinite(duration)&&duration>0?duration*.55:180;
+        });
+      });
+      scene.getBoundingClientRect();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        projectilePool.forEach(parkProjectile);
+        explosionPool.forEach(parkExplosion);
+      }));
+    }
+
+    requestAnimationFrame(()=>requestAnimationFrame(prewarmVisualLayers));
+
     function launchBomb(context){
       const shape=context?.shape,targetWorld=shape?.center,originWorld=PLAYER.getPosition?.();
       if(!targetWorld||!originWorld)return;
@@ -176,15 +212,6 @@
       }
     }
 
-    function acquireExplosion(){
-      for(let i=0;i<POOL_SIZE;i++){const index=(explosionCursor+i)%POOL_SIZE,s=explosionPool[index];if(!s.busy){explosionCursor=(index+1)%POOL_SIZE;return s}}
-      const s=explosionPool[explosionCursor];explosionCursor=(explosionCursor+1)%POOL_SIZE;clearTimeout(s.releaseTimer);s.animations.forEach(a=>{a.pause();a.currentTime=0});return s;
-    }
-    function parkExplosion(surface){
-      clearTimeout(surface.releaseTimer);
-      surface.animations.forEach(a=>{a.pause();a.currentTime=0});
-      surface.blast.style.opacity='0';surface.blast.style.transform=PARK;surface.busy=false;
-    }
     function renderExplosion(shape){
       const center=shape?.center,radius=Number(shape?.radiusWorld);if(!center||!(radius>0))return;
       const target=proj(center.x,center.y),surface=acquireExplosion();surface.busy=true;
@@ -211,7 +238,7 @@
     function watch(){const context=COMBAT.getLastAttackContext?.();if(context?.sourceType==='CHIP'&&context.sourceId===BOMB_ID&&context.shotToken!==lastShotToken){lastShotToken=context.shotToken;launchBomb(context)}requestAnimationFrame(watch)}
     requestAnimationFrame(watch);
 
-    window.BattleNetworkMiniBombEffect=Object.freeze({version:'MINIBOMB_V4_VISUAL_RESIDENT_POOL_V7',image:ART,spriteSize:SPRITE_SIZE,throwMs:THROW_MS,projection:'RANGE_CIRCLE_ISOMETRIC',renderer:'RESIDENT_V4_DOM_POOL',projectilePool:POOL_SIZE,explosionPool:POOL_SIZE});
+    window.BattleNetworkMiniBombEffect=Object.freeze({version:'MINIBOMB_V4_VISUAL_PREWARMED_POOL_V8',image:ART,spriteSize:SPRITE_SIZE,throwMs:THROW_MS,projection:'RANGE_CIRCLE_ISOMETRIC',renderer:'PREWARMED_RESIDENT_V4_DOM_POOL',projectilePool:POOL_SIZE,explosionPool:POOL_SIZE});
   }
 
   if(document.readyState==='complete')queueMicrotask(installEffect);else window.addEventListener('load',installEffect,{once:true});
