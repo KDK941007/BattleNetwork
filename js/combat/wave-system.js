@@ -12,6 +12,10 @@
     startNoticeMs:1500,
     spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
     swordDummyTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:1})]),
+    longSwordDummyTiles:Object.freeze([
+      Object.freeze({rowOffset:0,colOffset:1}),
+      Object.freeze({rowOffset:0,colOffset:2})
+    ]),
     spreadDummyTiles:Object.freeze([Object.freeze({rowOffset:-1,colOffset:4}),Object.freeze({rowOffset:1,colOffset:4})]),
     vulcanGridTiles:Object.freeze([
       Object.freeze({rowOffset:-1,colOffset:3}),Object.freeze({rowOffset:-1,colOffset:4}),Object.freeze({rowOffset:-1,colOffset:5}),
@@ -38,11 +42,14 @@
   function isSpreadGunTest(){try{return window.BattleNetworkFolder?.toLegacyCards?.()?.[0]?.type==='SPREADGUN'}catch{return false}}
   function isVulcanTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='VULCAN1'}
   function isSwordTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='SWORD'}
+  function isLongSwordTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='LONG'}
   function isChipDetailTest(){return getTestTarget()?.enabled===true}
   function spawnWave(n){
-    const swordTest=isSwordTest(),vulcanTest=!swordTest&&isVulcanTest(),spreadTest=!swordTest&&!vulcanTest&&isSpreadGunTest(),hp=isChipDetailTest()?TEST_CONFIG.chipDetailTestHp:spreadTest?TEST_CONFIG.spreadTestHp:null;
+    const longSwordTest=isLongSwordTest(),swordTest=!longSwordTest&&isSwordTest(),vulcanTest=!longSwordTest&&!swordTest&&isVulcanTest(),spreadTest=!longSwordTest&&!swordTest&&!vulcanTest&&isSpreadGunTest(),hp=isChipDetailTest()?TEST_CONFIG.chipDetailTestHp:spreadTest?TEST_CONFIG.spreadTestHp:null;
     let enemyIds;
-    if(swordTest){
+    if(longSwordTest){
+      enemyIds=TEST_CONFIG.longSwordDummyTiles.map(tile=>spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.swordTestHp}));
+    }else if(swordTest){
       enemyIds=TEST_CONFIG.swordDummyTiles.map(tile=>spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.swordTestHp}));
     }else if(vulcanTest){
       enemyIds=TEST_CONFIG.vulcanGridTiles.map(tile=>spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.vulcanTestHp}));
