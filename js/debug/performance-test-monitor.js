@@ -1,6 +1,5 @@
 (()=>{
-  const target=window.BattleNetworkFolder?.getTestTarget?.();
-  const enabled=new URLSearchParams(location.search).get('perfTest')==='1'||(target?.enabled===true&&target?.type==='BOMB');
+  const enabled=new URLSearchParams(location.search).get('perfTest')==='1';
   if(!enabled)return;
   const battle=document.getElementById('battle'),A=document.getElementById('A'),customFill=document.getElementById('customFill'),ENEMY=window.BattleNetworkEnemy;
   if(!battle||!A||!customFill)return;
