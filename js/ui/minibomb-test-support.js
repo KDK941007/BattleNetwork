@@ -7,7 +7,7 @@
   window.BattleNetworkMiniBombSettings=Object.freeze({getSettings:()=>settings});
 
   // Finalized MiniBomb parameters: fixed 3-tile throw and 2-tile blast diameter.
-  // Visual/performance changes below do not alter hit/range/damage behavior.
+  // Visual review changes below do not alter hit/range/damage behavior.
   const originalCreate=MASTER.createGameCompatibilityData;
   MASTER.createGameCompatibilityData=()=>{
     const result=originalCreate();
@@ -25,8 +25,8 @@
     const FIELD=window.BattleNetworkField;
     const COMBAT=window.BattleNetworkCombatRange;
     const PLAYER=window.BattleNetworkPlayer;
-    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v5')return;
-    scene.dataset.miniBombEffect='v5';
+    if(!scene||!FIELD||!COMBAT||!PLAYER||scene.dataset.miniBombEffect==='v4')return;
+    scene.dataset.miniBombEffect='v4';
 
     const BOMB_ID='CHIP_0004';
     const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
@@ -36,125 +36,223 @@
     const THROW_MS=Math.max(720,BASE_DELAY_MS);
     const SPRITE_SIZE=92,SPRITE_HALF=SPRITE_SIZE/2;
     const SHADOW_W=62,SHADOW_H=19;
-    const PROJECTILE_POOL_SIZE=4,EXPLOSION_POOL_SIZE=4,TEMPLATE_SIZE=512;
     const previousAppendChild=scene.appendChild.bind(scene);
     const pendingExplosions=[];
     const projectiles=new Map();
-    let lastShotToken=null,projectileCursor=0,explosionCursor=0;
+    let lastShotToken=null;
+
+    const artPreload=new Image();
+    artPreload.decoding='async';
+    artPreload.src=ART;
+    artPreload.decode?.().catch(()=>{});
 
     const style=document.createElement('style');
-    style.id='miniBombEffectV5Style';
+    style.id='miniBombEffectV4Style';
     style.textContent=`
-      #scene .miniBombThrowV5{position:absolute;left:0;top:0;width:${SPRITE_SIZE}px;height:${SPRITE_SIZE}px;z-index:11;display:none;pointer-events:none;background:transparent;will-change:transform,opacity;backface-visibility:hidden;contain:layout paint style}
-      #scene .miniBombSpriteV5{position:absolute;inset:8%;border-radius:50%;overflow:hidden;background-repeat:no-repeat;background-size:145% 145%;background-position:50% 50%;pointer-events:none}
-      #scene .miniBombShadowV5{position:absolute;left:0;top:0;width:${SHADOW_W}px;height:${SHADOW_H}px;z-index:9;display:none;border-radius:50%;background:rgba(0,0,0,.28);pointer-events:none;will-change:transform,opacity;backface-visibility:hidden;contain:layout paint style}
-      #scene .miniBombExplosionV5{position:absolute;left:0;top:0;z-index:12;display:none;pointer-events:none;overflow:visible;contain:layout paint style;backface-visibility:hidden}
-      #scene .miniBombExplosionV5 canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
+      #scene .miniBombThrowV4{position:absolute;left:0;top:0;width:${SPRITE_SIZE}px;height:${SPRITE_SIZE}px;z-index:11;pointer-events:none;background:transparent!important;overflow:visible;will-change:transform,opacity;backface-visibility:hidden}
+      #scene .miniBombSpriteV4{position:absolute;inset:0;background-repeat:no-repeat;background-size:145% 145%;background-position:50% 50%;clip-path:circle(42% at 50% 50%);filter:drop-shadow(0 4px 3px rgba(0,0,0,.55)) drop-shadow(0 0 8px rgba(76,183,255,.72));pointer-events:none}
+      #scene .miniBombShadowV4{position:absolute;left:0;top:0;width:${SHADOW_W}px;height:${SHADOW_H}px;z-index:9;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.48) 0 42%,rgba(0,0,0,.2) 66%,rgba(0,0,0,0) 100%);filter:blur(2px);pointer-events:none;will-change:transform,opacity}
+      #scene .miniBombExplosionV2{position:absolute;z-index:12;pointer-events:none;border-radius:50%;overflow:visible;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
+      #scene .miniBombBlastCoreV2,#scene .miniBombShockRingV2,#scene .miniBombBlastFlashV2{position:absolute;inset:0;border-radius:50%;pointer-events:none;transform-origin:50% 50%;will-change:transform,opacity}
+      #scene .miniBombBlastCoreV2{background:radial-gradient(ellipse at center,rgba(255,255,255,1) 0 8%,rgba(255,250,178,1) 13%,rgba(255,218,75,.98) 25%,rgba(255,138,28,.96) 48%,rgba(242,60,18,.88) 67%,rgba(91,9,3,.25) 82%,rgba(62,5,2,0) 100%);box-shadow:0 0 34px rgba(255,182,54,.98),0 0 70px rgba(255,72,18,.72)}
+      #scene .miniBombShockRingV2{inset:-6%;border:10px solid rgba(255,236,147,.96);box-shadow:0 0 20px rgba(255,155,38,.98),inset 0 0 18px rgba(255,250,208,.9)}
+      #scene .miniBombBlastFlashV2{inset:25%;background:rgba(255,255,245,1);box-shadow:0 0 32px rgba(255,252,194,1),0 0 64px rgba(255,177,46,.86)}
+      #scene .miniBombFireballV2{position:absolute;width:48%;height:72%;border-radius:50%;background:radial-gradient(ellipse at 42% 38%,rgba(255,255,230,1) 0 9%,rgba(255,226,82,.98) 22%,rgba(255,128,28,.96) 50%,rgba(226,43,13,.82) 72%,rgba(96,8,3,0) 100%);box-shadow:0 0 18px rgba(255,132,30,.82);pointer-events:none;will-change:transform,opacity}
+      #scene .miniBombSparkV2{position:absolute;left:50%;top:50%;width:24px;height:7px;margin-left:-12px;margin-top:-3.5px;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,244,1),rgba(255,220,86,1) 42%,rgba(255,87,22,.94));box-shadow:0 0 10px rgba(255,162,38,.96);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity}
+      #scene .miniBombSmokeV2{position:absolute;width:34%;height:52%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(92,74,64,.56) 0 30%,rgba(55,44,40,.38) 58%,rgba(34,25,24,0) 100%);filter:blur(3px);pointer-events:none;will-change:transform,opacity}
     `;
     document.head.appendChild(style);
 
     function proj(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
-    function canvasTemplate(draw){const c=document.createElement('canvas');c.width=TEMPLATE_SIZE;c.height=TEMPLATE_SIZE;draw(c.getContext('2d'));return c}
-    function radial(ctx,x,y,r,stops){const g=ctx.createRadialGradient(x,y,0,x,y,r);stops.forEach(([p,color])=>g.addColorStop(p,color));return g}
 
-    // Heavy gradients, glow, sparks and smoke are painted once here.
-    const coreTemplate=canvasTemplate(ctx=>{
-      const c=TEMPLATE_SIZE/2,r=TEMPLATE_SIZE*.42;
-      ctx.save();
-      ctx.fillStyle=radial(ctx,c,c,r,[[0,'rgba(255,255,255,1)'],[.12,'rgba(255,250,178,1)'],[.28,'rgba(255,218,75,.98)'],[.52,'rgba(255,138,28,.96)'],[.72,'rgba(242,60,18,.88)'],[1,'rgba(62,5,2,0)']]);
-      ctx.shadowColor='rgba(255,95,24,.72)';ctx.shadowBlur=34;ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.fill();ctx.restore();
-      const lobes=[[.25,.30,.18],[.46,.22,.21],[.68,.31,.18],[.28,.58,.20],[.50,.53,.23],[.70,.60,.18],[.48,.72,.16]];
-      lobes.forEach(([nx,ny,nr])=>{const x=TEMPLATE_SIZE*nx,y=TEMPLATE_SIZE*ny,rr=TEMPLATE_SIZE*nr;ctx.fillStyle=radial(ctx,x,y,rr,[[0,'rgba(255,255,230,.98)'],[.22,'rgba(255,226,82,.95)'],[.52,'rgba(255,128,28,.90)'],[.78,'rgba(226,43,13,.68)'],[1,'rgba(96,8,3,0)']]);ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill()});
-      ctx.save();ctx.translate(c,c);ctx.lineCap='round';
-      for(let i=0;i<18;i++){const a=i/18*Math.PI*2+(i%3)*.07,r1=TEMPLATE_SIZE*.15,r2=TEMPLATE_SIZE*(.40+(i%4)*.025);ctx.strokeStyle=i%2?'rgba(255,215,78,.92)':'rgba(255,250,220,.96)';ctx.lineWidth=5+(i%3);ctx.beginPath();ctx.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);ctx.stroke()}
-      ctx.restore();
-      const smoke=[[.29,.34,.12],[.48,.27,.13],[.65,.36,.11],[.38,.58,.14],[.59,.59,.13]];
-      smoke.forEach(([nx,ny,nr])=>{const x=TEMPLATE_SIZE*nx,y=TEMPLATE_SIZE*ny,rr=TEMPLATE_SIZE*nr;ctx.fillStyle=radial(ctx,x,y,rr,[[0,'rgba(78,63,57,.32)'],[.55,'rgba(53,42,38,.20)'],[1,'rgba(34,25,24,0)']]);ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill()});
-    });
-    const ringTemplate=canvasTemplate(ctx=>{const c=TEMPLATE_SIZE/2,r=TEMPLATE_SIZE*.40;ctx.save();ctx.strokeStyle='rgba(255,236,147,.96)';ctx.lineWidth=22;ctx.shadowColor='rgba(255,155,38,.92)';ctx.shadowBlur=24;ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.stroke();ctx.restore()});
-    const flashTemplate=canvasTemplate(ctx=>{const c=TEMPLATE_SIZE/2,r=TEMPLATE_SIZE*.23;ctx.fillStyle=radial(ctx,c,c,r,[[0,'rgba(255,255,255,1)'],[.32,'rgba(255,255,230,.98)'],[.70,'rgba(255,235,132,.78)'],[1,'rgba(255,177,46,0)']]);ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.fill()});
-
-    function copyTemplate(source,target){target.width=TEMPLATE_SIZE;target.height=TEMPLATE_SIZE;target.getContext('2d').drawImage(source,0,0)}
-    function makeProjectileSurface(){
-      const sprite=document.createElement('div');sprite.className='miniBombThrowV5';
-      const art=document.createElement('div');art.className='miniBombSpriteV5';art.style.backgroundImage=`url("${ART}")`;sprite.appendChild(art);
-      const shadow=document.createElement('div');shadow.className='miniBombShadowV5';
-      previousAppendChild(shadow);previousAppendChild(sprite);
-      return {sprite,shadow,busy:false,token:null,landingAt:0};
-    }
-    function makeExplosionSurface(){
-      const wrapper=document.createElement('div');wrapper.className='miniBombExplosionV5';
-      const core=document.createElement('canvas'),ring=document.createElement('canvas'),flash=document.createElement('canvas');
-      copyTemplate(coreTemplate,core);copyTemplate(ringTemplate,ring);copyTemplate(flashTemplate,flash);wrapper.append(core,ring,flash);previousAppendChild(wrapper);
-      return {wrapper,core,ring,flash,busy:false,releaseTimer:0};
-    }
-    const projectilePool=Array.from({length:PROJECTILE_POOL_SIZE},makeProjectileSurface);
-    const explosionPool=Array.from({length:EXPLOSION_POOL_SIZE},makeExplosionSurface);
-
-    const artPreload=new Image();artPreload.decoding='async';artPreload.src=ART;artPreload.decode?.().catch(()=>{});
-    function cancelAnimations(el){el?.getAnimations?.().forEach(animation=>animation.cancel())}
-    function acquireProjectile(){
-      for(let i=0;i<projectilePool.length;i++){const index=(projectileCursor+i)%projectilePool.length,s=projectilePool[index];if(!s.busy){projectileCursor=(index+1)%projectilePool.length;return s}}
-      const s=projectilePool[projectileCursor];projectileCursor=(projectileCursor+1)%projectilePool.length;if(s.token!==null)projectiles.delete(s.token);cancelAnimations(s.sprite);cancelAnimations(s.shadow);return s;
-    }
     function removeProjectile(token){
-      const surface=projectiles.get(token);if(!surface)return;projectiles.delete(token);cancelAnimations(surface.sprite);cancelAnimations(surface.shadow);surface.sprite.style.display='none';surface.shadow.style.display='none';surface.busy=false;surface.token=null;surface.landingAt=0;
+      const entry=projectiles.get(token);
+      if(!entry)return;
+      projectiles.delete(token);
+      [entry.sprite,entry.shadow].forEach(el=>{
+        if(!el)return;
+        el.getAnimations?.().forEach(animation=>animation.cancel());
+        el.remove();
+      });
     }
 
     function launchBomb(context){
-      const shape=context?.shape,targetWorld=shape?.center,originWorld=PLAYER.getPosition?.();if(!targetWorld||!originWorld)return;
-      const start=proj(originWorld.x,originWorld.y),target=proj(targetWorld.x,targetWorld.y),token=context.shotToken,surface=acquireProjectile();
-      surface.busy=true;surface.token=token;surface.landingAt=performance.now()+THROW_MS;projectiles.set(token,surface);pendingExplosions.push({token,shape});
-      const {sprite,shadow}=surface;sprite.style.display='block';shadow.style.display='block';
-      const sx=start.x-SPRITE_HALF,sy=start.y-88,tx=target.x-SPRITE_HALF,ty=target.y-62,dx=tx-sx,dy=ty-sy;
-      const arcHeight=Math.min(205,Math.max(132,112+Math.hypot(dx,dy)*.18)),FRAME_COUNT=31,times=Array.from({length:FRAME_COUNT},(_,i)=>i/(FRAME_COUNT-1));
-      const arcFrames=times.map(t=>{const x=sx+dx*t,y=sy+dy*t-4*arcHeight*t*(1-t),scale=.88+.10*(1-Math.abs(t*2-1)),rotation=-8+42*t;return{transform:`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${scale})`,opacity:1,offset:t}});
-      const ssx=start.x-SHADOW_W/2,ssy=start.y-SHADOW_H/2+2,stx=target.x-SHADOW_W/2,sty=target.y-SHADOW_H/2+2;
-      const shadowFrames=times.map(t=>{const x=ssx+(stx-ssx)*t,y=ssy+(sty-ssy)*t,apex=1-Math.abs(t*2-1),scale=.78-.36*apex,opacity=.42-.28*apex;return{transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity,offset:t}});
-      sprite.style.transform=arcFrames[0].transform;shadow.style.transform=shadowFrames[0].transform;
-      cancelAnimations(sprite);cancelAnimations(shadow);
+      const shape=context?.shape,targetWorld=shape?.center,originWorld=PLAYER.getPosition?.();
+      if(!targetWorld||!originWorld)return;
+      const start=proj(originWorld.x,originWorld.y),target=proj(targetWorld.x,targetWorld.y);
+      const token=context.shotToken;
+
+      const sprite=document.createElement('div');
+      sprite.className='miniBombThrowV4';
+      const art=document.createElement('div');
+      art.className='miniBombSpriteV4';
+      art.style.backgroundImage=`url("${ART}")`;
+      sprite.appendChild(art);
+
+      const shadow=document.createElement('div');
+      shadow.className='miniBombShadowV4';
+      previousAppendChild(shadow);
+      previousAppendChild(sprite);
+
+      const launchedAt=performance.now();
+      projectiles.set(token,{sprite,shadow,landingAt:launchedAt+THROW_MS});
+      pendingExplosions.push({token,shape});
+
+      const sx=start.x-SPRITE_HALF,sy=start.y-88;
+      const tx=target.x-SPRITE_HALF,ty=target.y-62;
+      const dx=tx-sx,dy=ty-sy;
+      const arcHeight=Math.min(205,Math.max(132,112+Math.hypot(dx,dy)*.18));
+      const FRAME_COUNT=31;
+      const times=Array.from({length:FRAME_COUNT},(_,i)=>i/(FRAME_COUNT-1));
+      const arcFrames=times.map(t=>{
+        const x=sx+dx*t;
+        const y=sy+dy*t-4*arcHeight*t*(1-t);
+        const scale=.88+.10*(1-Math.abs(t*2-1));
+        const rotation=-8+42*t;
+        return {transform:`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${scale})`,opacity:1,offset:t};
+      });
+
+      const ssx=start.x-SHADOW_W/2,ssy=start.y-SHADOW_H/2+2;
+      const stx=target.x-SHADOW_W/2,sty=target.y-SHADOW_H/2+2;
+      const shadowFrames=times.map(t=>{
+        const x=ssx+(stx-ssx)*t;
+        const y=ssy+(sty-ssy)*t;
+        const apex=1-Math.abs(t*2-1);
+        const scale=.78-.36*apex;
+        const opacity=.46-.30*apex;
+        return {transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity,offset:t};
+      });
+
       if(typeof sprite.animate==='function'){
-        const flight=sprite.animate(arcFrames,{duration:THROW_MS,fill:'forwards',easing:'linear'});flight.onfinish=()=>{sprite.style.transform=arcFrames[arcFrames.length-1].transform};
+        const flight=sprite.animate(arcFrames,{duration:THROW_MS,fill:'forwards',easing:'linear'});
+        flight.onfinish=()=>{sprite.style.transform=arcFrames[arcFrames.length-1].transform};
         shadow.animate(shadowFrames,{duration:THROW_MS,fill:'forwards',easing:'linear'});
-      }else{sprite.style.transform=arcFrames[arcFrames.length-1].transform;shadow.style.transform=shadowFrames[shadowFrames.length-1].transform}
+      }else{
+        sprite.style.transform=arcFrames[arcFrames.length-1].transform;
+        shadow.style.transform=shadowFrames[shadowFrames.length-1].transform;
+      }
     }
 
-    function acquireExplosion(){
-      for(let i=0;i<explosionPool.length;i++){const index=(explosionCursor+i)%explosionPool.length,s=explosionPool[index];if(!s.busy){explosionCursor=(index+1)%explosionPool.length;return s}}
-      const s=explosionPool[explosionCursor];explosionCursor=(explosionCursor+1)%explosionPool.length;clearTimeout(s.releaseTimer);[s.core,s.ring,s.flash].forEach(cancelAnimations);return s;
-    }
     function renderExplosion(shape){
-      const center=shape?.center,radius=Number(shape?.radiusWorld);if(!center||!(radius>0))return;
-      const target=proj(center.x,center.y),rx=Math.SQRT2*radius*PX,ry=Math.SQRT2*radius*PY,width=rx*2,height=ry*2,surface=acquireExplosion();
-      surface.busy=true;const {wrapper,core,ring,flash}=surface;wrapper.style.cssText=`width:${width}px;height:${height}px;left:${target.x-rx}px;top:${target.y-ry}px;display:block`;
-      [core,ring,flash].forEach(el=>{cancelAnimations(el);el.style.opacity='1';el.style.transform='scale(1)'});
-      if(typeof core.animate==='function'){
-        flash.animate([{transform:'scale(.08)',opacity:1},{transform:'scale(1.25)',opacity:1,offset:.28},{transform:'scale(1.65)',opacity:0}],{duration:260,fill:'forwards',easing:'ease-out'});
-        core.animate([{transform:'scale(.12)',opacity:1},{transform:'scale(1.04)',opacity:1,offset:.32},{transform:'scale(1.25)',opacity:.72,offset:.62},{transform:'scale(1.42)',opacity:0}],{duration:610,fill:'forwards',easing:'cubic-bezier(.1,.7,.2,1)'});
-        ring.animate([{transform:'scale(.16)',opacity:1},{transform:'scale(1.08)',opacity:.92,offset:.38},{transform:'scale(1.5)',opacity:0}],{duration:520,fill:'forwards',easing:'cubic-bezier(.08,.68,.18,1)'});
+      const center=shape?.center,radius=Number(shape?.radiusWorld);
+      if(!center||!(radius>0))return;
+      const target=proj(center.x,center.y);
+      // Same world-circle -> screen-ellipse projection as the range preview.
+      const rx=Math.SQRT2*radius*PX,ry=Math.SQRT2*radius*PY;
+      const width=rx*2,height=ry*2;
+      const blast=document.createElement('div');
+      blast.className='miniBombExplosionV2';
+      blast.style.cssText=`width:${width}px;height:${height}px;left:${target.x-rx}px;top:${target.y-ry}px`;
+
+      const core=document.createElement('div');core.className='miniBombBlastCoreV2';
+      const ring=document.createElement('div');ring.className='miniBombShockRingV2';
+      const flash=document.createElement('div');flash.className='miniBombBlastFlashV2';
+      blast.append(core,ring,flash);
+
+      const lobeLayout=[
+        [4,8,.84],[28,-10,1.02],[55,6,.88],[9,39,.92],[34,28,1.08],[59,40,.82],[31,51,.76]
+      ];
+      lobeLayout.forEach(([left,top,scale],index)=>{
+        const lobe=document.createElement('span');
+        lobe.className='miniBombFireballV2';
+        lobe.style.left=left+'%';lobe.style.top=top+'%';
+        blast.appendChild(lobe);
+        lobe.animate?.([
+          {transform:'scale(.12)',opacity:0,offset:0},
+          {transform:`scale(${scale})`,opacity:1,offset:.22+(index%3)*.035},
+          {transform:`scale(${scale*1.28})`,opacity:.82,offset:.58},
+          {transform:`scale(${scale*1.52})`,opacity:0,offset:1}
+        ],{duration:560+(index%2)*70,fill:'forwards',easing:'cubic-bezier(.12,.72,.24,1)'});
+      });
+
+      const sparkCount=18;
+      for(let i=0;i<sparkCount;i++){
+        const spark=document.createElement('span');
+        spark.className='miniBombSparkV2';
+        blast.appendChild(spark);
+        const a=i/sparkCount*Math.PI*2+(i%3)*.07;
+        const dx=Math.cos(a)*rx*(1.35+(i%4)*.12),dy=Math.sin(a)*ry*(1.62+(i%3)*.16);
+        const deg=a*180/Math.PI;
+        spark.animate?.([
+          {transform:`translate3d(0,0,0) rotate(${deg}deg) scaleX(.2)`,opacity:1},
+          {transform:`translate3d(${dx}px,${dy}px,0) rotate(${deg}deg) scaleX(1.8)`,opacity:0}
+        ],{duration:390+(i%4)*45,fill:'forwards',easing:'cubic-bezier(.1,.62,.22,1)'});
       }
-      clearTimeout(surface.releaseTimer);surface.releaseTimer=setTimeout(()=>{wrapper.style.display='none';surface.busy=false},780);
+
+      const smokeLayout=[[12,18,-18],[38,5,-28],[58,22,-20],[24,42,-34],[50,43,-30]];
+      smokeLayout.forEach(([left,top,rise],index)=>{
+        const smoke=document.createElement('span');
+        smoke.className='miniBombSmokeV2';
+        smoke.style.left=left+'%';smoke.style.top=top+'%';
+        blast.appendChild(smoke);
+        smoke.animate?.([
+          {transform:'translate3d(0,0,0) scale(.35)',opacity:0,offset:0},
+          {transform:'translate3d(0,-4px,0) scale(.78)',opacity:.46,offset:.28},
+          {transform:`translate3d(${(index-2)*8}px,${rise}px,0) scale(1.35)`,opacity:0,offset:1}
+        ],{duration:720,fill:'forwards',easing:'ease-out'});
+      });
+
+      previousAppendChild(blast);
+      flash.animate?.([
+        {transform:'scale(.08)',opacity:1,offset:0},
+        {transform:'scale(1.25)',opacity:1,offset:.28},
+        {transform:'scale(1.65)',opacity:0,offset:1}
+      ],{duration:260,fill:'forwards',easing:'ease-out'});
+      core.animate?.([
+        {transform:'scale(.12)',opacity:1,offset:0},
+        {transform:'scale(1.04)',opacity:1,offset:.32},
+        {transform:'scale(1.25)',opacity:.72,offset:.62},
+        {transform:'scale(1.42)',opacity:0,offset:1}
+      ],{duration:610,fill:'forwards',easing:'cubic-bezier(.1,.7,.2,1)'});
+      ring.animate?.([
+        {transform:'scale(.16)',opacity:1},
+        {transform:'scale(1.08)',opacity:.92,offset:.38},
+        {transform:'scale(1.5)',opacity:0}
+      ],{duration:520,fill:'forwards',easing:'cubic-bezier(.08,.68,.18,1)'});
+      setTimeout(()=>blast.remove(),780);
     }
 
     function explodeAtLanding(pending){
-      if(!pending)return;const entry=projectiles.get(pending.token),remaining=Math.max(0,(entry?.landingAt??performance.now())-performance.now());
-      const finish=()=>{removeProjectile(pending.token);renderExplosion(pending.shape)};if(remaining>4)setTimeout(finish,remaining);else finish();
+      if(!pending)return;
+      const entry=projectiles.get(pending.token);
+      const remaining=Math.max(0,(entry?.landingAt??performance.now())-performance.now());
+      const finish=()=>{removeProjectile(pending.token);renderExplosion(pending.shape)};
+      if(remaining>4)setTimeout(finish,remaining);else finish();
     }
 
     scene.appendChild=function(node){
       if(node instanceof HTMLElement&&node.classList.contains('boom')){
         const pending=pendingExplosions.shift();
-        if(pending)explodeAtLanding(pending);else{const context=COMBAT.getLastAttackContext?.();if(context?.sourceId===BOMB_ID)explodeAtLanding({token:context.shotToken,shape:context.shape})}
+        if(pending)explodeAtLanding(pending);
+        else{
+          const context=COMBAT.getLastAttackContext?.();
+          if(context?.sourceId===BOMB_ID)explodeAtLanding({token:context.shotToken,shape:context.shape});
+        }
         return node;
       }
       return previousAppendChild(node);
     };
 
-    function watch(){const context=COMBAT.getLastAttackContext?.();if(context?.sourceType==='CHIP'&&context.sourceId===BOMB_ID&&context.shotToken!==lastShotToken){lastShotToken=context.shotToken;launchBomb(context)}requestAnimationFrame(watch)}
+    function watch(){
+      const context=COMBAT.getLastAttackContext?.();
+      if(context?.sourceType==='CHIP'&&context.sourceId===BOMB_ID&&context.shotToken!==lastShotToken){
+        lastShotToken=context.shotToken;
+        launchBomb(context);
+      }
+      requestAnimationFrame(watch);
+    }
     requestAnimationFrame(watch);
 
-    window.BattleNetworkMiniBombEffect=Object.freeze({version:'MINIBOMB_PREPAINTED_COMPOSITOR_V5',image:ART,spriteSize:SPRITE_SIZE,throwMs:THROW_MS,projection:'RANGE_CIRCLE_ISOMETRIC',renderer:'PREPAINTED_CANVAS_COMPOSITOR',projectilePool:PROJECTILE_POOL_SIZE,explosionPool:EXPLOSION_POOL_SIZE});
+    window.BattleNetworkMiniBombEffect=Object.freeze({
+      version:'MINIBOMB_THROW_SMOOTH_SLOW_PARABOLA_V4',
+      image:ART,
+      spriteSize:SPRITE_SIZE,
+      throwMs:THROW_MS,
+      projection:'RANGE_CIRCLE_ISOMETRIC',
+      renderer:'DOM_TRANSFORM_OPACITY'
+    });
   }
 
-  if(document.readyState==='complete')queueMicrotask(installEffect);else window.addEventListener('load',installEffect,{once:true});
+  if(document.readyState==='complete')queueMicrotask(installEffect);
+  else window.addEventListener('load',installEffect,{once:true});
 })();
