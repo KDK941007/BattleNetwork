@@ -48,6 +48,17 @@
   folder.getTestTarget=getTestTarget;
   folder.toLegacyCards=toLegacyCards;
 
+  // folder-service installs its own one-shot bridge before this review selector loads.
+  // Intercept the same legacy startup folder first so game.js receives the selected
+  // Sword/WideSword/LongSword test cards instead of the folder-service default LONG cards.
+  const previousMap=Array.prototype.map;
+  Array.prototype.map=function(callback,thisArg){
+    const isLegacyBattleFolder=this.length===30&&Array.isArray(this[0])&&this[0][0]==='CANNON'&&this[0][1]==='A';
+    if(!isLegacyBattleFolder)return previousMap.call(this,callback,thisArg);
+    Array.prototype.map=previousMap;
+    return toLegacyCards();
+  };
+
   const style=document.createElement('style');
   style.id='swordTestSelectorStyle';
   style.textContent=`
@@ -83,7 +94,7 @@
   battle.appendChild(panel);
 
   window.BattleNetworkSwordTestSelector=Object.freeze({
-    version:'SWORD_TEST_SELECTOR_V1',
+    version:'SWORD_TEST_SELECTOR_V2',
     getSelected:()=>selectedKey,
     getTestTarget
   });
