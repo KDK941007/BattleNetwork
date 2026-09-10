@@ -77,5 +77,89 @@
   });
   observer.observe(scene,{childList:true,subtree:true});
 
+  const SWORD_IDS=new Set(['CHIP_0002','CHIP_0003','CHIP_EXE4_S056']);
+  const BASE_FORWARD_OFFSET=150,OFFSET_STEP=10,PX=.72,PY=.36;
+  let swordForwardOffset=BASE_FORWARD_OFFSET;
+
+  function isSwordFamilyContext(){
+    const context=RANGE.getLastAttackContext?.();
+    if(context?.sourceType==='CHIP'&&SWORD_IDS.has(context.sourceId))return true;
+    const target=window.BattleNetworkFolder?.getTestTarget?.();
+    return target?.enabled===true&&['SWORD','WIDE','LONG'].includes(target.type);
+  }
+
+  function projectedDirection(){
+    const direction=RANGE.getLastAttackContext?.()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
+    let dx=Number(direction.x),dy=Number(direction.y);
+    if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.0001){dx=1;dy=0}
+    const worldLength=Math.hypot(dx,dy)||1;
+    dx/=worldLength;dy/=worldLength;
+    const sx=(dx-dy)*PX,sy=(dx+dy)*PY,screenLength=Math.hypot(sx,sy)||1;
+    return {x:sx/screenLength,y:sy/screenLength};
+  }
+
+  const previousAppendChild=scene.appendChild.bind(scene);
+  scene.appendChild=function(node){
+    if(node instanceof HTMLElement&&node.classList.contains('slash')&&isSwordFamilyContext()){
+      const delta=swordForwardOffset-BASE_FORWARD_OFFSET;
+      if(delta!==0){
+        const direction=projectedDirection();
+        const left=parseFloat(node.style.left)||0;
+        const top=parseFloat(node.style.top)||0;
+        node.style.left=`${left+direction.x*delta}px`;
+        node.style.top=`${top+direction.y*delta}px`;
+      }
+      node.dataset.reviewForwardOffset=String(swordForwardOffset);
+    }
+    return previousAppendChild(node);
+  };
+
+  const battle=document.getElementById('battle');
+  const offsetStyle=document.createElement('style');
+  offsetStyle.id='swordOffsetReviewStyle';
+  offsetStyle.textContent=`
+    #swordOffsetReview{position:absolute;top:8px;right:8px;z-index:80;display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid rgba(174,235,255,.8);border-radius:8px;background:rgba(4,18,32,.86);box-shadow:0 0 12px rgba(86,205,255,.28);color:#e9fbff;font:700 11px/1 system-ui,sans-serif;pointer-events:auto}
+    #swordOffsetReview .swordOffsetLabel{white-space:nowrap}
+    #swordOffsetReview .swordOffsetValue{min-width:46px;text-align:center;font-variant-numeric:tabular-nums;color:#fff7a8}
+    #swordOffsetReview button{width:42px;height:32px;padding:0;border:1px solid rgba(174,235,255,.72);border-radius:6px;background:rgba(20,71,101,.92);color:#fff;font:900 16px/1 system-ui,sans-serif;touch-action:manipulation}
+    #swordOffsetReview button:active{transform:scale(.94);filter:brightness(1.22)}
+  `;
+  document.head.appendChild(offsetStyle);
+
+  let offsetValue=null;
+  function updateOffsetValue(){if(offsetValue)offsetValue.textContent=`${swordForwardOffset}px`}
+  function setSwordForwardOffset(value){
+    const next=Number(value);
+    if(!Number.isFinite(next))return swordForwardOffset;
+    swordForwardOffset=Math.round(next/OFFSET_STEP)*OFFSET_STEP;
+    updateOffsetValue();
+    return swordForwardOffset;
+  }
+  function adjustSwordForwardOffset(delta){return setSwordForwardOffset(swordForwardOffset+Number(delta||0))}
+
+  if(battle&&!document.getElementById('swordOffsetReview')){
+    const panel=document.createElement('div');
+    panel.id='swordOffsetReview';
+    panel.setAttribute('aria-label','ソード系エフェクト前方オフセット確認');
+    const label=document.createElement('span');label.className='swordOffsetLabel';label.textContent='SWORD OFFSET';
+    const minus=document.createElement('button');minus.type='button';minus.textContent='−10';minus.setAttribute('aria-label','前方オフセットを10ピクセル減らす');
+    offsetValue=document.createElement('span');offsetValue.className='swordOffsetValue';
+    const plus=document.createElement('button');plus.type='button';plus.textContent='+10';plus.setAttribute('aria-label','前方オフセットを10ピクセル増やす');
+    minus.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();adjustSwordForwardOffset(-OFFSET_STEP)});
+    plus.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();adjustSwordForwardOffset(OFFSET_STEP)});
+    panel.addEventListener('pointerdown',e=>e.stopPropagation());
+    panel.append(label,minus,offsetValue,plus);
+    battle.appendChild(panel);
+    updateOffsetValue();
+  }
+
   window.BattleNetworkAirShotEffect=Object.freeze({mode:'A3_FINAL',decorate});
+  window.BattleNetworkSwordOffsetReview=Object.freeze({
+    version:'SWORD_OFFSET_REVIEW_V1',
+    baseForwardOffset:BASE_FORWARD_OFFSET,
+    step:OFFSET_STEP,
+    getForwardOffset:()=>swordForwardOffset,
+    setForwardOffset:setSwordForwardOffset,
+    adjustForwardOffset:adjustSwordForwardOffset
+  });
 })();
