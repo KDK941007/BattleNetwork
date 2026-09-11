@@ -9,4 +9,4 @@
 .kokoroStateMark{display:none}
 .kokoroWindow[data-state="NORMAL"]{border-color:#64ddff;background:#071624}
 @media (max-height:390px){.playerStatusHud{left:3px;top:4px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroWindow{width:68px;height:28px}.playerHpValue{font-size:21px}}
-.kokoroWindow[data-state="FULL_SYNCHRO"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-fullsynchro.webp');background-position:center 60%}
+.kokoroWindow[data-state="FULL_SYNCHRO"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-fullsynchro.webp');background-size:160% auto;background-position:60% 50%}
