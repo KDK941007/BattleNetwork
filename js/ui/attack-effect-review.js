@@ -78,7 +78,7 @@
   observer.observe(scene,{childList:true,subtree:true});
 
   const SWORD_IDS=new Set(['CHIP_0002','CHIP_0003','CHIP_EXE4_S056']);
-  const BASE_FORWARD_OFFSET=150,OFFSET_STEP=10,PX=.72,PY=.36;
+  const BASE_FORWARD_OFFSET=100,OFFSET_STEP=10,PX=.72,PY=.36;
   let swordForwardOffset=BASE_FORWARD_OFFSET;
 
   function isSwordFamilyContext(){
@@ -155,7 +155,7 @@
 
   window.BattleNetworkAirShotEffect=Object.freeze({mode:'A3_FINAL',decorate});
   window.BattleNetworkSwordOffsetReview=Object.freeze({
-    version:'SWORD_OFFSET_REVIEW_V1',
+    version:'SWORD_OFFSET_REVIEW_V2_DEFAULT_100PX',
     baseForwardOffset:BASE_FORWARD_OFFSET,
     step:OFFSET_STEP,
     getForwardOffset:()=>swordForwardOffset,
