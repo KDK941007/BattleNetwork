@@ -1,26 +1,39 @@
 (()=>{
   const scene=document.getElementById('scene');
   const FIELD=window.BattleNetworkField;
-  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v14')return;
-  scene.dataset.swordEffectHook='v14';
+  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v15')return;
+  scene.dataset.swordEffectHook='v15';
 
-  const PX=.72,PY=.36,SWORD_ID='CHIP_0002',WIDE_ID='CHIP_0003',LONG_ID='CHIP_EXE4_S056';
-  const SWORD_SCALE_X=.6,LONG_SCALE_X_MULTIPLIER=2,FORWARD_OFFSET=150,MAX_PROJECTED_LENGTH=Math.SQRT2*Math.max(PX,PY);
-  const CSS_WIDTH=520,CSS_HEIGHT=320,DURATION=390,DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
+  const SWORD_ID='CHIP_0002';
+  const WIDE_ID='CHIP_0003';
+  const LONG_ID='CHIP_EXE4_S056';
+  const TILE=Number(FIELD.TILE_SIZE)||180;
+  const DURATION=220;
+  const BASE_FORWARD_OFFSET=150;
+  const VISUAL_LIFT=-30;
+  const PAD=60;
+  const DPR=Math.min(2,Math.max(1,window.devicePixelRatio||1));
   const nativeAppendChild=scene.appendChild.bind(scene);
   const meleePreview=document.getElementById('meleePreview');
-  const surfacePools={SWORD:[],WIDE:[],LONG:[]};
+  const pools={SWORD:[],WIDE:[],LONG:[]};
   let activeEffects=0;
+
+  const bounds=Object.freeze({
+    SWORD:Object.freeze({minX:-TILE*.5-PAD,maxX:TILE*.5+PAD,minY:-TILE*.5-PAD,maxY:TILE*.5+PAD}),
+    WIDE:Object.freeze({minX:-TILE*.5-PAD,maxX:TILE*.5+PAD,minY:-TILE*1.5-PAD,maxY:TILE*1.5+PAD}),
+    LONG:Object.freeze({minX:-TILE*.5-PAD,maxX:TILE*1.5+PAD,minY:-TILE*.5-PAD,maxY:TILE*.5+PAD})
+  });
 
   const style=document.createElement('style');
   style.id='swordEffectDirectStyle';
   style.textContent=`
-    #scene .swordSlashFxLayer{position:absolute;left:0;top:0;width:${CSS_WIDTH}px;height:${CSS_HEIGHT}px;z-index:9;pointer-events:none;opacity:0;overflow:visible;transform-origin:50% 50%;will-change:transform,opacity;backface-visibility:hidden}
-    #scene .swordSlashFx{display:block;width:${CSS_WIDTH}px;height:${CSS_HEIGHT}px;background:transparent!important;border:0!important;box-shadow:none!important;transform-origin:32px 50%;will-change:transform;backface-visibility:hidden}
+    #scene .swordSlashFxLayer{position:absolute;left:0;top:0;width:0;height:0;z-index:9;pointer-events:none;opacity:0;overflow:visible;will-change:opacity;backface-visibility:hidden}
+    #scene .swordSlashFxCanvas{position:absolute;display:block;background:transparent!important;border:0!important;box-shadow:none!important;will-change:transform;backface-visibility:hidden}
   `;
   document.head.appendChild(style);
 
   function currentContext(){return window.BattleNetworkCombatRange?.getLastAttackContext?.()||null}
+
   function currentSlashType(){
     const context=currentContext();
     if(context?.sourceType==='CHIP'){
@@ -35,172 +48,216 @@
     return null;
   }
 
-  function projectedDirection(){
-    const direction=currentContext()?.shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0};
-    let dx=Number(direction.x),dy=Number(direction.y);
-    if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.hypot(dx,dy)<.0001){dx=1;dy=0}
-    const worldLength=Math.hypot(dx,dy)||1;
-    dx/=worldLength;dy/=worldLength;
-    const sx=(dx-dy)*PX,sy=(dx+dy)*PY;
-    const projectedLength=Math.hypot(sx,sy)||1;
-    const directionScale=Math.max(.5,Math.min(1,projectedLength/MAX_PROJECTED_LENGTH));
+  function normalizeDirection(direction){
+    let x=Number(direction?.x),y=Number(direction?.y);
+    if(!Number.isFinite(x)||!Number.isFinite(y)||Math.hypot(x,y)<.0001){x=1;y=0}
+    const length=Math.hypot(x,y)||1;
+    return {x:x/length,y:y/length};
+  }
+
+  function projectionConstants(){
+    const world=Number(FIELD.WORLD_SIZE)||3600;
+    const width=scene.clientWidth||5184;
+    const height=scene.clientHeight||2592;
+    return {px:width/(world*2),py:height/(world*2),width,height,world};
+  }
+
+  function projectWorld(worldX,worldY){
+    const p=projectionConstants();
     return {
-      angle:Math.atan2(sy,sx)*180/Math.PI,
-      x:sx/projectedLength,
-      y:sy/projectedLength,
-      worldX:dx,
-      worldY:dy,
-      scaleX:SWORD_SCALE_X*directionScale,
-      directionScale
+      x:(worldX-worldY)*p.px+p.width/2,
+      y:(worldX+worldY)*p.py
     };
   }
 
-  function bodyPath(ctx){
-    ctx.moveTo(32,86);
-    ctx.bezierCurveTo(154,91,332,102,438,126);
-    ctx.bezierCurveTo(472,134,487,149,477,166);
-    ctx.bezierCurveTo(449,208,337,236,67,229);
-    ctx.bezierCurveTo(165,206,235,181,266,155);
-    ctx.bezierCurveTo(229,124,144,101,32,86);
+  function projectedBasis(){
+    const shape=currentContext()?.shape;
+    const direction=normalizeDirection(shape?.direction||window.BattleNetworkPlayer?.getFacing?.()||{x:1,y:0});
+    let normal=shape?.normal;
+    let nx=Number(normal?.x),ny=Number(normal?.y);
+    if(!Number.isFinite(nx)||!Number.isFinite(ny)||Math.hypot(nx,ny)<.0001){nx=-direction.y;ny=direction.x}
+    const nl=Math.hypot(nx,ny)||1;
+    nx/=nl;ny/=nl;
+    const p=projectionConstants();
+    return {
+      direction,
+      normal:{x:nx,y:ny},
+      a:(direction.x-direction.y)*p.px,
+      b:(direction.x+direction.y)*p.py,
+      c:(nx-ny)*p.px,
+      d:(nx+ny)*p.py
+    };
+  }
+
+  function forwardWorldDistance(){
+    const review=Number(window.BattleNetworkSwordOffsetReview?.getForwardOffset?.());
+    const reviewOffset=Number.isFinite(review)&&review>0?review:BASE_FORWARD_OFFSET;
+    return TILE*(reviewOffset/BASE_FORWARD_OFFSET);
+  }
+
+  function effectAnchor(sourceNode,basis){
+    const shape=currentContext()?.shape;
+    const originX=Number(shape?.origin?.x),originY=Number(shape?.origin?.y);
+    if(Number.isFinite(originX)&&Number.isFinite(originY)){
+      const forward=forwardWorldDistance();
+      const point=projectWorld(
+        originX+basis.direction.x*forward,
+        originY+basis.direction.y*forward
+      );
+      return {x:point.x,y:point.y+VISUAL_LIFT};
+    }
+    const width=parseFloat(sourceNode?.style?.width)||160;
+    const height=parseFloat(sourceNode?.style?.height)||90;
+    const left=parseFloat(sourceNode?.style?.left)||0;
+    const top=parseFloat(sourceNode?.style?.top)||0;
+    return {x:left+width/2,y:top+height/2};
+  }
+
+  function swordGeometry(type){
+    const left=-TILE*.5;
+    const r=TILE*.03;
+    const yTop=-TILE*.42;
+    const yBottom=TILE*.42;
+    const yCenter=0;
+    const xInner=left+TILE*.38;
+
+    if(type==='LONG'){
+      const xTip=left+TILE*1.94;
+      return {left,r,yTop,yBottom,yCenter,xInner,xTip,xOuter:left+(xTip-left)*.80,upperTipX:left+r,lowerTipX:left+r*.65,yScale:1,pointed:false};
+    }
+    if(type==='WIDE'){
+      return {left,r,yTop,yBottom,yCenter,xInner,xTip:left+TILE*.88,xOuter:left+TILE*.76,upperTipX:left+r*.25,lowerTipX:left+r*.25,yScale:3/.84,pointed:true};
+    }
+    return {left,r,yTop,yBottom,yCenter,xInner,xTip:left+TILE*.88,xOuter:left+TILE*.76,upperTipX:left+r,lowerTipX:left+r*.65,yScale:1,pointed:false};
+  }
+
+  function modelPath(ctx,type){
+    const g=swordGeometry(type);
+    const sy=value=>value*g.yScale;
+
+    ctx.beginPath();
+    ctx.moveTo(g.upperTipX,sy(g.yTop));
+    ctx.bezierCurveTo(
+      g.xOuter,sy(g.yTop+TILE*.10),
+      g.xTip-g.r*.25,sy(-TILE*.14),
+      g.xTip,sy(-g.r*.15)
+    );
+    ctx.bezierCurveTo(
+      g.xTip+g.r*.18,sy(-g.r*.05),
+      g.xTip+g.r*.18,sy(g.r*.05),
+      g.xTip,sy(g.r*.15)
+    );
+    ctx.bezierCurveTo(
+      g.xTip-g.r*.25,sy(TILE*.14),
+      g.xOuter,sy(g.yBottom-TILE*.08),
+      g.lowerTipX,sy(g.yBottom)
+    );
+
+    if(g.pointed){
+      ctx.bezierCurveTo(
+        g.left+g.r*.55,sy(g.yBottom-g.r*.70),
+        g.left+g.r*.85,sy(g.yBottom-g.r*1.05),
+        g.left+g.r*1.25,sy(g.yBottom-g.r*1.15)
+      );
+    }else{
+      ctx.bezierCurveTo(
+        g.left+g.r*.35,sy(g.yBottom-g.r*.05),
+        g.left+g.r*.45,sy(g.yBottom-g.r*.55),
+        g.left+g.r*1.25,sy(g.yBottom-g.r*1.15)
+      );
+    }
+
+    ctx.bezierCurveTo(
+      g.xInner,sy(TILE*.25),
+      g.xInner,sy(-TILE*.25),
+      g.upperTipX,sy(g.yTop)
+    );
     ctx.closePath();
   }
 
-  function stroke(ctx,draw,color,width,alpha,blur=0){
-    ctx.save();
-    ctx.globalAlpha=alpha;
-    ctx.strokeStyle=color;
-    ctx.lineWidth=width;
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-    ctx.shadowColor='rgba(114,224,255,.95)';
-    ctx.shadowBlur=blur;
-    ctx.beginPath();
-    draw(ctx);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawSwordSlash(ctx){
-    const outer=ctx.createLinearGradient(35,92,480,190);
-    outer.addColorStop(0,'rgba(80,207,247,.10)');
-    outer.addColorStop(.20,'rgba(99,222,255,.54)');
-    outer.addColorStop(.58,'rgba(151,237,255,.78)');
-    outer.addColorStop(.84,'rgba(201,249,255,.88)');
-    outer.addColorStop(1,'rgba(132,227,255,.58)');
+  function drawModel(ctx,type){
+    const g=swordGeometry(type);
+    const verticalHalf=type==='WIDE'?TILE*1.5:TILE*.5;
+    const gradient=ctx.createLinearGradient(g.left,-verticalHalf,g.xTip,verticalHalf);
+    gradient.addColorStop(0,'rgba(0,220,255,.70)');
+    gradient.addColorStop(.40,'rgba(230,255,255,.95)');
+    gradient.addColorStop(.70,'rgba(0,240,255,.80)');
+    gradient.addColorStop(1,'rgba(0,180,255,.50)');
 
     ctx.save();
     ctx.globalAlpha=.96;
-    ctx.fillStyle=outer;
-    ctx.shadowColor='rgba(89,214,255,.88)';
-    ctx.shadowBlur=24;
-    ctx.beginPath();
-    bodyPath(ctx);
+    ctx.fillStyle=gradient;
+    ctx.shadowColor='rgba(0,220,255,.45)';
+    ctx.shadowBlur=10;
+    modelPath(ctx,type);
     ctx.fill();
     ctx.restore();
-
-    const core=ctx.createLinearGradient(72,118,458,164);
-    core.addColorStop(0,'rgba(193,249,255,.08)');
-    core.addColorStop(.48,'rgba(226,254,255,.42)');
-    core.addColorStop(.82,'rgba(250,255,255,.68)');
-    core.addColorStop(1,'rgba(218,250,255,.38)');
-    ctx.save();
-    ctx.globalAlpha=.72;
-    ctx.fillStyle=core;
-    ctx.beginPath();
-    ctx.moveTo(76,118);
-    ctx.bezierCurveTo(199,119,346,126,438,143);
-    ctx.bezierCurveTo(453,146,459,152,455,157);
-    ctx.bezierCurveTo(425,172,371,184,307,190);
-    ctx.bezierCurveTo(293,180,287,166,279,153);
-    ctx.bezierCurveTo(240,135,164,122,76,118);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    stroke(ctx,c=>{c.moveTo(45,90);c.bezierCurveTo(174,94,343,105,441,128);c.bezierCurveTo(461,133,473,142,476,151)},'rgba(247,255,255,.98)',6.8,.88,7);
-    stroke(ctx,c=>{c.moveTo(75,224);c.bezierCurveTo(191,209,320,196,438,169)},'rgba(91,216,252,.92)',4.8,.58,7);
   }
 
   function createSurface(type){
+    const b=bounds[type];
+    const cssWidth=Math.ceil(b.maxX-b.minX);
+    const cssHeight=Math.ceil(b.maxY-b.minY);
+    const originX=-b.minX;
+    const originY=-b.minY;
+
     const layer=document.createElement('div');
     layer.className='swordSlashFxLayer';
     const canvas=document.createElement('canvas');
-    canvas.className='swordSlashFx';
-    canvas.width=Math.round(CSS_WIDTH*DPR);
-    canvas.height=Math.round(CSS_HEIGHT*DPR);
-    canvas.style.width=CSS_WIDTH+'px';
-    canvas.style.height=CSS_HEIGHT+'px';
+    canvas.className='swordSlashFxCanvas';
+    canvas.width=Math.round(cssWidth*DPR);
+    canvas.height=Math.round(cssHeight*DPR);
+    canvas.style.width=cssWidth+'px';
+    canvas.style.height=cssHeight+'px';
+    canvas.style.left=-originX+'px';
+    canvas.style.top=-originY+'px';
+    canvas.style.transformOrigin=`${originX}px ${originY}px`;
+
     const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true})||canvas.getContext('2d');
-    if(ctx){ctx.setTransform(DPR,0,0,DPR,0,0);drawSwordSlash(ctx)}
+    if(ctx){
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.translate(originX,originY);
+      drawModel(ctx,type);
+    }
+
     layer.appendChild(canvas);
     nativeAppendChild(layer);
-    const surface={type,layer,canvas,busy:false,fade:null,grow:null};
-    surfacePools[type].push(surface);
+    const surface={type,layer,canvas,busy:false,fade:null};
+    pools[type].push(surface);
     return surface;
   }
 
-  createSurface('SWORD');
-  createSurface('SWORD');
-  for(let i=0;i<6;i++)createSurface('WIDE');
-  createSurface('LONG');
-  createSurface('LONG');
-
-  function acquireSurface(type){return surfacePools[type]?.find(surface=>!surface.busy)||surfacePools[type]?.[0]||null}
-  function cancelAnimation(animation){if(animation){animation.onfinish=null;animation.oncancel=null;animation.cancel()}}
-
-  function attackWidthOffsets(type,projection){
-    if(type!=='WIDE')return [{x:0,y:0,lane:0}];
-    const shape=currentContext()?.shape;
-    const tileWorld=Number(FIELD.toWorldDistance?.(1));
-    const widthWorld=Number(shape?.widthWorld);
-    if(!(tileWorld>0)||!(widthWorld>0))return [{x:0,y:0,lane:0}];
-
-    const laneCount=Math.max(1,Math.round(widthWorld/tileWorld));
-    const perpendicularX=-projection.worldY;
-    const perpendicularY=projection.worldX;
-    const firstLane=-(laneCount-1)/2;
-    const offsets=[];
-    for(let i=0;i<laneCount;i++){
-      const lane=firstLane+i;
-      const worldOffsetX=perpendicularX*tileWorld*lane;
-      const worldOffsetY=perpendicularY*tileWorld*lane;
-      offsets.push({
-        x:(worldOffsetX-worldOffsetY)*PX,
-        y:(worldOffsetX+worldOffsetY)*PY,
-        lane
-      });
-    }
-    return offsets;
+  for(const type of ['SWORD','WIDE','LONG']){
+    createSurface(type);
+    createSurface(type);
   }
 
-  function renderLaneSlash(sourceNode,type,projection,laneOffset){
-    const width=parseFloat(sourceNode.style.width)||160;
-    const height=parseFloat(sourceNode.style.height)||90;
-    const left=parseFloat(sourceNode.style.left)||0;
-    const top=parseFloat(sourceNode.style.top)||0;
-    const centerX=left+width/2;
-    const centerY=top+height/2;
+  function acquireSurface(type){return pools[type]?.find(surface=>!surface.busy)||pools[type]?.[0]||null}
+  function cancelAnimation(animation){if(animation){animation.onfinish=null;animation.oncancel=null;animation.cancel()}}
+
+  function matrixCss(basis){
+    return `matrix(${basis.a.toFixed(6)},${basis.b.toFixed(6)},${basis.c.toFixed(6)},${basis.d.toFixed(6)},0,0)`;
+  }
+
+  function renderSlashFx(sourceNode,type){
     const surface=acquireSurface(type);
     if(!surface)return;
 
     cancelAnimation(surface.fade);
-    cancelAnimation(surface.grow);
-    surface.fade=null;surface.grow=null;surface.busy=true;
+    surface.fade=null;
+    surface.busy=true;
 
-    const x=centerX-CSS_WIDTH/2+projection.x*FORWARD_OFFSET+laneOffset.x;
-    const y=centerY-CSS_HEIGHT/2-8+projection.y*FORWARD_OFFSET+laneOffset.y;
-    const scaleMultiplier=type==='LONG'?LONG_SCALE_X_MULTIPLIER:1;
-    const targetScaleX=projection.scaleX*scaleMultiplier;
-    const startScaleX=Math.max(.04,targetScaleX*.18);
+    const basis=projectedBasis();
+    const anchor=effectAnchor(sourceNode,basis);
+    const transform=matrixCss(basis);
 
     surface.layer.dataset.effectType=type;
-    surface.layer.dataset.forwardOffset=String(FORWARD_OFFSET);
-    surface.layer.dataset.directionScale=projection.directionScale.toFixed(3);
-    surface.layer.dataset.attackWidthLane=String(laneOffset.lane);
-    surface.layer.dataset.scaleMultiplier=String(scaleMultiplier);
-    surface.layer.style.transform=`translate3d(${x}px,${y}px,0) rotate(${projection.angle.toFixed(2)}deg)`;
+    surface.layer.dataset.projection='FIELD_WORLD_BASIS';
+    surface.layer.dataset.forwardWorld=forwardWorldDistance().toFixed(2);
+    surface.layer.style.left=anchor.x+'px';
+    surface.layer.style.top=anchor.y+'px';
     surface.layer.style.opacity='0';
-    surface.canvas.style.transform=`scaleX(${targetScaleX})`;
+    surface.canvas.style.transform=transform;
 
     activeEffects++;
     if(meleePreview)meleePreview.style.opacity='0';
@@ -210,38 +267,26 @@
       if(finished)return;
       finished=true;
       surface.layer.style.opacity='0';
-      surface.canvas.style.transform=`scaleX(${targetScaleX})`;
+      surface.canvas.style.transform=transform;
       surface.busy=false;
       surface.fade=null;
-      surface.grow=null;
       activeEffects=Math.max(0,activeEffects-1);
       if(activeEffects===0&&meleePreview)meleePreview.style.opacity='';
     }
 
-    if(typeof surface.layer.animate==='function'&&typeof surface.canvas.animate==='function'){
-      surface.grow=surface.canvas.animate([
-        {transform:`scaleX(${startScaleX})`},
-        {transform:`scaleX(${targetScaleX})`}
-      ],{duration:DURATION*.24,fill:'forwards',easing:'cubic-bezier(.22,1,.36,1)'});
+    if(typeof surface.layer.animate==='function'){
       surface.fade=surface.layer.animate([
         {opacity:0,offset:0},
-        {opacity:1,offset:.04},
-        {opacity:1,offset:.68},
+        {opacity:1,offset:.08},
+        {opacity:1,offset:.62},
         {opacity:0,offset:1}
       ],{duration:DURATION,fill:'forwards',easing:'linear'});
       surface.fade.onfinish=finish;
       surface.fade.oncancel=()=>{if(!finished)finish()};
     }else{
       surface.layer.style.opacity='1';
-      surface.canvas.style.transform=`scaleX(${targetScaleX})`;
       setTimeout(finish,DURATION);
     }
-  }
-
-  function renderSlashFx(sourceNode,type){
-    const projection=projectedDirection();
-    const offsets=attackWidthOffsets(type,projection);
-    offsets.forEach(offset=>renderLaneSlash(sourceNode,type,projection,offset));
   }
 
   scene.appendChild=function(node){
@@ -253,12 +298,11 @@
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V14_CLEAN_HIGHLIGHT_LONG_X2',
-    scaleX:SWORD_SCALE_X,
-    longScaleXMultiplier:LONG_SCALE_X_MULTIPLIER,
-    forwardOffset:FORWARD_OFFSET,
-    wideLayout:'ATTACK_WIDTH_LANES',
-    getProjection:()=>projectedDirection(),
-    renderer:'PREPAINTED_TRANSFORM_OPACITY'
+    version:'DIRECT_CANVAS_V15_APPROVED_HEAVY_BOLD_PROJECTED',
+    handlesWide:true,
+    forwardOffsetMode:'WORLD_TILE_FROM_REVIEW_OFFSET',
+    projection:'FIELD_WORLD_BASIS_MATRIX',
+    renderer:'PREPAINTED_TRANSFORM_OPACITY',
+    durationMs:DURATION
   });
 })();
