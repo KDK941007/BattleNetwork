@@ -30,7 +30,7 @@
   function getKokoroState(){return kokoroState}
 
   renderHealth();
-  setKokoroState('NORMAL');
+  setKokoroState('FULL_SYNCHRO');
   const unsubscribe=typeof HEALTH.subscribe==='function'?HEALTH.subscribe(renderHealth):null;
 
   window.BattleNetworkPlayerHud=Object.freeze({
