@@ -8,7 +8,7 @@
   panel.id='kokoroTestControls';
   panel.setAttribute('role','group');
   panel.setAttribute('aria-label','ココロ値テスト');
-  panel.style.cssText='display:flex;flex-direction:column;gap:3px;pointer-events:auto;max-width:120px';
+  panel.style.cssText='display:flex;flex-direction:column;gap:4px;pointer-events:auto;max-width:170px';
 
   const caption=document.createElement('span');
   caption.textContent='ココロ値';
@@ -20,8 +20,22 @@
   value.style.cssText='min-width:56px;text-align:center;color:#fff;font-size:18px;font-weight:900;line-height:1.1;text-shadow:0 1px 2px #000';
   panel.appendChild(value);
 
+  const slider=document.createElement('input');
+  slider.type='range';
+  slider.min='0';
+  slider.max='255';
+  slider.step='1';
+  slider.setAttribute('aria-label','ココロ値');
+  slider.style.cssText='width:160px;max-width:100%;touch-action:auto';
+  slider.addEventListener('input',event=>{
+    event.stopPropagation();
+    api.setKokoroValue(Number(slider.value));
+    sync();
+  });
+  panel.appendChild(slider);
+
   const controls=document.createElement('div');
-  controls.style.cssText='display:flex;gap:4px';
+  controls.style.cssText='display:flex;gap:4px;justify-content:center';
   panel.appendChild(controls);
 
   function makeButton(label,delta,ariaLabel){
@@ -45,11 +59,19 @@
     const current=api.getKokoroValue();
     value.value=String(current);
     value.textContent=String(current);
+    slider.value=String(current);
   }
 
-  for(const type of ['pointerdown','pointerup','touchstart','touchend','keydown','keyup']){
+  for(const type of ['pointerdown','pointerup','touchstart','touchend','keydown','keyup','wheel']){
     panel.addEventListener(type,event=>event.stopPropagation());
   }
+
+  slider.addEventListener('wheel',event=>{
+    event.preventDefault();
+    const delta=event.deltaY>0?-1:1;
+    api.setKokoroValue(api.getKokoroValue()+delta);
+    sync();
+  },{passive:false});
 
   hud.appendChild(panel);
   sync();
