@@ -1,5 +1,5 @@
 (()=>{
-  const INITIAL_MAX_HP=999;
+  const INITIAL_MAX_HP=100;
   let state={maxHp:INITIAL_MAX_HP,hp:INITIAL_MAX_HP};
   const listeners=new Set();
 
