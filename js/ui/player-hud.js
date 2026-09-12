@@ -8,6 +8,7 @@
 
   let kokoroState='NORMAL';
   let kokoroValue=128;
+  const kokoroListeners=new Set();
 
   function renderHealth(snapshot=HEALTH.getSnapshot()){
     if(snapshot?.isConfigured){
@@ -21,36 +22,44 @@
     }
   }
 
+  function getKokoroSnapshot(){return Object.freeze({value:kokoroValue,state:kokoroState})}
+  function emitKokoro(){const snapshot=getKokoroSnapshot();kokoroListeners.forEach(listener=>{try{listener(snapshot)}catch(error){console.error('BattleNetworkPlayerHud kokoro listener failed.',error)}});return snapshot}
+  function setStateRaw(next){kokoroState=next;kokoro.dataset.state=next}
+
   function setKokoroState(state){
     const next=String(state||'NORMAL').toUpperCase();
-    kokoroState=next;
-    kokoro.dataset.state=next;
+    if(next===kokoroState)return kokoroState;
+    setStateRaw(next);
+    emitKokoro();
     return kokoroState;
   }
 
   function getKokoroState(){return kokoroState}
 
-  function applyKokoroStateFromValue(value){
-    if(value>=1&&value<=64){
-      setKokoroState('ANXIOUS');
-    }else if(value>=65&&value<=254){
-      setKokoroState('NORMAL');
-    }
+  function stateFromValue(value){
+    if(value>=1&&value<=64)return 'ANXIOUS';
+    if(value>=65&&value<=254)return 'NORMAL';
+    return null;
   }
 
   function setKokoroValue(value){
     const numeric=Number(value);
     if(!Number.isFinite(numeric))return kokoroValue;
-    kokoroValue=Math.max(0,Math.min(255,Math.round(numeric)));
-    applyKokoroStateFromValue(kokoroValue);
+    const nextValue=Math.max(0,Math.min(255,Math.round(numeric)));
+    const nextState=stateFromValue(nextValue);
+    const changed=nextValue!==kokoroValue||(nextState!==null&&nextState!==kokoroState);
+    kokoroValue=nextValue;
+    if(nextState!==null)setStateRaw(nextState);
+    if(changed)emitKokoro();
     return kokoroValue;
   }
 
   function getKokoroValue(){return kokoroValue}
+  function subscribeKokoro(listener){if(typeof listener!=='function')return()=>{};kokoroListeners.add(listener);listener(getKokoroSnapshot());return()=>kokoroListeners.delete(listener)}
 
   renderHealth();
-  setKokoroState('NORMAL');
-  setKokoroValue(128);
+  setStateRaw('NORMAL');
+  kokoroValue=128;
   const unsubscribe=typeof HEALTH.subscribe==='function'?HEALTH.subscribe(renderHealth):null;
 
   window.BattleNetworkPlayerHud=Object.freeze({
@@ -59,6 +68,8 @@
     getKokoroState,
     setKokoroValue,
     getKokoroValue,
-    destroy(){if(typeof unsubscribe==='function')unsubscribe()}
+    getKokoroSnapshot,
+    subscribeKokoro,
+    destroy(){if(typeof unsubscribe==='function')unsubscribe();kokoroListeners.clear()}
   });
 })();
