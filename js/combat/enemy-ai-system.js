@@ -41,6 +41,12 @@
   function resume(reason='MANUAL'){const key=normalizeId(reason)||'MANUAL';pauseReasons.delete(key);return getSnapshot()}
   function setChannelEnabled(channel,enabled=true){const key=normalizeChannel(channel);if(enabled)disabledChannels.delete(key);else{disabledChannels.add(key);cancelChannel(key)}return getSnapshot()}
   function isChannelEnabled(channel){return !disabledChannels.has(normalizeChannel(channel))}
+  function getBehaviorSnapshot(enemyId,channel='ATTACK'){
+    const assignment=assignments.get(assignmentKey(enemyId,normalizeChannel(channel)));
+    if(!assignment)return null;
+    const snapshot=call(assignment.controller,'getSnapshot');
+    return snapshot&&typeof snapshot==='object'?snapshot:null;
+  }
   function getSnapshot(){const activeEnemyIds=new Set(),activeChannels=[];for(const assignment of assignments.values()){if(!isBusy(assignment))continue;activeEnemyIds.add(assignment.enemyId);activeChannels.push(Object.freeze({enemyId:assignment.enemyId,channel:assignment.channel,behaviorId:assignment.behaviorId}))}return Object.freeze({schedulerPolicy:'INDEPENDENT_PER_ENEMY_CHANNEL',running,paused:isSystemPaused(),pauseReasons:Object.freeze([...pauseReasons]),disabledChannels:Object.freeze([...disabledChannels]),activeEnemyIds:Object.freeze([...activeEnemyIds]),activeChannels:Object.freeze(activeChannels),assignments:Object.freeze([...assignments.values()].map(item=>Object.freeze({enemyId:item.enemyId,behaviorId:item.behaviorId,channel:item.channel}))),registeredBehaviors:Object.freeze([...registry.entries()].map(([behaviorId,item])=>Object.freeze({behaviorId,channel:item.channel})))})}
   function updateAssignment(assignment,now,dt){const enemy=ENEMY.getEnemy(assignment.enemyId);if(!enemy){destroyByKey(assignmentKey(assignment.enemyId,assignment.channel));return}if(disabledChannels.has(assignment.channel)){cancelAssignment(assignment,now);return}if(isBusy(assignment)){call(assignment.controller,'update',now,dt);return}if(enemy.isDefeated)return;if(call(assignment.controller,'canStart',now)!==true)return;call(assignment.controller,'start',now)}
   function loop(now){
@@ -54,6 +60,6 @@
   function stop(){if(!running)return;running=false;cancelAll()}
   function start(){if(running)return;running=true;lastFrame=performance.now();requestAnimationFrame(loop)}
 
-  window.BattleNetworkEnemyAI=Object.freeze({registerBehavior,assignBehavior,detachBehavior:destroyAssignment,clearAssignments,pause,resume,setChannelEnabled,isChannelEnabled,getSnapshot,start,stop});
+  window.BattleNetworkEnemyAI=Object.freeze({registerBehavior,assignBehavior,detachBehavior:destroyAssignment,clearAssignments,pause,resume,setChannelEnabled,isChannelEnabled,getBehaviorSnapshot,getSnapshot,start,stop});
   requestAnimationFrame(loop);
 })();
