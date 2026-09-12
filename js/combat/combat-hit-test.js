@@ -3,6 +3,8 @@
   const ENEMY=window.BattleNetworkEnemy;
   const DATA=window.BattleNetworkData;
   const FIELD=window.BattleNetworkField;
+  const MASTER=window.BattleNetworkMaster;
+  const KOKORO=window.BattleNetworkKokoro;
   if(!RANGE)throw new Error('BattleNetworkCombatHitTest: range geometry is not loaded.');
   if(!ENEMY)throw new Error('BattleNetworkCombatHitTest: enemy foundation is not loaded.');
   if(!DATA)throw new Error('BattleNetworkCombatHitTest: master data is not loaded.');
@@ -14,8 +16,30 @@
   function trace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
   function behaviorParam(behaviorId,paramId,fallback){const row=DATA.BEHAVIOR_PARAM_MASTER?.find(item=>item.behaviorId===behaviorId&&item.paramId===paramId);const value=Number(row?.defaultValue);return Number.isFinite(value)?value:fallback}
   function testRange(shape){return ENEMY.getHitEnemies(shape)}
-  function damageAndFlash(enemy,damage){const value=Number(damage);const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;ENEMY.debugFlash(enemy.id);return result}
-  function flashHits(shape,damage=null){const hits=testRange(shape);hits.forEach(enemy=>damageAndFlash(enemy,damage));return hits}
+  function chipBasePower(attack,damage){
+    const explicit=Number(attack?.kokoroBasePower);
+    if(Number.isFinite(explicit)&&explicit>0)return explicit;
+    const value=MASTER?.getChipValues?.(attack?.sourceId)?.find(item=>item.valueTypeId==='DAMAGE');
+    const masterPower=Number(value?.value);
+    if(Number.isFinite(masterPower)&&masterPower>0)return masterPower;
+    const fallback=Number(damage);
+    return Number.isFinite(fallback)&&fallback>0?fallback:null;
+  }
+  function applyChipKokoro(attack,damage,result){
+    if(attack?.sourceType!=='CHIP'||result?.applied!==true||!(Number(result.amount)>0)||!KOKORO?.applyChipHit)return null;
+    return KOKORO.applyChipHit({
+      basePower:chipBasePower(attack,damage),
+      damage:Number(damage),
+      sourceType:'CHIP',
+      sourceId:attack.sourceId??null,
+      attackId:attack.attackId??attack.sourceId??null,
+      actionToken:attack.actionToken??attack.kokoroActionToken??attack.shotToken,
+      kokoro:attack.kokoro,
+      excludeKokoro:attack.excludeKokoro===true
+    });
+  }
+  function damageAndFlash(enemy,damage,attack=null){const value=Number(damage);const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;if(result)applyChipKokoro(attack,value,result);ENEMY.debugFlash(enemy.id);return result}
+  function flashHits(shape,damage=null,attack=null){const hits=testRange(shape);hits.forEach(enemy=>damageAndFlash(enemy,damage,attack));return hits}
   function rayEntryDistance(origin,direction,bounds,padding=0){const left=bounds.left-padding,right=bounds.right+padding,top=bounds.top-padding,bottom=bounds.bottom+padding;let near=0,far=Infinity;for(const [o,d,min,max] of [[origin.x,direction.x,left,right],[origin.y,direction.y,top,bottom]]){if(Math.abs(d)<1e-9){if(o<min||o>max)return null;continue}let a=(min-o)/d,b=(max-o)/d;if(a>b)[a,b]=[b,a];near=Math.max(near,a);far=Math.min(far,b);if(near>far)return null}return far>=0?Math.max(0,near):null}
   function getFirstCannonHit(input){
     const attack=input?.shape?input:{shape:input};const shape=attack.shape;
@@ -38,7 +62,7 @@
     const hitTile=FIELD.worldToTile(enemy.x,enemy.y),step=eightDirectionStep(direction),row=hitTile.row+step.y,col=hitTile.col+step.x;
     return FIELD.getTile(row,col);
   }
-  function triggerVulcanInduction(tile,damage,excludeEnemyId=null){
+  function triggerVulcanInduction(tile,damage,excludeEnemyId=null,attack=null){
     if(!tile)return Object.freeze([]);
     const hits=[];
     for(const occupantId of FIELD.getOccupantsAt?.(tile.row,tile.col)||[]){
@@ -48,7 +72,7 @@
       if(enemyId===excludeEnemyId)continue;
       const enemy=ENEMY.getEnemy(enemyId);
       if(!enemy||enemy.isDefeated)continue;
-      damageAndFlash(enemy,damage);hits.push(enemyId);
+      damageAndFlash(enemy,damage,attack);hits.push(enemyId);
     }
     window.dispatchEvent(new CustomEvent('battlenetwork:vulcan-induction',{detail:Object.freeze({row:tile.row,col:tile.col,damage:Number(damage)||0,enemyIds:Object.freeze(hits.slice())})}));
     return Object.freeze(hits);
@@ -59,14 +83,14 @@
     setTimeout(()=>{
       if(spreadGun)trace('SPREAD:directHit:start');
       const inductionTile=vulcan1?getVulcanInductionTile(first.enemy,attack.shape.direction):null;
-      const result=damageAndFlash(first.enemy,attack.damage);
+      const result=damageAndFlash(first.enemy,attack.damage,attack);
       if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);
-      if(vulcan1&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id);
+      if(vulcan1&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id,attack);
       if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,first.enemy);trace('SPREAD:directHit:end')}
     },first.distance/speed*1000)
   }
-  function scheduleBomb(attack){const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);setTimeout(()=>flashHits(attack.shape,attack.damage),Math.max(0,delay)*1000)}
-  function resolveBehavior(input){if(!input)return;const attack=input.shape?input:{shape:input,damage:null};const shape=attack.shape;if(!shape)return;if(isSpreadGun(attack))trace('SPREAD:attackObserved');if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage);return}if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack)}
+  function scheduleBomb(attack){const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);setTimeout(()=>flashHits(attack.shape,attack.damage,attack),Math.max(0,delay)*1000)}
+  function resolveBehavior(input){if(!input)return;const attack=input.shape?input:{shape:input,damage:null};const shape=attack.shape;if(!shape)return;if(isSpreadGun(attack))trace('SPREAD:attackObserved');if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage,attack);return}if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack)}
   function observeAttackRange(){const combatRange=window.BattleNetworkCombatRange;const attack=combatRange?.getLastAttackContext?.()||null;if(attack&&attack!==lastObservedAttack){lastObservedAttack=attack;resolveBehavior(attack)}requestAnimationFrame(observeAttackRange)}
   window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior,getFirstCannonHit,getVulcanInductionTile,triggerVulcanInduction});requestAnimationFrame(observeAttackRange);
 })();
