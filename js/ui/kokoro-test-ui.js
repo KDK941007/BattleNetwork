@@ -30,7 +30,6 @@
   slider.addEventListener('input',event=>{
     event.stopPropagation();
     api.setKokoroValue(Number(slider.value));
-    sync();
   });
   panel.appendChild(slider);
 
@@ -47,7 +46,6 @@
     button.addEventListener('click',event=>{
       event.stopPropagation();
       api.setKokoroValue(api.getKokoroValue()+delta);
-      sync();
     });
     controls.appendChild(button);
   }
@@ -55,8 +53,8 @@
   makeButton('−',-1,'ココロ値を1下げる');
   makeButton('+',1,'ココロ値を1上げる');
 
-  function sync(){
-    const current=api.getKokoroValue();
+  function sync(snapshot){
+    const current=Number.isFinite(Number(snapshot?.value))?Number(snapshot.value):api.getKokoroValue();
     value.value=String(current);
     value.textContent=String(current);
     slider.value=String(current);
@@ -70,15 +68,15 @@
     event.preventDefault();
     const delta=event.deltaY>0?-1:1;
     api.setKokoroValue(api.getKokoroValue()+delta);
-    sync();
   },{passive:false});
 
   hud.appendChild(panel);
-  sync();
+  const unsubscribe=typeof api.subscribeKokoro==='function'?api.subscribeKokoro(sync):null;
+  if(!unsubscribe)sync();
 
   window.BattleNetworkKokoroTestUi=Object.freeze({
     getValue:()=>api.getKokoroValue(),
-    setValue(next){const result=api.setKokoroValue(next);sync();return result},
-    destroy(){panel.remove();delete window.BattleNetworkKokoroTestUi}
+    setValue(next){return api.setKokoroValue(next)},
+    destroy(){if(typeof unsubscribe==='function')unsubscribe();panel.remove();delete window.BattleNetworkKokoroTestUi}
   });
 })();
