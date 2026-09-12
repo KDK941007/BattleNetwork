@@ -37,6 +37,7 @@
   function getKokoroState(){return kokoroState}
 
   function stateFromValue(value){
+    if(value===255)return 'FULL_SYNCHRO';
     if(value>=1&&value<=64)return 'ANXIOUS';
     if(value>=65&&value<=254)return 'NORMAL';
     return null;
