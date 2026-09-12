@@ -22,7 +22,7 @@
       button.style.background=active?'#176078':'#10232e';
     }
   }
-  for(const [id,label] of [['NORMAL','平常'],['FULL_SYNCHRO','フルシンクロ'],['ANXIOUS','不安']]){
+  for(const [id,label] of [['NORMAL','平常'],['FULL_SYNCHRO','フルシンクロ'],['ANXIOUS','不安'],['ANGRY','怒り'],['EVIL','悪']]){
     const button=document.createElement('button');
     button.type='button';
     button.textContent=label;

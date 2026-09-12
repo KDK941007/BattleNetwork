@@ -11,3 +11,5 @@
 @media (max-height:390px){.playerStatusHud{left:3px;top:4px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroWindow{width:68px;height:28px}.playerHpValue{font-size:21px}}
 .kokoroWindow[data-state="FULL_SYNCHRO"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-fullsynchro.webp?v=3');background-position:center 60%}
 .kokoroWindow[data-state="ANXIOUS"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-anxious.webp')}
+.kokoroWindow[data-state="ANGRY"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-angry.webp')}
+.kokoroWindow[data-state="EVIL"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-evil.webp')}
