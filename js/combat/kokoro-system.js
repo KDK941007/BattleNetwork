@@ -6,8 +6,8 @@
 
   const DEFAULT_CONFIG=Object.freeze({
     profiles:Object.freeze({LIGHT:.75,NORMAL:1,HEAVY:1.25,MULTI:.65}),
-    enemy:Object.freeze({enabled:true,base:8,damageRate:.25,maxPerAction:50,defaultProfile:'NORMAL'}),
-    chip:Object.freeze({enabled:true,base:10,damageRate:.5,maxPerAction:50,defaultProfile:'NORMAL'}),
+    enemy:Object.freeze({enabled:true,base:0,damageRate:.25,maxPerAction:50,defaultProfile:'NORMAL'}),
+    chip:Object.freeze({enabled:true,base:0,damageRate:.5,maxPerAction:50,defaultProfile:'NORMAL'}),
     support:Object.freeze({enabled:false,base:0,damageRate:0,maxPerAction:50,defaultProfile:'NORMAL'})
   });
 
