@@ -2,9 +2,9 @@
   const IMAGE_EXT=/\.(?:png|webp|jpe?g|gif|avif|svg)(?:[?#].*)?$/i;
   const pending=new Map();
 
-  function absoluteUrl(src){
+  function absoluteUrl(src,base=document.baseURI){
     if(!src||typeof src!=='string')return null;
-    try{return new URL(src,document.baseURI).href}catch{return null}
+    try{return new URL(src,base).href}catch{return null}
   }
 
   function preloadOne(src){
@@ -27,31 +27,33 @@
   }
 
   function preload(urls){
-    const unique=[...new Set((urls||[]).map(absoluteUrl).filter(Boolean))];
+    const unique=[...new Set((urls||[]).map(src=>absoluteUrl(src)).filter(Boolean))];
     return Promise.all(unique.map(preloadOne));
   }
 
-  function urlsFromCssText(text){
+  function urlsFromCssText(text,base=document.baseURI){
     const urls=[];
     const regex=/url\(\s*(["']?)(.*?)\1\s*\)/g;
     let match;
     while((match=regex.exec(String(text||'')))){
       const src=match[2];
-      if(src&&!src.startsWith('data:')&&IMAGE_EXT.test(src))urls.push(src);
+      if(!src||src.startsWith('data:'))continue;
+      const absolute=absoluteUrl(src,base);
+      if(absolute&&IMAGE_EXT.test(absolute))urls.push(absolute);
     }
     return urls;
   }
 
   function collectCssImageUrls(){
     const urls=[];
-    const visitRules=rules=>{
+    const visitRules=(rules,base)=>{
       for(const rule of rules||[]){
-        if(rule.cssRules){visitRules(rule.cssRules);continue}
-        urls.push(...urlsFromCssText(rule.cssText));
+        if(rule.cssRules){visitRules(rule.cssRules,rule.href||base);continue}
+        urls.push(...urlsFromCssText(rule.cssText,base));
       }
     };
     for(const sheet of document.styleSheets){
-      try{visitRules(sheet.cssRules)}catch{}
+      try{visitRules(sheet.cssRules,sheet.href||document.baseURI)}catch{}
     }
     return urls;
   }
@@ -72,7 +74,7 @@
         if(srcset)srcset.split(',').forEach(part=>{const src=part.trim().split(/\s+/)[0];if(src)urls.push(src)});
       }
       const style=element.getAttribute?.('style');
-      if(style)urls.push(...urlsFromCssText(style));
+      if(style)urls.push(...urlsFromCssText(style,document.baseURI));
     }
     return urls;
   }
