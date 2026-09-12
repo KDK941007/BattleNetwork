@@ -1,48 +1,62 @@
 (()=>{
-  // Temporary visual test controls. Remove this file and its script tag after testing.
+  // Temporary kokoro value test controls. Remove this file and its script tag after testing.
   const api=window.BattleNetworkPlayerHud;
   const hud=document.getElementById('playerStatusHud');
-  const kokoro=document.getElementById('kokoroWindow');
-  if(!api||!hud||!kokoro||document.getElementById('kokoroTestControls'))return;
+  if(!api||!hud||typeof api.getKokoroValue!=='function'||typeof api.setKokoroValue!=='function'||document.getElementById('kokoroTestControls'))return;
+
   const panel=document.createElement('div');
   panel.id='kokoroTestControls';
   panel.setAttribute('role','group');
-  panel.setAttribute('aria-label','ココロ表示テスト');
+  panel.setAttribute('aria-label','ココロ値テスト');
   panel.style.cssText='display:flex;flex-direction:column;gap:3px;pointer-events:auto;max-width:120px';
+
   const caption=document.createElement('span');
-  caption.textContent='ココロ表示テスト';
+  caption.textContent='ココロ値';
   caption.style.cssText='font-size:10px;color:#fff;text-shadow:0 1px 2px #000';
   panel.appendChild(caption);
-  const buttons=[];
-  function sync(){
-    const state=api.getKokoroState();
-    for(const [button,id] of buttons){
-      const active=state===id;
-      button.setAttribute('aria-pressed',String(active));
-      button.style.background=active?'#176078':'#10232e';
-    }
-  }
-  for(const [id,label] of [['NORMAL','平常'],['FULL_SYNCHRO','フルシンクロ'],['ANXIOUS','不安'],['ANGRY','怒り'],['EVIL','悪']]){
+
+  const value=document.createElement('output');
+  value.setAttribute('aria-live','polite');
+  value.style.cssText='min-width:56px;text-align:center;color:#fff;font-size:18px;font-weight:900;line-height:1.1;text-shadow:0 1px 2px #000';
+  panel.appendChild(value);
+
+  const controls=document.createElement('div');
+  controls.style.cssText='display:flex;gap:4px';
+  panel.appendChild(controls);
+
+  function makeButton(label,delta,ariaLabel){
     const button=document.createElement('button');
     button.type='button';
     button.textContent=label;
-    button.style.cssText='min-height:28px;padding:3px 7px;border:1px solid #64ddff;border-radius:4px;color:#fff;font-size:11px;touch-action:manipulation';
+    button.setAttribute('aria-label',ariaLabel);
+    button.style.cssText='min-width:40px;min-height:30px;padding:3px 8px;border:1px solid #64ddff;border-radius:4px;background:#10232e;color:#fff;font-size:14px;font-weight:900;touch-action:manipulation';
     button.addEventListener('click',event=>{
       event.stopPropagation();
-      api.setKokoroState(id);
+      api.setKokoroValue(api.getKokoroValue()+delta);
       sync();
     });
-    buttons.push([button,id]);
-    panel.appendChild(button);
+    controls.appendChild(button);
   }
+
+  makeButton('−',-1,'ココロ値を1下げる');
+  makeButton('+',1,'ココロ値を1上げる');
+
+  function sync(){
+    const current=api.getKokoroValue();
+    value.value=String(current);
+    value.textContent=String(current);
+  }
+
   for(const type of ['pointerdown','pointerup','touchstart','touchend','keydown','keyup']){
     panel.addEventListener(type,event=>event.stopPropagation());
   }
+
   hud.appendChild(panel);
-  const observer=new MutationObserver(sync);
-  observer.observe(kokoro,{attributes:true,attributeFilter:['data-state']});
   sync();
+
   window.BattleNetworkKokoroTestUi=Object.freeze({
-    destroy(){observer.disconnect();panel.remove();delete window.BattleNetworkKokoroTestUi}
+    getValue:()=>api.getKokoroValue(),
+    setValue(next){const result=api.setKokoroValue(next);sync();return result},
+    destroy(){panel.remove();delete window.BattleNetworkKokoroTestUi}
   });
 })();
