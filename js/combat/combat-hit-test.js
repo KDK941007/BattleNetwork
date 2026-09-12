@@ -5,6 +5,7 @@
   const FIELD=window.BattleNetworkField;
   const MASTER=window.BattleNetworkMaster;
   const KOKORO=window.BattleNetworkKokoro;
+  const FULL_SYNC=window.BattleNetworkFullSynchro;
   if(!RANGE)throw new Error('BattleNetworkCombatHitTest: range geometry is not loaded.');
   if(!ENEMY)throw new Error('BattleNetworkCombatHitTest: enemy foundation is not loaded.');
   if(!DATA)throw new Error('BattleNetworkCombatHitTest: master data is not loaded.');
@@ -38,7 +39,18 @@
       excludeKokoro:attack.excludeKokoro===true
     });
   }
-  function damageAndFlash(enemy,damage,attack=null){const value=Number(damage);const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;if(result)applyChipKokoro(attack,value,result);ENEMY.debugFlash(enemy.id);return result}
+  function isCounterHit(enemy,attack){return attack?.sourceType==='CHIP'&&FULL_SYNC?.isCounterWindowActive?.(enemy?.id)===true}
+  function applyCounter(enemy,attack,result){
+    if(result?.applied!==true||!(Number(result.amount)>0)||!FULL_SYNC?.triggerCounter)return null;
+    return FULL_SYNC.triggerCounter({sourceType:'CHIP',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null,enemyId:enemy?.id??null});
+  }
+  function damageAndFlash(enemy,damage,attack=null){
+    const value=Number(damage),counterHit=isCounterHit(enemy,attack);
+    const result=Number.isFinite(value)&&value>0?ENEMY.applyDamage(enemy.id,value):null;
+    if(result){if(counterHit)applyCounter(enemy,attack,result);else applyChipKokoro(attack,value,result)}
+    ENEMY.debugFlash(enemy.id);
+    return result;
+  }
   function flashHits(shape,damage=null,attack=null){const hits=testRange(shape);hits.forEach(enemy=>damageAndFlash(enemy,damage,attack));return hits}
   function rayEntryDistance(origin,direction,bounds,padding=0){const left=bounds.left-padding,right=bounds.right+padding,top=bounds.top-padding,bottom=bounds.bottom+padding;let near=0,far=Infinity;for(const [o,d,min,max] of [[origin.x,direction.x,left,right],[origin.y,direction.y,top,bottom]]){if(Math.abs(d)<1e-9){if(o<min||o>max)return null;continue}let a=(min-o)/d,b=(max-o)/d;if(a>b)[a,b]=[b,a];near=Math.max(near,a);far=Math.min(far,b);if(near>far)return null}return far>=0?Math.max(0,near):null}
   function getFirstCannonHit(input){
