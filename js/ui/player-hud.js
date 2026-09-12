@@ -30,10 +30,19 @@
 
   function getKokoroState(){return kokoroState}
 
+  function applyKokoroStateFromValue(value){
+    if(value>=1&&value<=64){
+      setKokoroState('ANXIOUS');
+    }else if(value>=65&&value<=254){
+      setKokoroState('NORMAL');
+    }
+  }
+
   function setKokoroValue(value){
     const numeric=Number(value);
     if(!Number.isFinite(numeric))return kokoroValue;
     kokoroValue=Math.max(0,Math.min(255,Math.round(numeric)));
+    applyKokoroStateFromValue(kokoroValue);
     return kokoroValue;
   }
 
