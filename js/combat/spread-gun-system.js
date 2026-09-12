@@ -3,6 +3,8 @@
   const ENEMY=window.BattleNetworkEnemy;
   const RELATIVE=window.BattleNetworkRelativeCellRange;
   const FIELD=window.BattleNetworkField;
+  const MASTER=window.BattleNetworkMaster;
+  const KOKORO=window.BattleNetworkKokoro;
   const scene=document.getElementById('scene');
   if(!RANGE||!ENEMY||!RELATIVE||!FIELD||!scene)throw new Error('BattleNetworkSpreadGun: required dependency is missing.');
 
@@ -25,6 +27,26 @@
   function trace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
   function isSpreadAttack(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId===CHIP_ID}
   function project(point){return{x:(point.x-point.y)*PX+SW/2,y:(point.x+point.y)*PY}}
+  function chipBasePower(attack){
+    const explicit=Number(attack?.kokoroBasePower);
+    if(Number.isFinite(explicit)&&explicit>0)return explicit;
+    const value=MASTER?.getChipValues?.(attack?.sourceId)?.find(item=>item.valueTypeId==='DAMAGE');
+    const power=Number(value?.value);
+    return Number.isFinite(power)&&power>0?power:Number(attack?.damage);
+  }
+  function applySpreadKokoro(attack,damageResult){
+    if(damageResult?.applied!==true||!(Number(damageResult.amount)>0)||!KOKORO?.applyChipHit)return null;
+    return KOKORO.applyChipHit({
+      basePower:chipBasePower(attack),
+      damage:Number(attack?.damage),
+      sourceType:'CHIP',
+      sourceId:attack?.sourceId??CHIP_ID,
+      attackId:attack?.attackId??attack?.sourceId??CHIP_ID,
+      actionToken:attack?.actionToken??attack?.kokoroActionToken??attack?.shotToken,
+      kokoro:attack?.kokoro,
+      excludeKokoro:attack?.excludeKokoro===true
+    });
+  }
   function showExplosionCells(shapes){
     if(!Array.isArray(shapes)||!shapes.length)return;
     return perf('spreadVisual',()=>{
@@ -45,7 +67,7 @@
     const result=perf('directHit',()=>{
       const shapes=perf('spreadCalc',()=>RELATIVE.createRelativeCells({center:{x:directEnemy.x,y:directEnemy.y},direction:attack.shape?.direction,offsets:OFFSETS,cellSizeTiles:1}));
       const hits=perf('spreadCalc',()=>RELATIVE.getHitEnemies(shapes,{excludeIds:[directEnemy.id]}));trace('SPREAD:targets',String(hits.length));const damage=Number(attack.damage);
-      perf('spreadDamage',()=>{if(Number.isFinite(damage)&&damage>0){for(const enemy of hits)ENEMY.applyDamage(enemy.id,damage)}});
+      perf('spreadDamage',()=>{if(Number.isFinite(damage)&&damage>0){for(const enemy of hits){const damageResult=ENEMY.applyDamage(enemy.id,damage);applySpreadKokoro(attack,damageResult)}}});
       trace('SPREAD:damage:end');showExplosionCells(shapes);
       window.BattleNetworkSpreadGun.lastExplosion=Object.freeze({sourceToken:attack.shotToken,center:Object.freeze({x:directEnemy.x,y:directEnemy.y}),direction:Object.freeze({...RANGE.normalizeDirection(attack.shape?.direction)}),shapes,hitEnemyIds:Object.freeze(hits.map(enemy=>enemy.id))});return true;
     });
