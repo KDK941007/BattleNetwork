@@ -60,7 +60,7 @@
   // Chip-detail/effect-review test rule:
   // review one chip at a time. The active target is repeated so it can be fired many times.
   const TEST_TARGET=Object.freeze({
-    enabled:true,
+    enabled:false,
     type:'LONG',
     chipId:LONG_SWORD_ID,
     codes:Object.freeze(['S']),
