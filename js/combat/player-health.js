@@ -1,5 +1,6 @@
 (()=>{
-  const INITIAL_MAX_HP=100;
+  // Temporary Kokoro Window verification setting. Restore after Kokoro state checks are complete.
+  const INITIAL_MAX_HP=999;
   let state={maxHp:INITIAL_MAX_HP,hp:INITIAL_MAX_HP};
   const listeners=new Set();
 
