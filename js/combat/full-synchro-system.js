@@ -1,9 +1,24 @@
 (()=>{
   const HUD=window.BattleNetworkPlayerHud;
   const PLAYER_EL=document.getElementById('player');
-  if(!HUD||!PLAYER_EL)throw new Error('BattleNetworkFullSynchro: required dependency is missing.');
+  const SCENE=PLAYER_EL?.parentElement||null;
+  if(!HUD||!PLAYER_EL||!SCENE)throw new Error('BattleNetworkFullSynchro: required dependency is missing.');
 
   const RESET_VALUE=153;
+  const ringBack=document.createElement('div');
+  const ringFront=document.createElement('div');
+  ringBack.className='fullSynchroRingLayer back';
+  ringFront.className='fullSynchroRingLayer front';
+  ringBack.setAttribute('aria-hidden','true');
+  ringFront.setAttribute('aria-hidden','true');
+  SCENE.appendChild(ringBack);
+  SCENE.appendChild(ringFront);
+
+  let destroyed=false;
+  let frameId=0;
+  let lastTransform='';
+  let lastWidth=0;
+  let lastHeight=0;
 
   function isActive(){
     return HUD.getKokoroValue?.()===255||HUD.getKokoroState?.()==='FULL_SYNCHRO';
@@ -39,12 +54,38 @@
     return Object.freeze({applied:true,reason:null,before,after,enemyId:context.enemyId??null,sourceId:context.sourceId??null});
   }
 
+  function syncRingGeometry(){
+    const transform=PLAYER_EL.style.transform||'';
+    if(transform!==lastTransform){
+      lastTransform=transform;
+      ringBack.style.transform=transform;
+      ringFront.style.transform=transform;
+    }
+    const width=PLAYER_EL.offsetWidth;
+    const height=PLAYER_EL.offsetHeight;
+    if(width!==lastWidth||height!==lastHeight){
+      lastWidth=width;
+      lastHeight=height;
+      for(const ring of [ringBack,ringFront]){
+        ring.style.width=`${width*2}px`;
+        ring.style.height=`${height*2}px`;
+        ring.style.marginLeft=`${-width/2}px`;
+        ring.style.marginTop=`${-height/2}px`;
+      }
+    }
+    if(!destroyed)frameId=requestAnimationFrame(syncRingGeometry);
+  }
+
   function syncVisual(snapshot=HUD.getKokoroSnapshot?.()){
-    PLAYER_EL.classList.toggle('fullSynchro',snapshot?.state==='FULL_SYNCHRO');
+    const active=snapshot?.state==='FULL_SYNCHRO';
+    PLAYER_EL.classList.toggle('fullSynchro',active);
+    ringBack.classList.toggle('active',active);
+    ringFront.classList.toggle('active',active);
   }
 
   const unsubscribe=typeof HUD.subscribeKokoro==='function'?HUD.subscribeKokoro(syncVisual):null;
   syncVisual();
+  syncRingGeometry();
 
   window.BattleNetworkFullSynchro=Object.freeze({
     RESET_VALUE,
@@ -53,6 +94,13 @@
     applyToChip,
     isCounterWindowActive,
     triggerCounter,
-    destroy(){if(typeof unsubscribe==='function')unsubscribe();PLAYER_EL.classList.remove('fullSynchro')}
+    destroy(){
+      destroyed=true;
+      if(frameId)cancelAnimationFrame(frameId);
+      if(typeof unsubscribe==='function')unsubscribe();
+      PLAYER_EL.classList.remove('fullSynchro');
+      ringBack.remove();
+      ringFront.remove();
+    }
   });
 })();
