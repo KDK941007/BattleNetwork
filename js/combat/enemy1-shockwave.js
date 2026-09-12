@@ -15,7 +15,16 @@
     const telegraphEl=LAYER.createTelegraph(),projectileEl=LAYER.createProjectile(),enemyEl=findEnemyElement(enemyId);
     let phase='IDLE',direction=null,projectile=null,fireAt=0,fullSyncAt=0,recoveryUntil=0,lastGlowMode='NONE';
     RUNTIME.setNextAttackAt(enemyId,performance.now());
-    function setGlow(mode){if(!enemyEl)return;const debug=RUNTIME.getDebugState(),next=debug.enabled&&debug.showAttackGlow?mode:'NONE';if(next===lastGlowMode)return;enemyEl.classList.toggle('enemy1TelegraphTest',next==='TELEGRAPH');enemyEl.classList.toggle('enemy1FullSyncTest',next==='FULL_SYNC');lastGlowMode=next}
+    function setGlow(mode){
+      if(!enemyEl)return;
+      const debug=RUNTIME.getDebugState();
+      const fullSynchroActive=window.BattleNetworkPlayerHud?.getKokoroState?.()==='FULL_SYNCHRO';
+      const next=mode==='FULL_SYNC'&&fullSynchroActive?'FULL_SYNC':debug.enabled&&debug.showAttackGlow?mode:'NONE';
+      if(next===lastGlowMode)return;
+      enemyEl.classList.toggle('enemy1TelegraphTest',next==='TELEGRAPH');
+      enemyEl.classList.toggle('enemy1FullSyncTest',next==='FULL_SYNC');
+      lastGlowMode=next;
+    }
     function hide(){LAYER.hideTelegraph(telegraphEl);LAYER.hideProjectile(projectileEl);setGlow('NONE')}
     function cfg(){return RUNTIME.getPattern()}
     function inRange(enemy,player){return Math.hypot(player.x-enemy.x,player.y-enemy.y)<=FIELD.toWorldDistance(cfg().attackStartRangeTiles)}
