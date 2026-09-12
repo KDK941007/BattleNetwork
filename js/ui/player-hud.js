@@ -7,6 +7,7 @@
   if(!HEALTH||!hud||!hpWindow||!hpValue||!kokoro)throw new Error('BattleNetworkPlayerHud: required dependency is missing.');
 
   let kokoroState='NORMAL';
+  let kokoroValue=128;
 
   function renderHealth(snapshot=HEALTH.getSnapshot()){
     if(snapshot?.isConfigured){
@@ -29,14 +30,26 @@
 
   function getKokoroState(){return kokoroState}
 
+  function setKokoroValue(value){
+    const numeric=Number(value);
+    if(!Number.isFinite(numeric))return kokoroValue;
+    kokoroValue=Math.max(0,Math.min(255,Math.round(numeric)));
+    return kokoroValue;
+  }
+
+  function getKokoroValue(){return kokoroValue}
+
   renderHealth();
-  setKokoroState('FULL_SYNCHRO');
+  setKokoroState('NORMAL');
+  setKokoroValue(128);
   const unsubscribe=typeof HEALTH.subscribe==='function'?HEALTH.subscribe(renderHealth):null;
 
   window.BattleNetworkPlayerHud=Object.freeze({
     renderHealth,
     setKokoroState,
     getKokoroState,
+    setKokoroValue,
+    getKokoroValue,
     destroy(){if(typeof unsubscribe==='function')unsubscribe()}
   });
 })();
