@@ -1,0 +1,1 @@
+.player.angry:not(.defeated){background:linear-gradient(#70d3f7,#3f84df 44%,#55418e);border-color:#ffd5d9;box-shadow:0 0 12px rgba(255,92,108,.58)}
