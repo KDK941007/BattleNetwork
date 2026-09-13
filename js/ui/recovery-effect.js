@@ -34,6 +34,8 @@
       background:#78ff9d;
       box-shadow:0 0 8px 3px rgba(92,255,136,1),0 0 17px 7px rgba(38,255,98,.9);
       transform:translate(-50%,-50%) rotate(45deg) scale(calc(.5 * var(--spark-scale,1)));
+    }
+    .player.recoverySparkGlow .recoverySparkParticle{
       animation:recoverySparkBlink .9s ease-in-out both;
     }
     .recoverySparkParticle::before,
@@ -77,6 +79,7 @@
   `;
   document.head.appendChild(style);
 
+  const player=document.getElementById('player');
   const sparks=[
     {x:-28,y:18,scale:.78,delay:42},
     {x:14,y:-24,scale:1.02,delay:6},
@@ -92,23 +95,9 @@
     {x:-46,y:36,scale:.9,delay:148}
   ];
   let cleanupTimer=0;
+  let activationFrame=0;
 
-  function clearEffect(){
-    const player=document.getElementById('player');
-    clearTimeout(cleanupTimer);
-    if(!player)return;
-    player.classList.remove('recoverySparkGlow');
-    player.querySelectorAll('.recoverySparkParticle').forEach(el=>el.remove());
-  }
-
-  function triggerEffect(){
-    const player=document.getElementById('player');
-    if(!player)return false;
-
-    clearEffect();
-    void player.offsetWidth;
-    player.classList.add('recoverySparkGlow');
-
+  if(player){
     sparks.forEach(({x,y,scale,delay})=>{
       const particle=document.createElement('span');
       particle.className='recoverySparkParticle';
@@ -118,8 +107,24 @@
       particle.style.animationDelay=`${delay}ms`;
       player.appendChild(particle);
     });
+  }
 
-    cleanupTimer=setTimeout(clearEffect,1250);
+  function clearEffect(){
+    clearTimeout(cleanupTimer);
+    if(activationFrame)cancelAnimationFrame(activationFrame);
+    cleanupTimer=0;
+    activationFrame=0;
+    player?.classList.remove('recoverySparkGlow');
+  }
+
+  function triggerEffect(){
+    if(!player)return false;
+    clearEffect();
+    activationFrame=requestAnimationFrame(()=>{
+      activationFrame=0;
+      player.classList.add('recoverySparkGlow');
+      cleanupTimer=setTimeout(clearEffect,1250);
+    });
     return true;
   }
 
