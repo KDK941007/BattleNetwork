@@ -1,8 +1,9 @@
 (()=>{
   const HUD=window.BattleNetworkPlayerHud;
+  const MASTER=window.BattleNetworkMaster;
   const PLAYER_EL=document.getElementById('player');
   const SCENE=PLAYER_EL?.parentElement||null;
-  if(!HUD||!PLAYER_EL||!SCENE)throw new Error('BattleNetworkFullSynchro: required dependency is missing.');
+  if(!HUD||!MASTER||!PLAYER_EL||!SCENE)throw new Error('BattleNetworkFullSynchro: required dependency is missing.');
 
   const RESET_VALUE=153;
   const ringBack=document.createElement('div');
@@ -30,15 +31,24 @@
     return Number.isFinite(power)&&power>0;
   }
 
+  function isDarkChip(chip){
+    const chipId=chip?.chipId??chip?.sourceId??null;
+    if(!chipId)return false;
+    return MASTER.getChipSpecialTypes?.(chipId)?.some(row=>row?.specialTypeId==='DARK')===true;
+  }
+
   function applyToChip(chip){
     const beforePower=Number(chip?.power);
     if(!isActive()||!isAttackChip(chip)){
-      return Object.freeze({chip,applied:false,beforePower:Number.isFinite(beforePower)?beforePower:null,afterPower:Number.isFinite(beforePower)?beforePower:null,resetValue:null});
+      return Object.freeze({chip,applied:false,reason:isActive()?'NO_ATTACK_POWER':'NOT_ACTIVE',beforePower:Number.isFinite(beforePower)?beforePower:null,afterPower:Number.isFinite(beforePower)?beforePower:null,resetValue:null});
+    }
+    if(isDarkChip(chip)){
+      return Object.freeze({chip,applied:false,reason:'DARK_CHIP',beforePower,afterPower:beforePower,resetValue:null});
     }
     const afterPower=beforePower*2;
     const powered=Object.freeze({...chip,power:afterPower,fullSynchroApplied:true,fullSynchroBasePower:beforePower});
     HUD.setKokoroValue(RESET_VALUE);
-    return Object.freeze({chip:powered,applied:true,beforePower,afterPower,resetValue:RESET_VALUE});
+    return Object.freeze({chip:powered,applied:true,reason:null,beforePower,afterPower,resetValue:RESET_VALUE});
   }
 
   function isCounterWindowActive(enemyId){
@@ -49,6 +59,10 @@
   function triggerCounter(context={}){
     if(context.sourceType!=='CHIP'){
       return Object.freeze({applied:false,reason:'NOT_ATTACK_CHIP',before:HUD.getKokoroValue(),after:HUD.getKokoroValue()});
+    }
+    const state=HUD.getKokoroState?.();
+    if(context.blockedByAnger===true||state==='ANGRY'||state==='EVIL'||window.BattleNetworkSoulUnison?.isActive?.()===true){
+      return Object.freeze({applied:false,reason:'EMOTION_PRIORITY',before:HUD.getKokoroValue(),after:HUD.getKokoroValue()});
     }
     const before=HUD.getKokoroValue();
     const after=HUD.setKokoroValue(255);
@@ -115,6 +129,7 @@
     RESET_VALUE,
     isActive,
     isAttackChip,
+    isDarkChip,
     applyToChip,
     isCounterWindowActive,
     triggerCounter,
