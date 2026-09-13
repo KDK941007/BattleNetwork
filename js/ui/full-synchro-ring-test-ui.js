@@ -4,7 +4,7 @@
   const root=document.documentElement;
   if(!battle||document.getElementById('fullSynchroRingTestControls'))return;
 
-  const defaults=Object.freeze({wobble:8,thicknessX:4,thicknessY:4,speed:1});
+  const defaults=Object.freeze({wobble:25,thicknessX:5,thicknessY:40,speed:2});
   const state={...defaults};
 
   const panel=document.createElement('div');
@@ -19,8 +19,15 @@
   panel.appendChild(title);
 
   function apply(){
-    root.style.setProperty('--full-synchro-ring-wobble',`${state.wobble}deg`);
-    root.style.setProperty('--full-synchro-ring-wobble-neg',`${-state.wobble}deg`);
+    const wobble=state.wobble;
+    root.style.setProperty('--full-synchro-ring-wobble',`${wobble}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-neg',`${-wobble}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-38',`${wobble*.382683}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-71',`${wobble*.707107}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-92',`${wobble*.92388}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-neg-38',`${-wobble*.382683}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-neg-71',`${-wobble*.707107}deg`);
+    root.style.setProperty('--full-synchro-ring-wobble-neg-92',`${-wobble*.92388}deg`);
     root.style.setProperty('--full-synchro-ring-thickness-x',`${state.thicknessX}px`);
     root.style.setProperty('--full-synchro-ring-thickness-y',`${state.thicknessY}px`);
     root.style.setProperty('--full-synchro-ring-duration',`${1/state.speed}s`);
@@ -82,13 +89,13 @@
   };
 
   const note=document.createElement('div');
-  note.textContent='横=左右端 / 縦=上下端　速さ1.0x=現在値';
+  note.textContent='横=左右端 / 縦=上下端　速さ1.0x=基準値';
   note.style.cssText='margin-top:4px;color:#b9dce8;font-size:9px;text-align:center';
   panel.appendChild(note);
 
   const reset=document.createElement('button');
   reset.type='button';
-  reset.textContent='初期値に戻す';
+  reset.textContent='決定値に戻す';
   reset.style.cssText='display:block;width:100%;min-height:28px;margin-top:5px;border:1px solid #64ddff;border-radius:5px;background:#10232e;color:#fff;font-size:10px;font-weight:900;touch-action:manipulation';
   reset.addEventListener('click',event=>{
     event.stopPropagation();
@@ -118,11 +125,7 @@
     },
     reset(){reset.click();return Object.freeze({...state})},
     destroy(){
-      root.style.removeProperty('--full-synchro-ring-wobble');
-      root.style.removeProperty('--full-synchro-ring-wobble-neg');
-      root.style.removeProperty('--full-synchro-ring-thickness-x');
-      root.style.removeProperty('--full-synchro-ring-thickness-y');
-      root.style.removeProperty('--full-synchro-ring-duration');
+      for(const name of ['--full-synchro-ring-wobble','--full-synchro-ring-wobble-neg','--full-synchro-ring-wobble-38','--full-synchro-ring-wobble-71','--full-synchro-ring-wobble-92','--full-synchro-ring-wobble-neg-38','--full-synchro-ring-wobble-neg-71','--full-synchro-ring-wobble-neg-92','--full-synchro-ring-thickness-x','--full-synchro-ring-thickness-y','--full-synchro-ring-duration'])root.style.removeProperty(name);
       panel.remove();
       delete window.BattleNetworkFullSynchroRingTestUi;
     }
