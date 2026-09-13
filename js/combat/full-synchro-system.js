@@ -19,6 +19,7 @@
   let lastTransform='';
   let lastWidth=0;
   let lastHeight=0;
+  let resizeObserver=null;
 
   function isActive(){
     return HUD.getKokoroValue?.()===255||HUD.getKokoroState?.()==='FULL_SYNCHRO';
@@ -54,26 +55,47 @@
     return Object.freeze({applied:true,reason:null,before,after,enemyId:context.enemyId??null,sourceId:context.sourceId??null});
   }
 
-  function syncRingGeometry(){
+  function applyRingSize(width,height){
+    const nextWidth=Number(width);
+    const nextHeight=Number(height);
+    if(!Number.isFinite(nextWidth)||!Number.isFinite(nextHeight)||nextWidth<=0||nextHeight<=0)return;
+    if(nextWidth===lastWidth&&nextHeight===lastHeight)return;
+    lastWidth=nextWidth;
+    lastHeight=nextHeight;
+    for(const ring of [ringBack,ringFront]){
+      ring.style.width=`${nextWidth*2}px`;
+      ring.style.height=`${nextHeight*2}px`;
+      ring.style.marginLeft=`${-nextWidth/2}px`;
+      ring.style.marginTop=`${-nextHeight/2}px`;
+    }
+  }
+
+  function syncInitialRingSize(){
+    applyRingSize(PLAYER_EL.offsetWidth,PLAYER_EL.offsetHeight);
+  }
+
+  function observeRingSize(){
+    if(typeof ResizeObserver!=='function')return;
+    resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(!entry)return;
+      const borderBox=entry.borderBoxSize;
+      const box=Array.isArray(borderBox)?borderBox[0]:borderBox;
+      const width=Number(box?.inlineSize)||PLAYER_EL.offsetWidth;
+      const height=Number(box?.blockSize)||PLAYER_EL.offsetHeight;
+      applyRingSize(width,height);
+    });
+    resizeObserver.observe(PLAYER_EL);
+  }
+
+  function syncRingTransform(){
     const transform=PLAYER_EL.style.transform||'';
     if(transform!==lastTransform){
       lastTransform=transform;
       ringBack.style.transform=transform;
       ringFront.style.transform=transform;
     }
-    const width=PLAYER_EL.offsetWidth;
-    const height=PLAYER_EL.offsetHeight;
-    if(width!==lastWidth||height!==lastHeight){
-      lastWidth=width;
-      lastHeight=height;
-      for(const ring of [ringBack,ringFront]){
-        ring.style.width=`${width*2}px`;
-        ring.style.height=`${height*2}px`;
-        ring.style.marginLeft=`${-width/2}px`;
-        ring.style.marginTop=`${-height/2}px`;
-      }
-    }
-    if(!destroyed)frameId=requestAnimationFrame(syncRingGeometry);
+    if(!destroyed)frameId=requestAnimationFrame(syncRingTransform);
   }
 
   function syncVisual(snapshot=HUD.getKokoroSnapshot?.()){
@@ -84,8 +106,10 @@
   }
 
   const unsubscribe=typeof HUD.subscribeKokoro==='function'?HUD.subscribeKokoro(syncVisual):null;
+  syncInitialRingSize();
+  observeRingSize();
   syncVisual();
-  syncRingGeometry();
+  syncRingTransform();
 
   window.BattleNetworkFullSynchro=Object.freeze({
     RESET_VALUE,
@@ -97,6 +121,7 @@
     destroy(){
       destroyed=true;
       if(frameId)cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
       if(typeof unsubscribe==='function')unsubscribe();
       PLAYER_EL.classList.remove('fullSynchro');
       ringBack.remove();
