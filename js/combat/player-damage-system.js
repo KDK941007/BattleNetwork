@@ -4,6 +4,7 @@
   const RANGE=window.BattleNetworkRangeGeometry;
   const COLLISION=window.BattleNetworkCharacterCollision;
   const KOKORO=window.BattleNetworkKokoro;
+  const ANGER=window.BattleNetworkAnger;
   const PLAYER_EL=document.getElementById('player');
   if(!HEALTH)throw new Error('BattleNetworkPlayerDamage: player health is not loaded.');
   if(!PLAYER)throw new Error('BattleNetworkPlayerDamage: player foundation is not loaded.');
@@ -37,7 +38,7 @@
   function clearInvincibility(){invincibleUntil=0;if(invincibilityTimer!==null){clearTimeout(invincibilityTimer);invincibilityTimer=null}clearInvincibilityVisual()}
   function missResult(reason,input={}){
     const health=HEALTH.getSnapshot();
-    return freezeResult({hit:false,applied:false,reason,requestedDamage:Number(input.damage),appliedDamage:0,beforeHp:health.hp,afterHp:health.hp,defeatedNow:false,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),kokoro:null,health});
+    return freezeResult({hit:false,applied:false,reason,requestedDamage:Number(input.damage),appliedDamage:0,beforeHp:health.hp,afterHp:health.hp,defeatedNow:false,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),kokoro:null,anger:null,health});
   }
   function applyKokoroDamage(input,damage,result){
     if(!KOKORO?.applyEnemyHit||result.ok!==true||!(result.appliedDamage>0))return null;
@@ -52,12 +53,27 @@
       excludeKokoro:input.excludeKokoro===true
     });
   }
+  function applyAngerDamage(input,result){
+    if(!ANGER?.noteEnemyDamage||result.ok!==true||!(result.appliedDamage>0)||result.defeatedNow===true)return null;
+    return ANGER.noteEnemyDamage(result.appliedDamage,{
+      sourceType:String(input.sourceType||'ENEMY'),
+      sourceId:input.sourceId??null,
+      attackId:input.attackId??null
+    });
+  }
   function applyResolvedDamage(input={}){
     const damage=Number(input.damage);if(!Number.isFinite(damage)||damage<=0)return missResult('INVALID_DAMAGE',input);if(isInvincible())return missResult('INVINCIBLE',input);
     const result=HEALTH.applyDamage(damage);
     const kokoroResult=applyKokoroDamage(input,damage,result);
-    if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){PLAYER.beginHitStun?.();beginInvincibility()}
-    return freezeResult({hit:true,applied:result.ok===true,reason:result.reason,requestedDamage:damage,appliedDamage:result.appliedDamage||0,beforeHp:result.beforeHp,afterHp:result.afterHp,defeatedNow:result.defeatedNow===true,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),kokoro:kokoroResult,health:HEALTH.getSnapshot()});
+    const angerResult=applyAngerDamage(input,result);
+    if(result.ok===true&&(result.appliedDamage||0)>0&&result.defeatedNow!==true){
+      if(ANGER?.isSuperArmorActive?.()!==true){
+        const stunned=PLAYER.beginHitStun?.()===true;
+        if(stunned)ANGER?.trackPlayerIncapacitation?.();
+      }
+      beginInvincibility();
+    }
+    return freezeResult({hit:true,applied:result.ok===true,reason:result.reason,requestedDamage:damage,appliedDamage:result.appliedDamage||0,beforeHp:result.beforeHp,afterHp:result.afterHp,defeatedNow:result.defeatedNow===true,invincible:isInvincible(),remainingInvincibilityMs:remainingInvincibilityMs(),...sourceMeta(input),kokoro:kokoroResult,anger:angerResult,health:HEALTH.getSnapshot()});
   }
   function playerHurt(){return COLLISION?.getPlayerHurt?.(PLAYER.getPosition())||null}
   function resolvePointHit(input={}){
