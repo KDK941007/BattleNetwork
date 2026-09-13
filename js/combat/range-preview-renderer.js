@@ -9,8 +9,6 @@
   layer.style.position='absolute';
   layer.style.left='0';
   layer.style.top='0';
-  layer.style.width=`${scene.clientWidth}px`;
-  layer.style.height=`${scene.clientHeight}px`;
   layer.style.transformOrigin='0 0';
   layer.style.pointerEvents='none';
   layer.style.willChange='transform';
@@ -37,8 +35,8 @@
   svg.setAttribute('preserveAspectRatio','none');
   polygon.setAttribute('class','battleRangeShape');
   ellipse.setAttribute('class','battleRangeShape');
-  polygon.style.display='none';
-  ellipse.style.display='none';
+  polygon.style.opacity='0';
+  ellipse.style.opacity='0';
   svg.append(polygon,ellipse);
   layer.appendChild(svg);
 
@@ -48,9 +46,9 @@
   function perfMeasure(name,fn){const perf=window.BattleNetworkPerfTest;return perf?.measure?perf.measure(name,fn):fn()}
   function perfTrace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
 
-  function refreshProjection(){
-    const nextWidth=scene.clientWidth,nextHeight=scene.clientHeight;
-    if(!nextWidth||!nextHeight)return false;
+  function applyProjectionSize(nextWidth,nextHeight){
+    nextWidth=Number(nextWidth);nextHeight=Number(nextHeight);
+    if(!(nextWidth>0)||!(nextHeight>0))return false;
     if(nextWidth===width&&nextHeight===height)return true;
     width=nextWidth;height=nextHeight;
     layer.style.width=`${width}px`;
@@ -61,8 +59,25 @@
     return true;
   }
 
+  function refreshProjection(){return applyProjectionSize(scene.clientWidth,scene.clientHeight)}
+
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applyProjectionSize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(scene);
+  }else{
+    window.addEventListener('resize',refreshProjection,{passive:true});
+  }
+
   function project(point){return{x:(point.x-point.y)*px+width/2,y:(point.x+point.y)*py}}
-  function setActiveShape(next){if(activeShape===next)return;activeShape=next;polygon.style.display=next==='polygon'?'':'none';ellipse.style.display=next==='ellipse'?'':'none'}
+  function setActiveShape(next){
+    if(activeShape===next)return;
+    activeShape=next;
+    polygon.style.opacity=next==='polygon'?'1':'0';
+    ellipse.style.opacity=next==='ellipse'?'1':'0';
+  }
   function applyHidden(){if(!visible)return;svg.classList.remove('show');visible=false;perfTrace('range:hidden')}
   function hide(){const generation=++hideGeneration;perfMeasure('range hide',()=>queueMicrotask(()=>{if(generation===hideGeneration)applyHidden()}))}
 
@@ -94,8 +109,7 @@
   function render(shape){
     return perfMeasure('range render',()=>{
       ++hideGeneration;
-      if(!shape)return applyHidden();
-      if((!width||!height)&&!refreshProjection())return applyHidden();
+      if(!shape||!width||!height)return applyHidden();
       const rendered=shape.rangeTypeId==='CIRCLE'?renderCircle(shape):renderForwardShape(shape);
       if(!rendered)return applyHidden();
       const rangeType=(shape.rangeTypeId||'').toLowerCase();
@@ -105,6 +119,5 @@
   }
 
   refreshProjection();
-  window.addEventListener('resize',refreshProjection,{passive:true});
   window.BattleNetworkRangePreview=Object.freeze({render,hide,refreshProjection});
 })();
