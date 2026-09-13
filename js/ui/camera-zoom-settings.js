@@ -22,6 +22,26 @@
 
   let zoom=loadZoom();
   let cameraX=0,cameraY=0,initialized=false,lastTime=performance.now();
+  let battleWidth=battle.clientWidth,battleHeight=battle.clientHeight;
+
+  function applyBattleSize(width,height){
+    const nextWidth=Number(width),nextHeight=Number(height);
+    if(Number.isFinite(nextWidth)&&nextWidth>0)battleWidth=nextWidth;
+    if(Number.isFinite(nextHeight)&&nextHeight>0)battleHeight=nextHeight;
+    initialized=false;
+  }
+
+  function refreshBattleSize(){applyBattleSize(battle.clientWidth,battle.clientHeight)}
+
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applyBattleSize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(battle);
+  }else{
+    window.addEventListener('resize',refreshBattleSize,{passive:true});
+  }
 
   const control=document.createElement('label');
   control.id='cameraZoomControl';
@@ -59,8 +79,8 @@
   function getCameraTarget(){
     const position=playerApi.getPosition();
     const p=project(position.x,position.y);
-    const viewportWidth=battle.clientWidth/zoom;
-    const viewportHeight=battle.clientHeight/zoom;
+    const viewportWidth=battleWidth/zoom;
+    const viewportHeight=battleHeight/zoom;
     return{
       x:clamp(p.x-viewportWidth/2,0,Math.max(0,SW-viewportWidth)),
       y:clamp(p.y-viewportHeight*.58,0,Math.max(0,SH-viewportHeight))
