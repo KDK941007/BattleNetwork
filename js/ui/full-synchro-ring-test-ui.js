@@ -77,7 +77,7 @@
   const rows={
     wobble:makeRow({key:'wobble',label:'上下幅',min:0,max:30,step:1,unit:'°'}),
     thicknessX:makeRow({key:'thicknessX',label:'厚み 横',min:1,max:16,step:.5,unit:'px'}),
-    thicknessY:makeRow({key:'thicknessY',label:'厚み 縦',min:1,max:16,step:.5,unit:'px'}),
+    thicknessY:makeRow({key:'thicknessY',label:'厚み 縦',min:1,max:50,step:.5,unit:'px'}),
     speed:makeRow({key:'speed',label:'速さ',min:.2,max:4,step:.1,unit:'x'})
   };
 
