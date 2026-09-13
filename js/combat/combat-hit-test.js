@@ -42,7 +42,7 @@
   function isCounterHit(enemy,attack){return attack?.sourceType==='CHIP'&&FULL_SYNC?.isCounterWindowActive?.(enemy?.id)===true}
   function applyCounter(enemy,attack,result){
     if(result?.applied!==true||!(Number(result.amount)>0)||!FULL_SYNC?.triggerCounter)return null;
-    return FULL_SYNC.triggerCounter({sourceType:'CHIP',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null,enemyId:enemy?.id??null});
+    return FULL_SYNC.triggerCounter({sourceType:'CHIP',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null,enemyId:enemy?.id??null,blockedByAnger:attack?.angerApplied===true});
   }
   function damageAndFlash(enemy,damage,attack=null){
     const value=Number(damage),counterHit=isCounterHit(enemy,attack);
