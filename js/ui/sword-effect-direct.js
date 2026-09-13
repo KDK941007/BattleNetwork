@@ -1,8 +1,8 @@
 (()=>{
   const scene=document.getElementById('scene');
   const FIELD=window.BattleNetworkField;
-  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v16')return;
-  scene.dataset.swordEffectHook='v16';
+  if(!scene||!FIELD||scene.dataset.swordEffectHook==='v17')return;
+  scene.dataset.swordEffectHook='v17';
 
   const SWORD_ID='CHIP_0002';
   const WIDE_ID='CHIP_0003';
@@ -17,6 +17,24 @@
   const meleePreview=document.getElementById('meleePreview');
   const pools={SWORD:[],WIDE:[],LONG:[]};
   let activeEffects=0;
+  let projectionWidth=scene.clientWidth||5184;
+  let projectionHeight=scene.clientHeight||2592;
+
+  function applyProjectionSize(width,height){
+    const nextWidth=Number(width),nextHeight=Number(height);
+    if(nextWidth>0)projectionWidth=nextWidth;
+    if(nextHeight>0)projectionHeight=nextHeight;
+  }
+  function refreshProjectionSize(){applyProjectionSize(scene.clientWidth,scene.clientHeight)}
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applyProjectionSize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(scene);
+  }else{
+    window.addEventListener('resize',refreshProjectionSize,{passive:true});
+  }
 
   const bounds=Object.freeze({
     SWORD:Object.freeze({minX:-TILE*.5-PAD,maxX:TILE*.5+PAD,minY:-TILE*.5-PAD,maxY:TILE*.5+PAD}),
@@ -57,8 +75,8 @@
 
   function projectionConstants(){
     const world=Number(FIELD.WORLD_SIZE)||3600;
-    const width=scene.clientWidth||5184;
-    const height=scene.clientHeight||2592;
+    const width=projectionWidth||5184;
+    const height=projectionHeight||2592;
     return {px:width/(world*2),py:height/(world*2),width,height,world};
   }
 
@@ -297,7 +315,7 @@
   };
 
   window.BattleNetworkSwordEffectDirect=Object.freeze({
-    version:'DIRECT_CANVAS_V16_APPROVED_HEAVY_BOLD_PROJECTED_OFFSET100',
+    version:'DIRECT_CANVAS_V17_NO_LAYOUT_HOT_PATH',
     handlesWide:true,
     forwardOffsetMode:'SCREEN_PX_PROJECTED_DIRECTION',
     forwardOffsetPx:DEFAULT_FORWARD_OFFSET,
