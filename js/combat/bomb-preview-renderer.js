@@ -18,9 +18,9 @@
   function perfMeasure(name,fn){const perf=window.BattleNetworkPerfTest;return perf?.measure?perf.measure(name,fn):fn()}
   function perfTrace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
 
-  function refreshProjection(){
-    const nextWidth=scene.clientWidth,nextHeight=scene.clientHeight;
-    if(!nextWidth||!nextHeight)return false;
+  function applyProjectionSize(nextWidth,nextHeight){
+    nextWidth=Number(nextWidth);nextHeight=Number(nextHeight);
+    if(!(nextWidth>0)||!(nextHeight>0))return false;
     if(nextWidth===width&&nextHeight===height)return true;
     width=nextWidth;height=nextHeight;
     px=width/(field.WORLD_SIZE*2);py=height/(field.WORLD_SIZE*2);
@@ -29,13 +29,24 @@
     return true;
   }
 
+  function refreshProjection(){return applyProjectionSize(scene.clientWidth,scene.clientHeight)}
+
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applyProjectionSize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(scene);
+  }else{
+    window.addEventListener('resize',refreshProjection,{passive:true});
+  }
+
   function project(point){return{x:(point.x-point.y)*px+width/2,y:(point.x+point.y)*py}}
   function hide(){return perfMeasure('bomb hide',()=>{if(!visible)return;svg.classList.remove('show');visible=false;perfTrace('bomb:hidden')})}
 
   function render(origin,target){
     return perfMeasure('bomb render',()=>{
-      if(!origin||!target)return hide();
-      if((!width||!height)&&!refreshProjection())return hide();
+      if(!origin||!target||!width||!height)return hide();
 
       const originScreen=project(origin);
       const dx=target.x-origin.x,dy=target.y-origin.y;
@@ -55,6 +66,5 @@
   }
 
   refreshProjection();
-  window.addEventListener('resize',refreshProjection,{passive:true});
   window.BattleNetworkBombPreview=Object.freeze({render,hide,refreshProjection});
 })();
