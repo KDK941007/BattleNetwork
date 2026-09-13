@@ -4,14 +4,14 @@
   const root=document.documentElement;
   if(!battle||document.getElementById('fullSynchroRingTestControls'))return;
 
-  const defaults=Object.freeze({wobble:8,thickness:4,speed:1});
+  const defaults=Object.freeze({wobble:8,thicknessX:4,thicknessY:4,speed:1});
   const state={...defaults};
 
   const panel=document.createElement('div');
   panel.id='fullSynchroRingTestControls';
   panel.setAttribute('role','group');
   panel.setAttribute('aria-label','フルシンクロリング調整');
-  panel.style.cssText='position:absolute;right:8px;top:32px;z-index:75;width:210px;padding:7px;border:1px solid rgba(120,222,255,.62);border-radius:8px;background:rgba(5,24,34,.92);color:#effcff;font-size:11px;font-weight:800;pointer-events:auto;touch-action:auto';
+  panel.style.cssText='position:absolute;right:8px;top:32px;z-index:75;width:220px;padding:7px;border:1px solid rgba(120,222,255,.62);border-radius:8px;background:rgba(5,24,34,.92);color:#effcff;font-size:11px;font-weight:800;pointer-events:auto;touch-action:auto';
 
   const title=document.createElement('div');
   title.textContent='FS RING TEST';
@@ -21,13 +21,14 @@
   function apply(){
     root.style.setProperty('--full-synchro-ring-wobble',`${state.wobble}deg`);
     root.style.setProperty('--full-synchro-ring-wobble-neg',`${-state.wobble}deg`);
-    root.style.setProperty('--full-synchro-ring-thickness',`${state.thickness}px`);
+    root.style.setProperty('--full-synchro-ring-thickness-x',`${state.thicknessX}px`);
+    root.style.setProperty('--full-synchro-ring-thickness-y',`${state.thicknessY}px`);
     root.style.setProperty('--full-synchro-ring-duration',`${1/state.speed}s`);
   }
 
   function makeRow({key,label,min,max,step,unit}){
     const row=document.createElement('label');
-    row.style.cssText='display:grid;grid-template-columns:58px 1fr 38px;align-items:center;gap:5px;margin:4px 0';
+    row.style.cssText='display:grid;grid-template-columns:64px 1fr 38px;align-items:center;gap:5px;margin:4px 0';
 
     const name=document.createElement('span');
     name.textContent=label;
@@ -75,12 +76,13 @@
 
   const rows={
     wobble:makeRow({key:'wobble',label:'上下幅',min:0,max:30,step:1,unit:'°'}),
-    thickness:makeRow({key:'thickness',label:'厚み',min:1,max:16,step:.5,unit:'px'}),
+    thicknessX:makeRow({key:'thicknessX',label:'厚み 横',min:1,max:16,step:.5,unit:'px'}),
+    thicknessY:makeRow({key:'thicknessY',label:'厚み 縦',min:1,max:16,step:.5,unit:'px'}),
     speed:makeRow({key:'speed',label:'速さ',min:.2,max:4,step:.1,unit:'x'})
   };
 
   const note=document.createElement('div');
-  note.textContent='速さ: 1.0x = 現在値';
+  note.textContent='横=左右端 / 縦=上下端　速さ1.0x=現在値';
   note.style.cssText='margin-top:4px;color:#b9dce8;font-size:9px;text-align:center';
   panel.appendChild(note);
 
@@ -92,7 +94,8 @@
     event.stopPropagation();
     Object.assign(state,defaults);
     rows.wobble.sync(state.wobble);
-    rows.thickness.sync(state.thickness);
+    rows.thicknessX.sync(state.thicknessX);
+    rows.thicknessY.sync(state.thicknessY);
     rows.speed.sync(state.speed);
   });
   panel.appendChild(reset);
@@ -108,7 +111,8 @@
     getValues:()=>Object.freeze({...state}),
     setValues(values={}){
       if(Number.isFinite(Number(values.wobble)))rows.wobble.sync(Number(values.wobble));
-      if(Number.isFinite(Number(values.thickness)))rows.thickness.sync(Number(values.thickness));
+      if(Number.isFinite(Number(values.thicknessX)))rows.thicknessX.sync(Number(values.thicknessX));
+      if(Number.isFinite(Number(values.thicknessY)))rows.thicknessY.sync(Number(values.thicknessY));
       if(Number.isFinite(Number(values.speed)))rows.speed.sync(Number(values.speed));
       return Object.freeze({...state});
     },
@@ -116,7 +120,8 @@
     destroy(){
       root.style.removeProperty('--full-synchro-ring-wobble');
       root.style.removeProperty('--full-synchro-ring-wobble-neg');
-      root.style.removeProperty('--full-synchro-ring-thickness');
+      root.style.removeProperty('--full-synchro-ring-thickness-x');
+      root.style.removeProperty('--full-synchro-ring-thickness-y');
       root.style.removeProperty('--full-synchro-ring-duration');
       panel.remove();
       delete window.BattleNetworkFullSynchroRingTestUi;
