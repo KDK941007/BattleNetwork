@@ -8,31 +8,12 @@
   layer.style.position='absolute';
   layer.style.left='0';
   layer.style.top='0';
-  layer.style.width=`${scene.clientWidth}px`;
-  layer.style.height=`${scene.clientHeight}px`;
   layer.style.transformOrigin='0 0';
   layer.style.pointerEvents='none';
   layer.style.willChange='transform';
   layer.style.contain='layout paint style';
   layer.style.zIndex='6';
   battle.appendChild(layer);
-
-  const effectLayer=document.createElement('div');
-  effectLayer.id='chipTransientEffectLayer';
-  effectLayer.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;contain:layout paint style;';
-  scene.appendChild(effectLayer);
-  const transientEffectClasses=new Set(['slash','boom','healPulse']);
-  const effectObserver=new MutationObserver(records=>{
-    for(const record of records){
-      for(const node of record.addedNodes){
-        if(node.nodeType!==1||node===effectLayer||node.parentNode!==scene)continue;
-        let matched=false;
-        for(const cls of transientEffectClasses){if(node.classList?.contains(cls)){matched=true;break}}
-        if(matched)effectLayer.appendChild(node);
-      }
-    }
-  });
-  effectObserver.observe(scene,{childList:true});
 
   const config=Object.freeze({
     normal:Object.freeze({width:30,height:15,border:'2px solid rgba(205,248,255,.9)',background:'#66ddff'}),
@@ -56,11 +37,28 @@
     requestAnimationFrame(syncTransform);
   }
 
+  function applySize(width,height){
+    const nextWidth=Number(width),nextHeight=Number(height);
+    if(nextWidth>0)layer.style.width=`${nextWidth}px`;
+    if(nextHeight>0)layer.style.height=`${nextHeight}px`;
+  }
+  function refreshSize(){applySize(scene.clientWidth,scene.clientHeight)}
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applySize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(scene);
+  }else{
+    window.addEventListener('resize',refreshSize,{passive:true});
+  }
+  refreshSize();
+
   function createElement(kind,cfg){
     const el=document.createElement('div');
     el.className=`busterProjectile ${kind}`;
     el.dataset.projectileKind=kind;
-    el.style.cssText=`position:absolute;width:${cfg.width}px;height:${cfg.height}px;border-radius:50%;background:${cfg.background};border:${cfg.border};pointer-events:none;transform-origin:center;will-change:transform;contain:layout paint style;box-shadow:none;filter:none;`;
+    el.style.cssText=`position:absolute;width:${cfg.width}px;height:${cfg.height}px;border-radius:50%;background:${cfg.background};border:${cfg.border};pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;box-shadow:none;filter:none;opacity:0;`;
     el.style.marginLeft=`${LEGACY_TRANSLATE_X-cfg.width/2}px`;
     el.style.marginTop=`${LEGACY_TRANSLATE_Y-cfg.height-FLOOR_CLEARANCE}px`;
     return el;
@@ -72,9 +70,9 @@
     if(!cfg)return null;
     const pool=poolFor(kind);
     let el=pool&&pool.length?pool.pop():null;
-    if(!el)el=createElement(kind,cfg);
-    el.style.display='block';
-    layer.appendChild(el);
+    if(!el){el=createElement(kind,cfg);layer.appendChild(el)}
+    else if(el.parentElement!==layer)layer.appendChild(el);
+    el.style.opacity='1';
     return el;
   }
 
@@ -87,21 +85,14 @@
     if(!el)return;
     const pool=poolFor(el.dataset.projectileKind);
     if(pool&&pool.length<6){
-      el.style.display='none';
+      el.style.opacity='0';
       el.style.transform='translate3d(-9999px,-9999px,0)';
-      el.remove();
       pool.push(el);
       return;
     }
     el.remove();
   }
 
-  function refreshSize(){
-    layer.style.width=`${scene.clientWidth}px`;
-    layer.style.height=`${scene.clientHeight}px`;
-  }
-
-  window.addEventListener('resize',refreshSize,{passive:true});
   requestAnimationFrame(syncTransform);
   window.BattleNetworkBusterProjectile=Object.freeze({create,update,remove,refreshSize});
 })();
