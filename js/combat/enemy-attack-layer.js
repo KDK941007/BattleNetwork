@@ -9,8 +9,6 @@
   layer.style.position='absolute';
   layer.style.left='0';
   layer.style.top='0';
-  layer.style.width=`${scene.clientWidth}px`;
-  layer.style.height=`${scene.clientHeight}px`;
   layer.style.transformOrigin='0 0';
   layer.style.pointerEvents='none';
   layer.style.willChange='transform';
@@ -27,12 +25,28 @@
     if(next!==lastSceneTransform){layer.style.transform=next;lastSceneTransform=next}
     requestAnimationFrame(syncTransform);
   }
-  function refreshSize(){layer.style.width=`${scene.clientWidth}px`;layer.style.height=`${scene.clientHeight}px`}
+  function applySize(width,height){
+    const nextWidth=Number(width),nextHeight=Number(height);
+    if(nextWidth>0)layer.style.width=`${nextWidth}px`;
+    if(nextHeight>0)layer.style.height=`${nextHeight}px`;
+  }
+  function refreshSize(){applySize(scene.clientWidth,scene.clientHeight)}
+
+  if(typeof ResizeObserver==='function'){
+    const resizeObserver=new ResizeObserver(entries=>{
+      const entry=entries[0];
+      if(entry)applySize(entry.contentRect?.width,entry.contentRect?.height);
+    });
+    resizeObserver.observe(scene);
+  }else{
+    window.addEventListener('resize',refreshSize,{passive:true});
+  }
+  refreshSize();
 
   function createTelegraph(){
     const el=document.createElement('div');
     el.className='enemyTestTelegraph';
-    el.style.cssText='display:none;position:absolute;height:6px;transform-origin:0 50%;background:rgba(255,76,76,.72);border:1px solid rgba(255,230,120,.95);border-radius:4px;box-shadow:0 0 5px rgba(255,70,70,.45);pointer-events:none;will-change:transform;contain:layout paint style;';
+    el.style.cssText='opacity:0;position:absolute;height:6px;transform-origin:0 50%;background:rgba(255,76,76,.72);border:1px solid rgba(255,230,120,.95);border-radius:4px;box-shadow:0 0 5px rgba(255,70,70,.45);pointer-events:none;will-change:transform,opacity;contain:layout paint style;';
     layer.appendChild(el);
     return el;
   }
@@ -42,28 +56,28 @@
     const dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy),angle=Math.atan2(dy,dx)*180/Math.PI;
     el.style.width=`${length}px`;
     el.style.transform=`translate3d(${a.x}px,${a.y-24}px,0) rotate(${angle}deg)`;
-    el.style.display='block';
+    el.style.opacity='1';
   }
-  function hideTelegraph(el){if(el)el.style.display='none'}
+  function hideTelegraph(el){if(el)el.style.opacity='0'}
 
   function createProjectile(){
     const el=document.createElement('div');
     el.className='enemyTestProjectile';
-    el.style.cssText='display:none;position:absolute;width:28px;height:14px;border-radius:50%;background:#ff4a50;border:2px solid #ffd66d;box-shadow:0 0 8px rgba(255,80,80,.65);pointer-events:none;transform-origin:center;will-change:transform;contain:layout paint style;';
+    el.style.cssText='opacity:0;position:absolute;width:28px;height:14px;border-radius:50%;background:#ff4a50;border:2px solid #ffd66d;box-shadow:0 0 8px rgba(255,80,80,.65);pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;';
     layer.appendChild(el);
     return el;
   }
-  function showProjectile(el,x,y){if(!el)return;el.style.display='block';updateProjectile(el,x,y)}
+  function showProjectile(el,x,y){if(!el)return;updateProjectile(el,x,y);el.style.opacity='1'}
   function updateProjectile(el,x,y){
     if(!el||!Number.isFinite(x)||!Number.isFinite(y))return;
     const p=project(x,y);
     el.style.transform=`translate3d(${p.x-14}px,${p.y-31}px,0)`;
   }
-  function hideProjectile(el){if(el)el.style.display='none'}
+  function hideProjectile(el){if(el)el.style.opacity='0'}
   function createAreaMarker(){
     const el=document.createElement('div');
     el.className='enemyTestAreaMarker';
-    el.style.cssText='display:none;position:absolute;border-radius:50%;pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;';
+    el.style.cssText='opacity:0;position:absolute;border-radius:50%;pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;';
     layer.appendChild(el);
     return el;
   }
@@ -82,20 +96,17 @@
     el.style.border='2px solid rgba(255,86,86,.95)';
     el.style.background='rgba(255,70,70,.20)';
     el.style.opacity='1';
-    el.style.display='block';
   }
   function showAreaImpact(el,center,radiusWorld){
     if(!placeArea(el,center,radiusWorld))return;
     el.style.border='3px solid rgba(255,236,126,.98)';
     el.style.background='rgba(255,108,74,.62)';
     el.style.opacity='.96';
-    el.style.display='block';
   }
-  function hideArea(el){if(el)el.style.display='none'}
+  function hideArea(el){if(el)el.style.opacity='0'}
 
   function destroy(el){el?.remove()}
 
-  window.addEventListener('resize',refreshSize,{passive:true});
   requestAnimationFrame(syncTransform);
   window.BattleNetworkEnemyAttackLayer=Object.freeze({createTelegraph,showTelegraph,hideTelegraph,createProjectile,showProjectile,updateProjectile,hideProjectile,createAreaMarker,showAreaTelegraph,showAreaImpact,hideArea,destroy,refreshSize});
 })();
