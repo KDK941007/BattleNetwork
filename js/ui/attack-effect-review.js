@@ -66,16 +66,11 @@
     return true;
   }
 
-  const observer=new MutationObserver(records=>{
-    for(const record of records){
-      for(const node of record.addedNodes){
-        if(!(node instanceof HTMLElement))continue;
-        if(node.matches('.bullet.cannon'))decorate(node);
-        node.querySelectorAll?.('.bullet.cannon').forEach(decorate);
-      }
-    }
-  });
-  observer.observe(scene,{childList:true,subtree:true});
+  const previousAppendChild=scene.appendChild.bind(scene);
+  scene.appendChild=function(node){
+    if(node instanceof HTMLElement&&node.matches('.bullet.cannon'))decorate(node);
+    return previousAppendChild(node);
+  };
 
-  window.BattleNetworkAirShotEffect=Object.freeze({mode:'A3_FINAL',decorate});
+  window.BattleNetworkAirShotEffect=Object.freeze({mode:'A3_FINAL_DIRECT_APPEND',decorate});
 })();
