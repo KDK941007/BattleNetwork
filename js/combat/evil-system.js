@@ -3,14 +3,19 @@
   const KOKORO=window.BattleNetworkKokoro;
   const MASTER=window.BattleNetworkMaster;
   const HEALTH=window.BattleNetworkPlayerHealth;
+  const SAVE=window.BattleNetworkSaveData;
   if(!HUD||!KOKORO||!MASTER)throw new Error('BattleNetworkEvil: required dependency is missing.');
 
   const DEFAULT_MORALITY=500;
   const EVIL_THRESHOLD=469;
   const EVIL_KOKORO_VALUE=0;
+  const PLAYER_ID='PLAYER_1';
   const listeners=new Set();
 
   let morality=DEFAULT_MORALITY;
+  let moralityReady=false;
+  let moralityRevision=0;
+  let saveQueue=Promise.resolve();
   let active=false;
   let darkLocked=false;
   let darkUsedThisWave=false;
@@ -41,6 +46,7 @@
       darkLocked,
       darkUsedThisWave,
       morality,
+      moralityReady,
       kokoroValue:HUD.getKokoroValue?.(),
       kokoroState:HUD.getKokoroState?.()
     });
@@ -95,13 +101,48 @@
     return enter('DARK_CHIP',{chipId});
   }
 
+  function persistMorality(reason='MORALITY_UPDATED'){
+    if(!SAVE?.getPlayerProgress||!SAVE?.savePlayerProgress)return Promise.resolve(false);
+    const value=morality;
+    saveQueue=saveQueue.catch(()=>false).then(async()=>{
+      await SAVE.initialize?.();
+      const current=await SAVE.getPlayerProgress(PLAYER_ID);
+      await SAVE.savePlayerProgress({...current,player_id:PLAYER_ID,morality:value});
+      return true;
+    }).catch(error=>{
+      console.warn(`[BattleNetworkEvil] Failed to persist morality (${reason}).`,error);
+      return false;
+    });
+    return saveQueue;
+  }
+
+  function updateMorality(value,reason,{persist=true}={}){
+    const next=clampMorality(value);
+    if(next===morality)return false;
+    morality=next;
+    moralityRevision+=1;
+    if(persist)void persistMorality(reason);
+    return true;
+  }
+
   function applyDarkMoralityPenalty(){
     const before=morality;
-    if(before>=500)morality=480;
-    else if(before>=470)morality=Math.max(0,before-4);
-    else if(before>=1)morality=before-1;
-    else morality=0;
+    let after=before;
+    if(before>=500)after=480;
+    else if(before>=470)after=Math.max(0,before-4);
+    else if(before>=1)after=before-1;
+    else after=0;
+    updateMorality(after,'DARK_CHIP_WAVE_PENALTY');
     return Object.freeze({before,after:morality});
+  }
+
+  function applyVictoryMoralityRecovery(amount=1){
+    const before=morality;
+    const recovery=Math.max(0,Math.trunc(Number(amount)||0));
+    if(before<301||before>=1000||recovery===0)return Object.freeze({applied:false,before,after:before,amount:0});
+    const after=Math.min(1000,before+recovery);
+    updateMorality(after,'WAVE_VICTORY_RECOVERY');
+    return Object.freeze({applied:after!==before,before,after:morality,amount:morality-before});
   }
 
   function applyDarkMaxHpPenalty(){
@@ -114,10 +155,12 @@
   }
 
   function onWaveEnd(){
-    let penalty=null;
     if(darkUsedThisWave){
-      penalty=Object.freeze({morality:applyDarkMoralityPenalty(),health:applyDarkMaxHpPenalty()});
+      const penalty=Object.freeze({morality:applyDarkMoralityPenalty(),health:applyDarkMaxHpPenalty()});
       emit('DARK_CHIP_WAVE_PENALTY',{penalty});
+    }else{
+      const recovery=applyVictoryMoralityRecovery(1);
+      if(recovery.applied)emit('MORALITY_WAVE_RECOVERY',{recovery});
     }
     darkUsedThisWave=false;
     darkLocked=false;
@@ -130,15 +173,46 @@
     return reevaluate('WAVE_START');
   }
 
-  function setMorality(value,{reevaluateNow=false}={}){
-    morality=clampMorality(value);
+  function setMorality(value,{reevaluateNow=false,persist=true}={}){
+    updateMorality(value,'MORALITY_UPDATED',{persist});
     if(reevaluateNow)return reevaluate('MORALITY_UPDATED');
     return getSnapshot();
+  }
+
+  async function initializeMorality(){
+    if(!SAVE?.getPlayerProgress||!SAVE?.savePlayerProgress){
+      moralityReady=true;
+      emit('MORALITY_PERSISTENCE_UNAVAILABLE',{morality});
+      return getSnapshot();
+    }
+    const revisionAtStart=moralityRevision;
+    try{
+      await SAVE.initialize?.();
+      const progress=await SAVE.getPlayerProgress(PLAYER_ID);
+      if(moralityRevision!==revisionAtStart){
+        moralityReady=true;
+        await persistMorality('MORALITY_LOAD_RACE');
+        return reevaluate('MORALITY_READY');
+      }
+      const stored=Number(progress?.morality);
+      if(progress&&Number.isFinite(stored)){
+        morality=clampMorality(stored);
+      }else{
+        await SAVE.savePlayerProgress({...progress,player_id:PLAYER_ID,morality:morality});
+      }
+      moralityReady=true;
+      return reevaluate('MORALITY_LOADED');
+    }catch(error){
+      moralityReady=true;
+      console.warn('[BattleNetworkEvil] Failed to load persisted morality. Using the runtime value.',error);
+      return emit('MORALITY_LOAD_FAILED',{morality});
+    }
   }
 
   const unsubscribe=typeof HUD.subscribeKokoro==='function'?HUD.subscribeKokoro(()=>enforceEvil()):null;
   KOKORO.registerExclusion?.('EVIL_STATE',()=>active);
   reevaluate('INITIAL');
+  void initializeMorality();
 
   window.BattleNetworkEvil=Object.freeze({
     DEFAULT_MORALITY,
@@ -148,6 +222,7 @@
     isDarkChip,
     canSoulUnison:()=>!active,
     getMorality:()=>morality,
+    isMoralityReady:()=>moralityReady,
     getWaveStartKokoro,
     getSnapshot,
     setMorality,
@@ -156,6 +231,8 @@
     onChipActivated,
     onWaveEnd,
     onWaveStart,
+    applyVictoryMoralityRecovery,
+    whenMoralitySaved:()=>saveQueue,
     subscribe(listener){if(typeof listener!=='function')return()=>{};listeners.add(listener);listener(getSnapshot(),'SUBSCRIBE',Object.freeze({}));return()=>listeners.delete(listener)},
     destroy(){if(typeof unsubscribe==='function')unsubscribe();KOKORO.unregisterExclusion?.('EVIL_STATE');listeners.clear()}
   });
