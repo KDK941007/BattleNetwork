@@ -7,6 +7,14 @@
   const battle=document.getElementById('battle');
   if(!FIELD||!PLAYER||!HEALTH||!SAVE||!MASTER||!battle)throw new Error('BattleNetworkBattleReward: required dependency is missing.');
 
+  if(!document.querySelector('link[data-battle-reward-style]')){
+    const styleLink=document.createElement('link');
+    styleLink.rel='stylesheet';
+    styleLink.href='./css/battle-reward.css?v=1';
+    styleLink.dataset.battleRewardStyle='1';
+    document.head.appendChild(styleLink);
+  }
+
   const PLAYER_ID='PLAYER_1';
   const METTAUR_CHIP_ID='CHIP_EXE4_S103';
   const LOW_HP_RATIO=.375;
