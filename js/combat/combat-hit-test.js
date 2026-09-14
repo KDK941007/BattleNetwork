@@ -6,6 +6,7 @@
   const MASTER=window.BattleNetworkMaster;
   const KOKORO=window.BattleNetworkKokoro;
   const FULL_SYNC=window.BattleNetworkFullSynchro;
+  const ENEMY_STATUS=window.BattleNetworkEnemyStatus;
   if(!RANGE)throw new Error('BattleNetworkCombatHitTest: range geometry is not loaded.');
   if(!ENEMY)throw new Error('BattleNetworkCombatHitTest: enemy foundation is not loaded.');
   if(!DATA)throw new Error('BattleNetworkCombatHitTest: master data is not loaded.');
@@ -42,7 +43,9 @@
   function isCounterHit(enemy,attack){return attack?.sourceType==='CHIP'&&FULL_SYNC?.isCounterWindowActive?.(enemy?.id)===true}
   function applyCounter(enemy,attack,result){
     if(result?.applied!==true||!(Number(result.amount)>0)||!FULL_SYNC?.triggerCounter)return null;
-    return FULL_SYNC.triggerCounter({sourceType:'CHIP',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null,enemyId:enemy?.id??null,blockedByAnger:attack?.angerApplied===true});
+    const counter=FULL_SYNC.triggerCounter({sourceType:'CHIP',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null,enemyId:enemy?.id??null,blockedByAnger:attack?.angerApplied===true});
+    if(result.defeatedNow!==true)ENEMY_STATUS?.applyParalysis?.(enemy.id,1500,{sourceType:'COUNTER',sourceId:attack?.sourceId??null,attackId:attack?.attackId??attack?.sourceId??null});
+    return counter;
   }
   function damageAndFlash(enemy,damage,attack=null){
     const value=Number(damage),counterHit=isCounterHit(enemy,attack);
