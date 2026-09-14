@@ -1,11 +1,12 @@
 (()=>{
   const PLAYER=window.BattleNetworkPlayer;
   const ANGER=window.BattleNetworkAnger;
+  const PLAYER_EL=document.getElementById('player');
   const CUSTOM_MODAL=document.getElementById('customModal');
   const SETTINGS_MODAL=document.getElementById('settingsModal');
   const CHIP_DETAIL_MODAL=document.getElementById('chipDetailModal');
   const BATTLE=document.getElementById('battle');
-  if(!PLAYER)throw new Error('BattleNetworkPlayerStatus: player foundation is not loaded.');
+  if(!PLAYER||!PLAYER_EL)throw new Error('BattleNetworkPlayerStatus: player foundation is not loaded.');
 
   const DEFAULT_PARALYSIS_MS=1500;
   const SOURCE_ID='PLAYER_PARALYSIS';
@@ -27,6 +28,7 @@
   }
   function isParalyzed(){return remainingMs>0}
   function getRemainingMs(){return Math.max(0,remainingMs)}
+  function syncVisual(){PLAYER_EL.classList.toggle('statusParalyzed',isParalyzed())}
   function syncPlayerLock(){
     if(!isParalyzed())return;
     const current=Number(PLAYER.getRemainingHitStunMs?.())||0;
@@ -35,6 +37,7 @@
   function clear(reason='EXPIRED'){
     if(!isParalyzed())return false;
     remainingMs=0;
+    syncVisual();
     ANGER?.setIncapacitated?.(SOURCE_ID,false);
     if(frameId){cancelAnimationFrame(frameId);frameId=0}
     window.dispatchEvent(new CustomEvent('battlenetwork:playerparalysischange',{detail:Object.freeze({active:false,reason,remainingMs:0})}));
@@ -56,6 +59,7 @@
     const duration=Number(durationMs);
     if(!Number.isFinite(duration)||duration<=0)return Object.freeze({applied:false,reason:'INVALID_DURATION',remainingMs:getRemainingMs()});
     remainingMs=Math.max(remainingMs,duration);
+    syncVisual();
     ANGER?.setIncapacitated?.(SOURCE_ID,true);
     syncPlayerLock();
     ensureLoop();
@@ -64,5 +68,6 @@
     return snapshot;
   }
   document.addEventListener('visibilitychange',()=>{lastAt=performance.now();if(isParalyzed())ensureLoop()});
+  syncVisual();
   window.BattleNetworkPlayerStatus=Object.freeze({DEFAULT_PARALYSIS_MS,applyParalysis,isParalyzed,getRemainingParalysisMs:getRemainingMs,clearParalysis:clear});
 })();
