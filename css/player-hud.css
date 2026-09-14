@@ -13,3 +13,5 @@
 .kokoroWindow[data-state="ANXIOUS"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-anxious.webp')}
 .kokoroWindow[data-state="ANGRY"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-angry.webp')}
 .kokoroWindow[data-state="EVIL"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-evil.webp')}
+
+.kokoroValueReadout{color:#fff;font-size:10px;line-height:1.3;white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}

@@ -4,6 +4,7 @@
   const hpWindow=document.getElementById('playerHpWindow');
   const hpValue=document.getElementById('playerHpValue');
   const kokoro=document.getElementById('kokoroWindow');
+  const kokoroReadout=document.getElementById('kokoroValueReadout');
   if(!HEALTH||!hud||!hpWindow||!hpValue||!kokoro)throw new Error('BattleNetworkPlayerHud: required dependency is missing.');
 
   let kokoroState='NORMAL';
@@ -23,7 +24,7 @@
   }
 
   function getKokoroSnapshot(){return Object.freeze({value:kokoroValue,state:kokoroState})}
-  function emitKokoro(){const snapshot=getKokoroSnapshot();kokoroListeners.forEach(listener=>{try{listener(snapshot)}catch(error){console.error('BattleNetworkPlayerHud kokoro listener failed.',error)}});return snapshot}
+  function emitKokoro(){if(kokoroReadout)kokoroReadout.textContent=String(kokoroValue);const snapshot=getKokoroSnapshot();kokoroListeners.forEach(listener=>{try{listener(snapshot)}catch(error){console.error('BattleNetworkPlayerHud kokoro listener failed.',error)}});return snapshot}
   function setStateRaw(next){kokoroState=next;kokoro.dataset.state=next}
 
   function setKokoroState(state){
@@ -61,6 +62,7 @@
   renderHealth();
   setStateRaw('NORMAL');
   kokoroValue=128;
+  if(kokoroReadout)kokoroReadout.textContent=String(kokoroValue);
   const unsubscribe=typeof HEALTH.subscribe==='function'?HEALTH.subscribe(renderHealth):null;
 
   window.BattleNetworkPlayerHud=Object.freeze({
