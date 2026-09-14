@@ -1,46 +1,48 @@
+/* Status-scoped paint only: no timers, layout reads, or per-frame DOM work.
+   Removing statusParalyzed removes both generated layers and restores the body. */
+.player.statusParalyzed:not(.defeated){
+  background:linear-gradient(165deg,#ffffd5,#ffe45c 44%,#d99b19);
+  border-color:#fff6af;
+  box-shadow:0 0 9px rgba(255,221,66,.75),inset 0 0 12px rgba(255,255,216,.65);
+}
+
 .player.statusParalyzed::before,
 .player.statusParalyzed::after,
 .enemyPrototype.statusParalyzed::before,
 .enemyPrototype.statusParalyzed::after{
   content:"";
   position:absolute;
-  left:50%;
-  top:50%;
+  inset:-10% -16%;
   pointer-events:none;
   z-index:12;
-  background:linear-gradient(180deg,#fffde8 0 28%,#fff36a 29% 62%,#ffc928 63% 100%);
-  clip-path:polygon(58% 0,24% 42%,48% 42%,18% 100%,82% 48%,56% 48%,88% 0);
-  box-shadow:0 0 4px rgba(255,238,72,.92);
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:100% 100%;
   transform-origin:center;
 }
 
+/* Open, broken branches with white cores, never a connected outline.
+   Two fixed small images are animated using only opacity and transform. */
 .player.statusParalyzed::before,
 .enemyPrototype.statusParalyzed::before{
-  width:13px;
-  height:46px;
-  animation:battleNetworkParalysisBoltA .18s steps(1,end) infinite;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20140%20156%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M27%2016l-8%2017%2010-4-12%2024%208%2013%20M110%2038l9%2013-10%207%2012%2018-7%2013%20M45%20107l-7%2012%2013-3-5%2022%20M20%2046l-9-4%20M116%2070l12-3%20M40%20120l-10%205%27%20stroke%3D%27%23ffd52a%27%20stroke-width%3D%273.2%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M27%2016l-8%2017%2010-4-12%2024%208%2013%20M110%2038l9%2013-10%207%2012%2018-7%2013%20M45%20107l-7%2012%2013-3-5%2022%20M20%2046l-9-4%20M116%2070l12-3%20M40%20120l-10%205%27%20stroke%3D%27%23ffffe8%27%20stroke-width%3D%271.2%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M39%209v8m-4-4h8%20M127%20101v8m-4-4h8%20M64%20142v6m-3-3h6%20M8%2064l4%204m0-4-4%204%27%20stroke%3D%27%23fff6a0%27%20stroke-width%3D%271.6%27%2F%3E%3C%2Fsvg%3E");
+  animation:battleNetworkParalysisBoltA .46s steps(1,end) infinite;
 }
 
 .player.statusParalyzed::after,
 .enemyPrototype.statusParalyzed::after{
-  width:10px;
-  height:36px;
-  animation:battleNetworkParalysisBoltB .14s steps(1,end) infinite;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20140%20156%27%20fill%3D%27none%27%3E%3Cpath%20d%3D%27M64%2010l-9%2012%2013-3-7%2015%20M19%2077l12%209-10%2012%209%2011%20M107%2098l-9%2012%2012%206-9%2020%20M57%2053l-8%2014%2011-4-7%2018%20M26%2094l-14%204%20M105%20118l15%206%27%20stroke%3D%27%23ffd52a%27%20stroke-width%3D%273.2%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M64%2010l-9%2012%2013-3-7%2015%20M19%2077l12%209-10%2012%209%2011%20M107%2098l-9%2012%2012%206-9%2020%20M57%2053l-8%2014%2011-4-7%2018%20M26%2094l-14%204%20M105%20118l15%206%27%20stroke%3D%27%23ffffe8%27%20stroke-width%3D%271.2%27%20stroke-linejoin%3D%27round%27%2F%3E%3Cpath%20d%3D%27M91%2017v8m-4-4h8%20M9%20116v8m-4-4h8%20M79%20132l5%205m0-5-5%205%20M130%2049v6m-3-3h6%27%20stroke%3D%27%23fff6a0%27%20stroke-width%3D%271.6%27%2F%3E%3C%2Fsvg%3E");
+  animation:battleNetworkParalysisBoltB .61s steps(1,end) infinite;
 }
 
 @keyframes battleNetworkParalysisBoltA{
-  0%{opacity:1;transform:translate(-48px,-56px) rotate(-18deg) scale(1)}
-  20%{opacity:.15;transform:translate(34px,-42px) rotate(24deg) scale(.82)}
-  40%{opacity:1;transform:translate(42px,8px) rotate(12deg) scale(1.08)}
-  60%{opacity:.2;transform:translate(-42px,20px) rotate(-28deg) scale(.88)}
-  80%{opacity:1;transform:translate(-16px,-22px) rotate(18deg) scale(.94)}
-  100%{opacity:.1;transform:translate(28px,28px) rotate(-10deg) scale(1)}
+  0%,42%,76%{opacity:1;transform:translate(0,0)}
+  12%,58%,90%{opacity:0;transform:translate(2px,-2px)}
+  24%{opacity:.9;transform:translate(-2px,3px)}
 }
 
 @keyframes battleNetworkParalysisBoltB{
-  0%{opacity:.12;transform:translate(38px,-18px) rotate(28deg) scale(.88)}
-  25%{opacity:1;transform:translate(-38px,-24px) rotate(-20deg) scale(1.08)}
-  50%{opacity:.18;transform:translate(-26px,28px) rotate(16deg) scale(.9)}
-  75%{opacity:1;transform:translate(30px,22px) rotate(-26deg) scale(1)}
-  100%{opacity:.12;transform:translate(4px,-46px) rotate(10deg) scale(.84)}
+  0%,32%,70%{opacity:0;transform:translate(0,0)}
+  15%,48%,84%{opacity:1;transform:translate(2px,1px)}
+  23%,57%,94%{opacity:.15;transform:translate(-2px,-2px)}
 }
