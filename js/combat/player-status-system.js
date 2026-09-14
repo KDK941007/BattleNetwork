@@ -9,8 +9,11 @@
   if(!PLAYER||!PLAYER_EL)throw new Error('BattleNetworkPlayerStatus: player foundation is not loaded.');
 
   const DEFAULT_PARALYSIS_MS=1500;
+  const ANGER_TRIGGER_MS=2000;
   const SOURCE_ID='PLAYER_PARALYSIS';
   let remainingMs=0;
+  let activeElapsedMs=0;
+  let angerTriggerChecked=false;
   let frameId=0;
   let lastAt=performance.now();
 
@@ -35,13 +38,21 @@
     if(current+80<remainingMs)PLAYER.beginHitStun?.(remainingMs);
   }
   function clear(reason='EXPIRED'){
-    if(!isParalyzed())return false;
+    const hadState=isParalyzed()||PLAYER_EL.classList.contains('statusParalyzed');
     remainingMs=0;
+    activeElapsedMs=0;
+    angerTriggerChecked=false;
     syncVisual();
     ANGER?.setIncapacitated?.(SOURCE_ID,false);
     if(frameId){cancelAnimationFrame(frameId);frameId=0}
+    if(!hadState)return false;
     window.dispatchEvent(new CustomEvent('battlenetwork:playerparalysischange',{detail:Object.freeze({active:false,reason,remainingMs:0})}));
     return true;
+  }
+  function triggerAngerIfNeeded(){
+    if(angerTriggerChecked||activeElapsedMs<ANGER_TRIGGER_MS)return;
+    angerTriggerChecked=true;
+    if(ANGER?.isActive?.()!==true)ANGER?.trigger?.('CONTINUOUS_INCAPACITATION',{sourceId:SOURCE_ID,seconds:activeElapsedMs/1000,status:'PARALYSIS'});
   }
   function frame(now){
     frameId=0;
@@ -49,6 +60,8 @@
     if(!isParalyzed())return;
     if(battleTimeRunning()){
       remainingMs=Math.max(0,remainingMs-delta);
+      activeElapsedMs+=delta;
+      triggerAngerIfNeeded();
       if(remainingMs<=0){clear('EXPIRED');return}
       syncPlayerLock();
     }
@@ -58,7 +71,9 @@
   function applyParalysis(durationMs=DEFAULT_PARALYSIS_MS,context={}){
     const duration=Number(durationMs);
     if(!Number.isFinite(duration)||duration<=0)return Object.freeze({applied:false,reason:'INVALID_DURATION',remainingMs:getRemainingMs()});
+    const startingNewEpisode=!isParalyzed();
     remainingMs=Math.max(remainingMs,duration);
+    if(startingNewEpisode){activeElapsedMs=0;angerTriggerChecked=false}
     syncVisual();
     ANGER?.setIncapacitated?.(SOURCE_ID,true);
     syncPlayerLock();
@@ -69,5 +84,5 @@
   }
   document.addEventListener('visibilitychange',()=>{lastAt=performance.now();if(isParalyzed())ensureLoop()});
   syncVisual();
-  window.BattleNetworkPlayerStatus=Object.freeze({DEFAULT_PARALYSIS_MS,applyParalysis,isParalyzed,getRemainingParalysisMs:getRemainingMs,clearParalysis:clear});
+  window.BattleNetworkPlayerStatus=Object.freeze({DEFAULT_PARALYSIS_MS,ANGER_TRIGGER_MS,applyParalysis,isParalyzed,getRemainingParalysisMs:getRemainingMs,clearParalysis:clear});
 })();
