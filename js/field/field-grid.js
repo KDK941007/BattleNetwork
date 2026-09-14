@@ -17,6 +17,7 @@
     PERMANENT: 'PERMANENT',
     RESTORABLE: 'RESTORABLE'
   });
+  const RESTORABLE_HOLE_LIFETIME_SECONDS = 10;
 
   if (WORLD_SIZE !== TILE_SIZE * GRID_COLS || WORLD_SIZE !== TILE_SIZE * GRID_ROWS) {
     throw new Error('BattleNetworkField: logical grid does not exactly match world size.');
@@ -27,6 +28,7 @@
   const clampRow = row => clamp(Math.trunc(row), 0, GRID_ROWS - 1);
   const terrainValues = new Set(Object.values(TERRAIN));
   const occupantTiles = new Map();
+  const restorableHoleTimers = new Map();
 
   const tiles = Array.from({ length: GRID_ROWS }, (_, row) =>
     Array.from({ length: GRID_COLS }, (_, col) => ({
@@ -66,6 +68,25 @@
     return tile.baseTerrain === TERRAIN.HOLE ? HOLE_KIND.PERMANENT : HOLE_KIND.RESTORABLE;
   }
 
+  function tileKey(row, col) {
+    return `${Math.trunc(row)}:${Math.trunc(col)}`;
+  }
+
+  function syncRestorableHoleTimer(tile, previousTerrain, previousHoleKind) {
+    if (!tile) return;
+    const key = tileKey(tile.row, tile.col);
+    if (tile.currentTerrain !== TERRAIN.HOLE || tile.holeKind !== HOLE_KIND.RESTORABLE) {
+      restorableHoleTimers.delete(key);
+      return;
+    }
+    if (previousTerrain === TERRAIN.HOLE && previousHoleKind === HOLE_KIND.RESTORABLE && restorableHoleTimers.has(key)) return;
+    restorableHoleTimers.set(key, {
+      row: tile.row,
+      col: tile.col,
+      remaining: RESTORABLE_HOLE_LIFETIME_SECONDS
+    });
+  }
+
   function emitTerrainChange(tile, previousTerrain, previousHoleKind) {
     if (!tile || (previousTerrain === tile.currentTerrain && previousHoleKind === tile.holeKind)) return;
     window.dispatchEvent(new CustomEvent('battlenetwork:terrainchange', {
@@ -88,6 +109,7 @@
     tile.currentTerrain = terrain;
     tile.holeKind = resolveHoleKind(tile, terrain);
     tile.walkable = terrain !== TERRAIN.HOLE;
+    syncRestorableHoleTimer(tile, previousTerrain, previousHoleKind);
     emitTerrainChange(tile, previousTerrain, previousHoleKind);
     return tile;
   }
@@ -101,6 +123,7 @@
     tile.currentTerrain = terrain;
     tile.holeKind = terrain === TERRAIN.HOLE ? HOLE_KIND.PERMANENT : null;
     tile.walkable = terrain !== TERRAIN.HOLE;
+    restorableHoleTimers.delete(tileKey(tile.row, tile.col));
     emitTerrainChange(tile, previousTerrain, previousHoleKind);
     return tile;
   }
@@ -164,8 +187,56 @@
         setTerrain(tile.row, tile.col, tile.baseTerrain);
       }
     });
+    restorableHoleTimers.clear();
     occupantTiles.clear();
   }
+
+  function isBattleTimeAdvancing() {
+    if (document.hidden) return false;
+    const wave = window.BattleNetworkWave?.getSnapshot?.();
+    if (!wave || wave.status !== 'ACTIVE') return false;
+    if (document.getElementById('customModal')?.classList.contains('open')) return false;
+    if (document.getElementById('settingsModal')?.classList.contains('open')) return false;
+    if (document.getElementById('battle')?.classList.contains('editMode')) return false;
+    if (window.BattleNetworkAreaSteal?.isActive?.() === true) return false;
+    if (window.BattleNetworkPlayer?.isDefeated?.() === true) return false;
+    return true;
+  }
+
+  function advanceRestorableHoleTimers(seconds) {
+    if (!(seconds > 0) || !restorableHoleTimers.size) return;
+    for (const [key, entry] of Array.from(restorableHoleTimers.entries())) {
+      const tile = getTile(entry.row, entry.col);
+      if (!tile || tile.currentTerrain !== TERRAIN.HOLE || tile.holeKind !== HOLE_KIND.RESTORABLE) {
+        restorableHoleTimers.delete(key);
+        continue;
+      }
+      const remaining = entry.remaining - seconds;
+      if (remaining <= 0) {
+        restorableHoleTimers.delete(key);
+        setTerrain(entry.row, entry.col, TERRAIN.NORMAL);
+      } else {
+        restorableHoleTimers.set(key, { ...entry, remaining });
+      }
+    }
+  }
+
+  let lastHoleTimerTick = performance.now();
+  let holeTimerWasAdvancing = false;
+  function tickRestorableHoles(now) {
+    const advancing = isBattleTimeAdvancing();
+    const elapsed = Math.max(0, (now - lastHoleTimerTick) / 1000);
+    lastHoleTimerTick = now;
+    if (advancing && holeTimerWasAdvancing) advanceRestorableHoleTimers(elapsed);
+    holeTimerWasAdvancing = advancing;
+    requestAnimationFrame(tickRestorableHoles);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    lastHoleTimerTick = performance.now();
+    if (document.hidden) holeTimerWasAdvancing = false;
+  });
+  requestAnimationFrame(tickRestorableHoles);
 
   function tileToWorldBounds(row, col) {
     const tile = getTile(row, col);
@@ -212,6 +283,7 @@
     GRID_ROWS,
     TERRAIN,
     HOLE_KIND,
+    RESTORABLE_HOLE_LIFETIME_SECONDS,
     worldToTile,
     getTile,
     getTileAtWorld,
