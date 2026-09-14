@@ -9,13 +9,13 @@
   pointer-events:none;
   opacity:0;
 }
-.confusionEffect.isActive{opacity:1}
+.confusionEffect.isActive, .confusionPreview > .confusionEffect{opacity:1}
 .confusionStar{
   position:absolute;
-  left:-5px;
-  top:-5px;
-  width:10px;
-  height:10px;
+  left:calc(var(--confusion-star-size,10px) / -2);
+  top:calc(var(--confusion-star-size,10px) / -2);
+  width:var(--confusion-star-size,10px);
+  height:var(--confusion-star-size,10px);
   background:#ffe15a;
   clip-path:polygon(50% 0,62% 34%,100% 38%,71% 61%,80% 100%,50% 78%,20% 100%,29% 61%,0 38%,38% 34%);
   animation:battleNetworkConfusionOrbit 1.5s linear infinite;
@@ -23,16 +23,29 @@
 }
 .confusionStar:nth-child(2){animation-delay:-.5s;background:#fff09a}
 .confusionStar:nth-child(3){animation-delay:-1s;background:#ffc940}
-.confusionEffect.isActive .confusionStar{animation-play-state:running}
+.confusionEffect.isActive .confusionStar, .confusionPreview > .confusionEffect .confusionStar{animation-play-state:running}
 .defeated > .confusionEffect{opacity:0}
 .defeated > .confusionEffect .confusionStar{animation-play-state:paused}
 @keyframes battleNetworkConfusionOrbit{
-  0%,100%{transform:translate(21px,0) scale(.9)}
-  12.5%{transform:translate(15px,4px) scale(1)}
-  25%{transform:translate(0,6px) scale(1.1)}
-  37.5%{transform:translate(-15px,4px) scale(1)}
-  50%{transform:translate(-21px,0) scale(.9)}
-  62.5%{transform:translate(-15px,-4px) scale(.8)}
-  75%{transform:translate(0,-6px) scale(.75)}
-  87.5%{transform:translate(15px,-4px) scale(.8)}
+  0%,100%{transform:translate(calc(21px * var(--confusion-orbit-scale,1)),0) scale(.9)}
+  12.5%{transform:translate(calc(15px * var(--confusion-orbit-scale,1)),calc(4px * var(--confusion-orbit-scale,1))) scale(1)}
+  25%{transform:translate(0,calc(6px * var(--confusion-orbit-scale,1))) scale(1.1)}
+  37.5%{transform:translate(calc(-15px * var(--confusion-orbit-scale,1)),calc(4px * var(--confusion-orbit-scale,1))) scale(1)}
+  50%{transform:translate(calc(-21px * var(--confusion-orbit-scale,1)),0) scale(.9)}
+  62.5%{transform:translate(calc(-15px * var(--confusion-orbit-scale,1)),calc(-4px * var(--confusion-orbit-scale,1))) scale(.8)}
+  75%{transform:translate(0,calc(-6px * var(--confusion-orbit-scale,1))) scale(.75)}
+  87.5%{transform:translate(calc(15px * var(--confusion-orbit-scale,1)),calc(-4px * var(--confusion-orbit-scale,1))) scale(.8)}
+}
+
+.confusionTestControls{
+  display:flex;flex-direction:column;gap:4px;pointer-events:auto;
+  width:170px;max-width:30vw;padding:5px;border:1px solid #9cb9c9;
+  border-radius:4px;background:rgba(4,10,18,.82);color:#fff;font-size:11px;
+}
+.confusionTestControls label{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.confusionTestControls input[type="range"]{width:100%;margin:0;min-height:24px}
+.confusionTestControls output{margin-left:auto;font-variant-numeric:tabular-nums}
+.confusionTestControls button{
+  min-height:28px;border:1px solid #9cb9c9;border-radius:4px;
+  background:#10232e;color:#fff;touch-action:manipulation;
 }
