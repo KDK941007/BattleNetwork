@@ -11,7 +11,21 @@
     movementBehaviorId:'ENEMY1_MOVEMENT',
     clearNoticeMs:1500,
     startNoticeMs:1500,
-    spawnTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
+    waveSpawnTiles:Object.freeze({
+      1:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
+      2:Object.freeze([
+        Object.freeze({rowOffset:-1,colOffset:4}),
+        Object.freeze({rowOffset:0,colOffset:4}),
+        Object.freeze({rowOffset:1,colOffset:4})
+      ]),
+      3:Object.freeze([
+        Object.freeze({rowOffset:-1,colOffset:3}),
+        Object.freeze({rowOffset:-1,colOffset:5}),
+        Object.freeze({rowOffset:0,colOffset:4}),
+        Object.freeze({rowOffset:1,colOffset:3}),
+        Object.freeze({rowOffset:1,colOffset:5})
+      ])
+    }),
     swordDummyTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:1})]),
     longSwordDummyTiles:Object.freeze([
       Object.freeze({rowOffset:0,colOffset:1}),
@@ -41,6 +55,7 @@
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
   function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),r=Math.floor(FIELD.GRID_ROWS/2),c=Math.floor(FIELD.GRID_COLS/2),p=FIELD.tileToWorldCenter(r+tile.rowOffset,c+tile.colOffset);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
   function spawnEnemy(tile,{maxHp=null}={}){const id=spawnBaseEnemy(tile,{maxHp});const m=AI.assignBehavior(id,TEST_CONFIG.movementBehaviorId);if(!m.ok)throw new Error(`BattleNetworkWave: movement assign failed: ${m.reason}`);const a=AI.assignBehavior(id,TEST_CONFIG.attackBehaviorId);if(!a.ok)throw new Error(`BattleNetworkWave: attack assign failed: ${a.reason}`);return id}
+  function getWaveSpawnTiles(n){return TEST_CONFIG.waveSpawnTiles[n]||TEST_CONFIG.waveSpawnTiles[1]}
   function getTestTarget(){return window.BattleNetworkFolder?.getTestTarget?.()||null}
   function isSpreadGunTest(){try{return window.BattleNetworkFolder?.toLegacyCards?.()?.[0]?.type==='SPREADGUN'}catch{return false}}
   function isVulcanTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='VULCAN1'}
@@ -57,7 +72,7 @@
     }else if(vulcanTest){
       enemyIds=TEST_CONFIG.vulcanGridTiles.map(tile=>spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.vulcanTestHp}));
     }else{
-      enemyIds=TEST_CONFIG.spawnTiles.map(tile=>spawnEnemy(tile,{maxHp:hp}));
+      enemyIds=getWaveSpawnTiles(n).map(tile=>spawnEnemy(tile,{maxHp:hp}));
       if(spreadTest)TEST_CONFIG.spreadDummyTiles.forEach(tile=>enemyIds.push(spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.spreadTestHp})));
     }
     state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds};getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
