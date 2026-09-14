@@ -18,6 +18,12 @@
   const PLAYER_ID='PLAYER_1';
   const METTAUR_CHIP_ID='CHIP_EXE4_S103';
   const LOW_HP_RATIO=.375;
+  const codeRelations=window.BattleNetworkData?.CHIP_CODE_RELATION;
+  if(Array.isArray(codeRelations)){
+    for(const codeId of ['A','L','V','*']){
+      if(!codeRelations.some(row=>row?.chipId===METTAUR_CHIP_ID&&row?.codeId===codeId))codeRelations.push({chipId:METTAUR_CHIP_ID,codeId});
+    }
+  }
   const appliedRewards=new Map();
   let tracker=null;
   let rewardSerial=0;
