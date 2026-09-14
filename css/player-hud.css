@@ -3,16 +3,16 @@
 .playerHpWindow::before{content:"";position:absolute;inset:3px;border-top:1px solid rgba(177,221,232,.28);border-left:1px solid rgba(177,221,232,.18);pointer-events:none}
 .playerHpValue{position:relative;z-index:1;display:inline-block;min-width:4ch;text-align:right;color:#f7ffff;font-family:var(--bn-ui-font);font-size:clamp(22px,3.2vw,29px);font-weight:800;line-height:.9;letter-spacing:-.09em;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'palt' 0;-webkit-text-stroke:2px #18212a;text-shadow:1px 1px 0 #18212a,-1px 1px 0 #18212a,1px -1px 0 #18212a,-1px -1px 0 #18212a;transform:scaleX(.88);transform-origin:right center}
 .playerHpWindow.unconfigured .playerHpValue{opacity:.72;letter-spacing:-.03em}
-.kokoroRow{display:flex;align-items:stretch;gap:-3px}
+.kokoroRow{display:flex;align-items:stretch;gap:0}
 .kokoroWindow{position:relative;width:clamp(70px,9vw,88px);height:clamp(30px,4vw,34px);display:block;border:3px solid #64ddff;border-radius:2px;background:#071624;box-shadow:inset 0 0 0 2px #102b3d,0 2px 0 rgba(0,0,0,.72);overflow:hidden}
-.soulTurnWindow{position:relative;width:clamp(30px,4vw,34px);height:clamp(30px,4vw,34px);display:flex;align-items:center;justify-content:center;border:3px solid #64ddff;border-radius:2px;background:#071624;box-shadow:inset 0 0 0 2px #102b3d,0 2px 0 rgba(0,0,0,.72);overflow:hidden}
+.soulTurnWindow{position:relative;width:clamp(30px,4vw,34px);height:clamp(30px,4vw,34px);display:flex;align-items:center;justify-content:center;margin-left:-3px;border:3px solid #64ddff;border-radius:2px;background:#071624;box-shadow:inset 0 0 0 2px #102b3d,0 2px 0 rgba(0,0,0,.72);overflow:hidden}
 .soulTurnWindow::before{content:"";position:absolute;inset:3px;border-top:1px solid rgba(100,221,255,.24);border-left:1px solid rgba(100,221,255,.18);pointer-events:none}
 .soulTurnValue{position:relative;z-index:1;color:#f7ffff;font-family:var(--bn-ui-font);font-size:clamp(18px,2.6vw,24px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;-webkit-text-stroke:1px #18212a;text-shadow:1px 1px 0 #18212a,-1px 1px 0 #18212a,1px -1px 0 #18212a,-1px -1px 0 #18212a}
 .kokoroPortrait{position:absolute;inset:0;background-image:url('../assets/ui/kokoro-normal.webp?v=2');background-size:100% auto;background-position:center 60%;background-repeat:no-repeat;background-color:#071624}
 .kokoroPortrait::before,.kokoroPortrait::after{content:none}
 .kokoroStateMark{display:none}
 .kokoroWindow[data-state="NORMAL"]{border-color:#64ddff;background:#071624}
-@media (max-height:390px){.playerStatusHud{left:3px;top:4px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroRow{gap:-3px}.kokoroWindow{width:68px;height:28px}.soulTurnWindow{width:28px;height:28px}.soulTurnValue{font-size:19px}.playerHpValue{font-size:21px}}
+@media (max-height:390px){.playerStatusHud{left:3px;top:4px;gap:2px}.playerHpWindow{width:68px;height:28px}.kokoroWindow{width:68px;height:28px}.soulTurnWindow{width:28px;height:28px}.soulTurnValue{font-size:19px}.playerHpValue{font-size:21px}}
 .kokoroWindow[data-state="FULL_SYNCHRO"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-fullsynchro.webp?v=3');background-position:center 60%}
 .kokoroWindow[data-state="ANXIOUS"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-anxious.webp')}
 .kokoroWindow[data-state="ANGRY"] .kokoroPortrait{background-image:url('../assets/ui/kokoro-angry.webp')}
