@@ -2,7 +2,7 @@
   const AI=window.BattleNetworkEnemyAI,FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,PLAYER=window.BattleNetworkPlayer,PLAYER_DAMAGE=window.BattleNetworkPlayerDamage,LAYER=window.BattleNetworkEnemyAttackLayer,RUNTIME=window.BattleNetworkEnemy1Runtime;
   if(!AI||!FIELD||!ENEMY||!PLAYER||!PLAYER_DAMAGE||!LAYER||!RUNTIME)throw new Error('BattleNetworkEnemy1Shockwave: required dependency is missing.');
   const BEHAVIOR_ID='ENEMY1_GROUND_SHOCKWAVE',DAMAGE=RUNTIME.getAttackDefaults().damage;
-  const TEST_STATUS_MS=2100;
+  const TEST_STATUS_MS=Number(PLAYER.HIT_STUN_MS)||300;
   const style=document.createElement('style');
   style.dataset.testOnly='enemy1-telegraph-glow';
   style.textContent=`
@@ -16,8 +16,8 @@
     const telegraphEl=LAYER.createTelegraph(),projectileEl=LAYER.createProjectile(),enemyEl=findEnemyElement(enemyId);
     let phase='IDLE',direction=null,projectile=null,fireAt=0,fullSyncAt=0,recoveryUntil=0,lastGlowMode='NONE',statusHitCount=0;
     RUNTIME.setNextAttackAt(enemyId,performance.now());
-    function nextStatusMode(){return statusHitCount%2===0?'FLINCH':'PARALYSIS'}
-    function testStatusInput(){return nextStatusMode()==='FLINCH'?{hitStunMs:TEST_STATUS_MS,paralysisMs:0}:{hitStunMs:0,paralysisMs:TEST_STATUS_MS}}
+    function nextStatusMode(){return 'FLINCH'}
+    function testStatusInput(){return{hitStunMs:TEST_STATUS_MS,paralysisMs:0}}
     function setGlow(mode){
       if(!enemyEl)return;
       const debug=RUNTIME.getDebugState();
