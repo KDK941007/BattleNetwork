@@ -11,8 +11,8 @@
     }
   ];
 
-  // Rockman EXE4 Folder1 (30 chips)
-  // Source: The Rockman EXE Zone Wiki / Folders (MMBN4)
+  // Rockman EXE4 Folder1 (30 chips), with one MiniBomb slot temporarily replaced
+  // by the implemented Dark Vulcan for Evil-state verification.
   const FOLDER_CHIP_RELATION=[
     {folderId:'INITIAL_FOLDER',slotNo:1,chipId:'CHIP_0001',codeId:'A'},
     {folderId:'INITIAL_FOLDER',slotNo:2,chipId:'CHIP_0001',codeId:'A'},
@@ -27,7 +27,7 @@
     {folderId:'INITIAL_FOLDER',slotNo:11,chipId:'CHIP_0004',codeId:'B'},
     {folderId:'INITIAL_FOLDER',slotNo:12,chipId:'CHIP_0004',codeId:'B'},
     {folderId:'INITIAL_FOLDER',slotNo:13,chipId:'CHIP_0004',codeId:'L'},
-    {folderId:'INITIAL_FOLDER',slotNo:14,chipId:'CHIP_0004',codeId:'L'},
+    {folderId:'INITIAL_FOLDER',slotNo:14,chipId:'CHIP_DARK_VULCAN',codeId:'V'},
     {folderId:'INITIAL_FOLDER',slotNo:15,chipId:'CHIP_0002',codeId:'S'},
     {folderId:'INITIAL_FOLDER',slotNo:16,chipId:'CHIP_0002',codeId:'S'},
     {folderId:'INITIAL_FOLDER',slotNo:17,chipId:'CHIP_0002',codeId:'S'},
