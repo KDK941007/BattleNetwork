@@ -81,7 +81,8 @@
     CHIP_EXE4_S056:'LONG',
     CHIP_EXE4_S106:'CRACKOUT',
     CHIP_EXE4_S119:'AREASTEAL',
-    CHIP_EXE4_S148:'ATTACK10'
+    CHIP_EXE4_S148:'ATTACK10',
+    CHIP_DARK_VULCAN:'DARKVULCAN'
   });
 
   const folderById=new Map((data.FOLDER_MASTER||[]).map(row=>[row.folderId,row]));
