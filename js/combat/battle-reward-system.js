@@ -18,6 +18,10 @@
   const PLAYER_ID='PLAYER_1';
   const METTAUR_CHIP_ID='CHIP_EXE4_S103';
   const LOW_HP_RATIO=.375;
+  const REWARD_IMAGE_PATHS=Object.freeze({
+    ZENNY:'./assets/rewards/zenny.png',
+    HP:'./assets/rewards/hp.png'
+  });
   const codeRelations=window.BattleNetworkData?.CHIP_CODE_RELATION;
   if(Array.isArray(codeRelations)){
     for(const codeId of ['A','L','V','*']){
@@ -227,23 +231,36 @@
     return '---';
   }
 
-  function renderRewardGet(modal,reward){
-    const label=modal.querySelector('#battleRewardGet');
-    const image=modal.querySelector('#battleRewardChipImage');
-    label.textContent=rewardLabel(reward);
-    if(reward?.type==='CHIP'){
+  function rewardImageInfo(reward){
+    if(!reward)return null;
+    if(reward.type==='CHIP'){
       const chip=MASTER.getChip?.(reward.chipId);
       const src=MASTER.getChipImagePath?.(chip||reward.chipId);
-      if(src){
-        image.src=src;
-        image.alt=chip?.chipName||'バトルチップ';
-        image.hidden=false;
-        return;
-      }
+      return src?{src,alt:chip?.chipName||'バトルチップ'}:null;
     }
+    if(reward.type==='ZENNY')return {src:REWARD_IMAGE_PATHS.ZENNY,alt:'ゼニー'};
+    if(reward.type==='HP')return {src:REWARD_IMAGE_PATHS.HP,alt:'HP回復'};
+    return null;
+  }
+
+  function renderRewardGet(modal,reward){
+    const label=modal.querySelector('#battleRewardGet');
+    const image=modal.querySelector('#battleRewardImage');
+    label.textContent=rewardLabel(reward);
     image.hidden=true;
-    image.removeAttribute('src');
-    image.alt='';
+    image.onload=()=>{image.hidden=false};
+    image.onerror=()=>{
+      image.hidden=true;
+      image.removeAttribute('src');
+    };
+    const info=rewardImageInfo(reward);
+    if(!info){
+      image.removeAttribute('src');
+      image.alt='';
+      return;
+    }
+    image.alt=info.alt;
+    image.src=info.src;
   }
 
   function ensureRewardModal(){
@@ -260,7 +277,7 @@
         <div><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
         <div><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></div>
       </div>
-      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0"><img id="battleRewardChipImage" hidden alt="" draggable="false" style="width:64px;height:64px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
+      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0"><img id="battleRewardImage" hidden alt="" draggable="false" style="width:64px;height:64px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
       <button class="battleRewardNext" id="battleRewardNext" type="button">次へ</button>
     </div>`;
@@ -295,6 +312,7 @@
   window.BattleNetworkBattleReward=Object.freeze({
     LOW_HP_RATIO,
     METTAUR_CHIP_ID,
+    REWARD_IMAGE_PATHS,
     startWave,
     finishWave,
     show,
