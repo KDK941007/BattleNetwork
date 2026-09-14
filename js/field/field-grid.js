@@ -18,6 +18,8 @@
     RESTORABLE: 'RESTORABLE'
   });
   const RESTORABLE_HOLE_LIFETIME_SECONDS = 10;
+  const RESTORABLE_HOLE_WARNING_SECONDS = 2;
+  const RESTORABLE_HOLE_BLINK_INTERVAL_SECONDS = 0.2;
 
   if (WORLD_SIZE !== TILE_SIZE * GRID_COLS || WORLD_SIZE !== TILE_SIZE * GRID_ROWS) {
     throw new Error('BattleNetworkField: logical grid does not exactly match world size.');
@@ -83,7 +85,8 @@
     restorableHoleTimers.set(key, {
       row: tile.row,
       col: tile.col,
-      remaining: RESTORABLE_HOLE_LIFETIME_SECONDS
+      remaining: RESTORABLE_HOLE_LIFETIME_SECONDS,
+      blinkPhase: null
     });
   }
 
@@ -97,6 +100,18 @@
         terrain: tile.currentTerrain,
         previousHoleKind: previousHoleKind || null,
         holeKind: tile.holeKind || null
+      })
+    }));
+  }
+
+  function emitHoleRestoreBlink(tile, visible, remaining) {
+    if (!tile || tile.currentTerrain !== TERRAIN.HOLE || tile.holeKind !== HOLE_KIND.RESTORABLE) return;
+    window.dispatchEvent(new CustomEvent('battlenetwork:holerestoreblink', {
+      detail: Object.freeze({
+        row: tile.row,
+        col: tile.col,
+        visible: visible === true,
+        remaining: Math.max(0, Number(remaining) || 0)
       })
     }));
   }
@@ -215,9 +230,14 @@
       if (remaining <= 0) {
         restorableHoleTimers.delete(key);
         setTerrain(entry.row, entry.col, TERRAIN.NORMAL);
-      } else {
-        restorableHoleTimers.set(key, { ...entry, remaining });
+        continue;
       }
+      let blinkPhase = null;
+      if (remaining <= RESTORABLE_HOLE_WARNING_SECONDS) {
+        blinkPhase = Math.floor(remaining / RESTORABLE_HOLE_BLINK_INTERVAL_SECONDS) % 2;
+        if (entry.blinkPhase !== blinkPhase) emitHoleRestoreBlink(tile, blinkPhase === 0, remaining);
+      }
+      restorableHoleTimers.set(key, { ...entry, remaining, blinkPhase });
     }
   }
 
@@ -284,6 +304,8 @@
     TERRAIN,
     HOLE_KIND,
     RESTORABLE_HOLE_LIFETIME_SECONDS,
+    RESTORABLE_HOLE_WARNING_SECONDS,
+    RESTORABLE_HOLE_BLINK_INTERVAL_SECONDS,
     worldToTile,
     getTile,
     getTileAtWorld,
