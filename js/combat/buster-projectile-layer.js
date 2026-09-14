@@ -19,14 +19,29 @@
     normal:Object.freeze({width:30,height:15,border:'2px solid rgba(205,248,255,.9)',background:'#66ddff'}),
     charged:Object.freeze({width:52,height:26,border:'2px solid rgba(255,220,210,.92)',background:'#ff514e'}),
     vulcan:Object.freeze({width:34,height:17,border:'1px solid rgba(255,246,174,.9)',background:'#ffe97a'}),
+    darkVulcan:Object.freeze({width:38,height:19,border:'1px solid rgba(218,166,255,.95)',background:'radial-gradient(ellipse at 72% 50%,rgba(231,190,255,.98) 0 8%,rgba(149,74,201,.96) 24%,rgba(73,27,102,.98) 58%,rgba(24,8,34,1) 100%)',boxShadow:'0 0 6px rgba(185,105,238,.88),0 0 12px rgba(89,35,126,.62)'}),
     spread:Object.freeze({width:38,height:19,border:'1px solid rgba(205,248,255,.92)',background:'#8eeaff'})
   });
   const LEGACY_TRANSLATE_X=9;
   const LEGACY_TRANSLATE_Y=34;
   const FLOOR_CLEARANCE=20;
+  const DARK_VULCAN_ID=window.BattleNetworkDarkVulcanMaster?.CHIP_ID||'CHIP_DARK_VULCAN';
+  const DARK_VULCAN_SHOTS=24;
   const vulcanPool=[];
+  const darkVulcanPool=[];
   const spreadPool=[];
+  let pendingDarkVulcanShots=0;
   let lastSceneTransform='';
+
+  window.addEventListener('battlenetwork:evilchange',event=>{
+    const reason=event.detail?.reason;
+    const chipId=event.detail?.context?.chipId;
+    if(reason==='DARK_CHIP'&&chipId===DARK_VULCAN_ID){
+      pendingDarkVulcanShots=DARK_VULCAN_SHOTS;
+      return;
+    }
+    if(reason==='WAVE_END'||reason==='WAVE_START')pendingDarkVulcanShots=0;
+  });
 
   function syncTransform(){
     const next=scene.style.transform||'';
@@ -58,19 +73,32 @@
     const el=document.createElement('div');
     el.className=`busterProjectile ${kind}`;
     el.dataset.projectileKind=kind;
-    el.style.cssText=`position:absolute;width:${cfg.width}px;height:${cfg.height}px;border-radius:50%;background:${cfg.background};border:${cfg.border};pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;box-shadow:none;filter:none;opacity:0;`;
+    el.style.cssText=`position:absolute;width:${cfg.width}px;height:${cfg.height}px;border-radius:50%;background:${cfg.background};border:${cfg.border};pointer-events:none;transform-origin:center;will-change:transform,opacity;contain:layout paint style;box-shadow:${cfg.boxShadow||'none'};filter:none;opacity:0;`;
     el.style.marginLeft=`${LEGACY_TRANSLATE_X-cfg.width/2}px`;
     el.style.marginTop=`${LEGACY_TRANSLATE_Y-cfg.height-FLOOR_CLEARANCE}px`;
     return el;
   }
 
-  function poolFor(kind){return kind==='vulcan'?vulcanPool:kind==='spread'?spreadPool:null}
+  function poolFor(kind){
+    if(kind==='vulcan')return vulcanPool;
+    if(kind==='darkVulcan')return darkVulcanPool;
+    if(kind==='spread')return spreadPool;
+    return null;
+  }
+  function visualKindFor(kind){
+    if(kind==='vulcan'&&pendingDarkVulcanShots>0){
+      pendingDarkVulcanShots--;
+      return 'darkVulcan';
+    }
+    return kind;
+  }
   function create(kind){
-    const cfg=config[kind];
+    const visualKind=visualKindFor(kind);
+    const cfg=config[visualKind];
     if(!cfg)return null;
-    const pool=poolFor(kind);
+    const pool=poolFor(visualKind);
     let el=pool&&pool.length?pool.pop():null;
-    if(!el){el=createElement(kind,cfg);layer.appendChild(el)}
+    if(!el){el=createElement(visualKind,cfg);layer.appendChild(el)}
     else if(el.parentElement!==layer)layer.appendChild(el);
     el.style.opacity='1';
     return el;
