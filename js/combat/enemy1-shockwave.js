@@ -31,7 +31,7 @@
     function hide(){LAYER.hideTelegraph(telegraphEl);LAYER.hideProjectile(projectileEl);setGlow('NONE')}
     function cfg(){return RUNTIME.getPattern()}
     function inRange(enemy,player){return Math.hypot(player.x-enemy.x,player.y-enemy.y)<=FIELD.toWorldDistance(cfg().attackStartRangeTiles)}
-    function canStart(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated||phase!=='IDLE'||!RUNTIME.isAttackReady(enemyId,now)||!RUNTIME.getPerception(enemyId))return false;return inRange(enemy,PLAYER.getPosition())}
+    function canStart(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated||phase!=='IDLE'||!RUNTIME.isAttackReady(enemyId,now))return false;return inRange(enemy,PLAYER.getPosition())}
     function start(now){if(!canStart(now))return false;const enemy=ENEMY.getEnemy(enemyId),player=PLAYER.getPosition(),c=cfg();direction=unit(player.x-enemy.x,player.y-enemy.y);phase='TELEGRAPH';fireAt=now+c.telegraphMs;fullSyncAt=Math.max(now,fireAt-c.fullSyncWindowMs);RUNTIME.setAttackLocked(enemyId,true);const end={x:enemy.x+direction.x*FIELD.toWorldDistance(c.projectileMaxRangeTiles),y:enemy.y+direction.y*FIELD.toWorldDistance(c.projectileMaxRangeTiles)};LAYER.showTelegraph(telegraphEl,{x:enemy.x,y:enemy.y},end);setGlow('TELEGRAPH');return true}
     function fire(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy){cancel(now);return}LAYER.hideTelegraph(telegraphEl);setGlow('NONE');projectile={x:enemy.x,y:enemy.y,travel:0,maxTravel:FIELD.toWorldDistance(cfg().projectileMaxRangeTiles)};phase='PROJECTILE';LAYER.showProjectile(projectileEl,projectile.x,projectile.y)}
     function beginRecovery(now){LAYER.hideProjectile(projectileEl);projectile=null;phase='RECOVERY';recoveryUntil=now+cfg().recoveryMs}
