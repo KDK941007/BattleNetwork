@@ -94,20 +94,25 @@
   }
 
   function trackPlayerIncapacitation(){
-    if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0)resetIncapacitationEpisode();
+    const wasIncapacitated=playerIsIncapacitated();
+    if(!wasIncapacitated)resetIncapacitationEpisode();
     trackingPlayerIncapacitation=true;
     ensureLoop();
     return getSnapshot();
   }
   function setIncapacitated(sourceId,value=true){
     const key=String(sourceId||'EXTERNAL').trim()||'EXTERNAL';
+    const wasIncapacitated=playerIsIncapacitated();
     if(value){
-      if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0)resetIncapacitationEpisode();
+      if(!wasIncapacitated)resetIncapacitationEpisode();
       externalIncapacitationSources.add(key);
       ensureLoop();
     }else{
       externalIncapacitationSources.delete(key);
-      if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0&&PLAYER.isHitStunned?.()!==true)resetIncapacitationEpisode();
+      if(!playerIsIncapacitated()){
+        trackingPlayerIncapacitation=false;
+        resetIncapacitationEpisode();
+      }
     }
     return getSnapshot();
   }
