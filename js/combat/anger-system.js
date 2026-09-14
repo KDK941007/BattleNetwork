@@ -54,6 +54,10 @@
   function playerIsIncapacitated(now=performance.now()){
     return PLAYER.isHitStunned?.(now)===true||externalIncapacitationSources.size>0;
   }
+  function resetIncapacitationEpisode(){
+    incapacitatedElapsed=0;
+    incapacitationConsumed=false;
+  }
 
   function trigger(reason='INCAPACITATED',context={}){
     if(active)return Object.freeze({applied:false,reason:'ALREADY_ACTIVE',snapshot:getSnapshot()});
@@ -74,6 +78,10 @@
     activeElapsed=0;
     syncVisual();
     restoreKokoroState();
+    if(!playerIsIncapacitated()){
+      trackingPlayerIncapacitation=false;
+      resetIncapacitationEpisode();
+    }
     const snapshot=emit(reason);
     if(!shouldRunLoop())stopLoop();
     return Object.freeze({applied:true,reason,snapshot});
@@ -85,11 +93,22 @@
     return trigger('HEAVY_DAMAGE',{...context,appliedDamage:damage});
   }
 
-  function trackPlayerIncapacitation(){trackingPlayerIncapacitation=true;ensureLoop();return getSnapshot()}
+  function trackPlayerIncapacitation(){
+    if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0)resetIncapacitationEpisode();
+    trackingPlayerIncapacitation=true;
+    ensureLoop();
+    return getSnapshot();
+  }
   function setIncapacitated(sourceId,value=true){
     const key=String(sourceId||'EXTERNAL').trim()||'EXTERNAL';
-    if(value)externalIncapacitationSources.add(key);else externalIncapacitationSources.delete(key);
-    if(value)ensureLoop();
+    if(value){
+      if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0)resetIncapacitationEpisode();
+      externalIncapacitationSources.add(key);
+      ensureLoop();
+    }else{
+      externalIncapacitationSources.delete(key);
+      if(!trackingPlayerIncapacitation&&externalIncapacitationSources.size===0&&PLAYER.isHitStunned?.()!==true)resetIncapacitationEpisode();
+    }
     return getSnapshot();
   }
 
@@ -112,8 +131,7 @@
     const wasActive=active;
     active=false;
     activeElapsed=0;
-    incapacitatedElapsed=0;
-    incapacitationConsumed=false;
+    resetIncapacitationEpisode();
     trackingPlayerIncapacitation=false;
     externalIncapacitationSources.clear();
     syncVisual();
@@ -124,8 +142,7 @@
 
   function updateContinuousIncapacitation(delta,incapacitated){
     if(!incapacitated){
-      incapacitatedElapsed=0;
-      incapacitationConsumed=false;
+      resetIncapacitationEpisode();
       trackingPlayerIncapacitation=false;
       return;
     }
@@ -158,8 +175,7 @@
 
     if(trackingPlayerIncapacitation&&!incapacitated&&running){
       trackingPlayerIncapacitation=false;
-      incapacitatedElapsed=0;
-      incapacitationConsumed=false;
+      resetIncapacitationEpisode();
     }
     if(shouldRunLoop())frameId=requestAnimationFrame(frame);
   }
