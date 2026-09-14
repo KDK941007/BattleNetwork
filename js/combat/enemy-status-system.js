@@ -21,12 +21,18 @@
     if(BATTLE?.classList.contains('editMode'))return false;
     return true;
   }
+  function getEnemyElement(enemyId){
+    const id=Number(enemyId),enemies=ENEMY.getEnemies(),index=enemies.findIndex(enemy=>enemy.id===id);
+    return index>=0?document.querySelectorAll('.enemyPrototype')[index]||null:null;
+  }
+  function syncVisual(enemyId,active){getEnemyElement(enemyId)?.classList.toggle('statusParalyzed',active===true)}
   function cleanupMissing(){for(const enemyId of [...paralysis.keys()])if(!ENEMY.getEnemy(enemyId))paralysis.delete(enemyId)}
   function isParalyzed(enemyId){const entry=paralysis.get(Number(enemyId));return !!entry&&entry.remainingMs>0}
   function getRemainingMs(enemyId){return Math.max(0,paralysis.get(Number(enemyId))?.remainingMs||0)}
   function clearParalysis(enemyId,reason='CLEARED'){
     const id=Number(enemyId);if(!paralysis.has(id))return false;
     paralysis.delete(id);
+    syncVisual(id,false);
     window.dispatchEvent(new CustomEvent('battlenetwork:enemyparalysischange',{detail:Object.freeze({enemyId:id,active:false,reason,remainingMs:0})}));
     return true;
   }
@@ -47,6 +53,7 @@
     if(!Number.isFinite(duration)||duration<=0)return Object.freeze({applied:false,reason:'INVALID_DURATION',enemyId:id,remainingMs:getRemainingMs(id)});
     const current=paralysis.get(id);
     paralysis.set(id,{remainingMs:Math.max(current?.remainingMs||0,duration)});
+    syncVisual(id,true);
     ensureLoop();
     const detail=Object.freeze({enemyId:id,active:true,reason:'APPLIED',remainingMs:getRemainingMs(id),context:Object.freeze({...context})});
     window.dispatchEvent(new CustomEvent('battlenetwork:enemyparalysischange',{detail}));
