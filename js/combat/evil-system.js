@@ -2,6 +2,7 @@
   const HUD=window.BattleNetworkPlayerHud;
   const KOKORO=window.BattleNetworkKokoro;
   const MASTER=window.BattleNetworkMaster;
+  const HEALTH=window.BattleNetworkPlayerHealth;
   if(!HUD||!KOKORO||!MASTER)throw new Error('BattleNetworkEvil: required dependency is missing.');
 
   const DEFAULT_MORALITY=500;
@@ -12,6 +13,7 @@
   let morality=DEFAULT_MORALITY;
   let active=false;
   let darkLocked=false;
+  let darkUsedThisWave=false;
   let syncing=false;
 
   function clampMorality(value){
@@ -37,6 +39,7 @@
     return Object.freeze({
       active,
       darkLocked,
+      darkUsedThisWave,
       morality,
       kokoroValue:HUD.getKokoroValue?.(),
       kokoroState:HUD.getKokoroState?.()
@@ -87,16 +90,42 @@
   function onChipActivated(chip){
     if(!isDarkChip(chip))return Object.freeze({applied:false,reason:'NOT_DARK_CHIP',snapshot:getSnapshot()});
     const chipId=chip?.chipId??chip?.sourceId??null;
+    darkUsedThisWave=true;
     darkLocked=true;
     return enter('DARK_CHIP',{chipId});
   }
 
+  function applyDarkMoralityPenalty(){
+    const before=morality;
+    if(before>=500)morality=480;
+    else if(before>=470)morality=Math.max(0,before-4);
+    else if(before>=1)morality=before-1;
+    else morality=0;
+    return Object.freeze({before,after:morality});
+  }
+
+  function applyDarkMaxHpPenalty(){
+    const before=HEALTH?.getSnapshot?.();
+    if(!before?.isConfigured||!(Number(before.maxHp)>1))return Object.freeze({applied:false,beforeMaxHp:before?.maxHp??null,afterMaxHp:before?.maxHp??null});
+    const nextMaxHp=before.maxHp-1;
+    const nextHp=Math.min(before.hp,nextMaxHp);
+    const result=HEALTH.configureHealth({maxHp:nextMaxHp,hp:nextHp});
+    return Object.freeze({applied:result?.ok===true,beforeMaxHp:before.maxHp,afterMaxHp:result?.maxHp??before.maxHp,beforeHp:before.hp,afterHp:result?.hp??before.hp});
+  }
+
   function onWaveEnd(){
+    let penalty=null;
+    if(darkUsedThisWave){
+      penalty=Object.freeze({morality:applyDarkMoralityPenalty(),health:applyDarkMaxHpPenalty()});
+      emit('DARK_CHIP_WAVE_PENALTY',{penalty});
+    }
+    darkUsedThisWave=false;
     darkLocked=false;
     return reevaluate('WAVE_END');
   }
 
   function onWaveStart(){
+    darkUsedThisWave=false;
     darkLocked=false;
     return reevaluate('WAVE_START');
   }
