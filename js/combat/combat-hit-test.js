@@ -63,6 +63,7 @@
   }
   function isAirShot(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S004'}
   function isVulcan1(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S005'}
+  function isDarkVulcan(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_DARK_VULCAN'}
   function isSpreadGun(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S008'}
   function isCannon(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_0001'}
   function airShotSpeed(){return 4000}function vulcan1Speed(){return 4000}function spreadGunSpeed(){return 4000}
@@ -93,14 +94,14 @@
     return Object.freeze(hits);
   }
   function scheduleCannon(attack){
-    const airShot=isAirShot(attack),vulcan1=isVulcan1(attack),spreadGun=isSpreadGun(attack),cannon=isCannon(attack);const speed=airShot?airShotSpeed():vulcan1?vulcan1Speed():spreadGun?spreadGunSpeed():cannon?cannonSpeed():behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',2000);if(!(speed>0))return;
+    const airShot=isAirShot(attack),vulcan1=isVulcan1(attack),darkVulcan=isDarkVulcan(attack),vulcanInduction=vulcan1||darkVulcan,spreadGun=isSpreadGun(attack),cannon=isCannon(attack);const speed=airShot?airShotSpeed():vulcanInduction?vulcan1Speed():spreadGun?spreadGunSpeed():cannon?cannonSpeed():behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',2000);if(!(speed>0))return;
     const first=getFirstCannonHit(attack);if(!first)return;if(spreadGun)trace('SPREAD:scheduled',`${first.distance.toFixed(0)}u`);
     setTimeout(()=>{
       if(spreadGun)trace('SPREAD:directHit:start');
-      const inductionTile=vulcan1?getVulcanInductionTile(first.enemy,attack.shape.direction):null;
+      const inductionTile=vulcanInduction?getVulcanInductionTile(first.enemy,attack.shape.direction):null;
       const result=damageAndFlash(first.enemy,attack.damage,attack);
       if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);
-      if(vulcan1&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id,attack);
+      if(vulcanInduction&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id,attack);
       if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,first.enemy);trace('SPREAD:directHit:end')}
     },first.distance/speed*1000)
   }
