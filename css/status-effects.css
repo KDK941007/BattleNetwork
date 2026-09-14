@@ -46,3 +46,10 @@
   15%,48%,84%{opacity:1;transform:translate(2px,1px)}
   23%,57%,94%{opacity:.15;transform:translate(-2px,-2px)}
 }
+
+/* Override the enemy's inline body paint only while paralysis is active. */
+.enemyPrototype.statusParalyzed:not(.defeated){
+  background:linear-gradient(165deg,#ffffd5,#ffe45c 44%,#d99b19) !important;
+  border-color:#fff6af !important;
+  box-shadow:0 0 9px rgba(255,221,66,.75),inset 0 0 12px rgba(255,255,216,.65) !important;
+}
