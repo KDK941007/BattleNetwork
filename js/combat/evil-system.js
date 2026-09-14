@@ -20,32 +20,11 @@
   let darkLocked=false;
   let darkUsedThisWave=false;
   let syncing=false;
-  let moralityReadout=null;
 
   function clampMorality(value){
     const numeric=Math.round(Number(value));
     if(!Number.isFinite(numeric))return morality;
     return Math.max(0,Math.min(1000,numeric));
-  }
-
-  function renderMoralityReadout(){
-    if(!moralityReadout){
-      moralityReadout=document.getElementById('moralityValueReadout');
-      if(!moralityReadout){
-        const kokoroRow=document.querySelector('.kokoroValueReadout');
-        if(kokoroRow){
-          const row=document.createElement('div');
-          row.className='kokoroValueReadout moralityValueReadout';
-          const label=document.createTextNode('善悪度：');
-          const value=document.createElement('span');
-          value.id='moralityValueReadout';
-          row.append(label,value);
-          kokoroRow.insertAdjacentElement('afterend',row);
-          moralityReadout=value;
-        }
-      }
-    }
-    if(moralityReadout)moralityReadout.textContent=String(morality);
   }
 
   function getWaveStartKokoro(value=morality){
@@ -74,7 +53,6 @@
   }
 
   function emit(reason,context={}){
-    renderMoralityReadout();
     const snapshot=getSnapshot();
     const detail=Object.freeze({reason,context:Object.freeze({...context}),snapshot});
     listeners.forEach(listener=>{try{listener(snapshot,reason,detail.context)}catch(error){console.error('BattleNetworkEvil listener failed.',error)}});
@@ -140,10 +118,9 @@
 
   function updateMorality(value,reason,{persist=true}={}){
     const next=clampMorality(value);
-    if(next===morality){renderMoralityReadout();return false}
+    if(next===morality)return false;
     morality=next;
     moralityRevision+=1;
-    renderMoralityReadout();
     if(persist)void persistMorality(reason);
     return true;
   }
@@ -205,7 +182,6 @@
   async function initializeMorality(){
     if(!SAVE?.getPlayerProgress||!SAVE?.savePlayerProgress){
       moralityReady=true;
-      renderMoralityReadout();
       emit('MORALITY_PERSISTENCE_UNAVAILABLE',{morality});
       return getSnapshot();
     }
@@ -225,11 +201,9 @@
         await SAVE.savePlayerProgress({...progress,player_id:PLAYER_ID,morality:morality});
       }
       moralityReady=true;
-      renderMoralityReadout();
       return reevaluate('MORALITY_LOADED');
     }catch(error){
       moralityReady=true;
-      renderMoralityReadout();
       console.warn('[BattleNetworkEvil] Failed to load persisted morality. Using the runtime value.',error);
       return emit('MORALITY_LOAD_FAILED',{morality});
     }
@@ -237,7 +211,6 @@
 
   const unsubscribe=typeof HUD.subscribeKokoro==='function'?HUD.subscribeKokoro(()=>enforceEvil()):null;
   KOKORO.registerExclusion?.('EVIL_STATE',()=>active);
-  renderMoralityReadout();
   reevaluate('INITIAL');
   void initializeMorality();
 
