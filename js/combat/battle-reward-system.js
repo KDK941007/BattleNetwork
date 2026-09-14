@@ -5,12 +5,13 @@
   const SAVE=window.BattleNetworkSaveData;
   const MASTER=window.BattleNetworkMaster;
   const battle=document.getElementById('battle');
+  const shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!PLAYER||!HEALTH||!SAVE||!MASTER||!battle)throw new Error('BattleNetworkBattleReward: required dependency is missing.');
 
   if(!document.querySelector('link[data-battle-reward-style]')){
     const styleLink=document.createElement('link');
     styleLink.rel='stylesheet';
-    styleLink.href='./css/battle-reward.css?v=1';
+    styleLink.href='./css/battle-reward.css?v=2';
     styleLink.dataset.battleRewardStyle='1';
     document.head.appendChild(styleLink);
   }
@@ -277,11 +278,11 @@
         <div><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
         <div><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></div>
       </div>
-      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0"><img id="battleRewardImage" hidden alt="" draggable="false" style="width:64px;height:64px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
+      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;min-width:0"><img id="battleRewardImage" hidden alt="" draggable="false" style="width:96px;height:96px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
-      <button class="battleRewardNext" id="battleRewardNext" type="button">次へ</button>
+      <button class="battleRewardNext" id="battleRewardNext" type="button">NEXT</button>
     </div>`;
-    battle.appendChild(modal);
+    shell.appendChild(modal);
     return modal;
   }
 
@@ -295,7 +296,7 @@
     renderRewardGet(modal,result.reward);
     modal.querySelector('#battleRewardStatus').textContent=applied.ok?'':'報酬の保存に失敗しました';
     const button=modal.querySelector('#battleRewardNext');
-    button.textContent=isFinal?'OK':'次へ';
+    button.textContent=isFinal?'OK':'NEXT';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     return new Promise(resolve=>{
