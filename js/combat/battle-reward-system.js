@@ -227,6 +227,25 @@
     return '---';
   }
 
+  function renderRewardGet(modal,reward){
+    const label=modal.querySelector('#battleRewardGet');
+    const image=modal.querySelector('#battleRewardChipImage');
+    label.textContent=rewardLabel(reward);
+    if(reward?.type==='CHIP'){
+      const chip=MASTER.getChip?.(reward.chipId);
+      const src=MASTER.getChipImagePath?.(chip||reward.chipId);
+      if(src){
+        image.src=src;
+        image.alt=chip?.chipName||'バトルチップ';
+        image.hidden=false;
+        return;
+      }
+    }
+    image.hidden=true;
+    image.removeAttribute('src');
+    image.alt='';
+  }
+
   function ensureRewardModal(){
     let modal=document.getElementById('battleRewardModal');
     if(modal)return modal;
@@ -241,7 +260,7 @@
         <div><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
         <div><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></div>
       </div>
-      <div class="battleRewardGet"><span>GET</span><strong id="battleRewardGet">---</strong></div>
+      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0"><img id="battleRewardChipImage" hidden alt="" draggable="false" style="width:64px;height:64px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
       <button class="battleRewardNext" id="battleRewardNext" type="button">次へ</button>
     </div>`;
@@ -256,7 +275,7 @@
     modal.querySelector('#battleRewardWave').textContent=`WAVE ${result.waveNumber}`;
     modal.querySelector('#battleRewardTime').textContent=formatTime(result.deleteTimeSeconds);
     modal.querySelector('#battleRewardLevel').textContent=result.bustingLevel;
-    modal.querySelector('#battleRewardGet').textContent=rewardLabel(result.reward);
+    renderRewardGet(modal,result.reward);
     modal.querySelector('#battleRewardStatus').textContent=applied.ok?'':'報酬の保存に失敗しました';
     const button=modal.querySelector('#battleRewardNext');
     button.textContent=isFinal?'OK':'次へ';
