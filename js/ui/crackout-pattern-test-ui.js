@@ -114,6 +114,7 @@
       return;
     }
     const entry=ensureTerrainVisual(tile);
+    entry.svg.style.opacity='1';
     if(terrain===FIELD.TERRAIN.CRACKED){
       entry.base.setAttribute('fill','rgb(111,63,27)');
       entry.base.setAttribute('stroke','rgb(255,183,63)');
@@ -178,6 +179,14 @@
     const row=Number(event.detail?.row),col=Number(event.detail?.col);
     if(!Number.isFinite(row)||!Number.isFinite(col))return;
     renderTerrain(FIELD.getTile(row,col));
+  });
+
+  window.addEventListener('battlenetwork:holerestoreblink',event=>{
+    const row=Number(event.detail?.row),col=Number(event.detail?.col);
+    if(!Number.isFinite(row)||!Number.isFinite(col))return;
+    const tile=FIELD.getTile(row,col);
+    if(!tile||tile.currentTerrain!==FIELD.TERRAIN.HOLE||tile.holeKind!==FIELD.HOLE_KIND.RESTORABLE)return;
+    ensureTerrainVisual(tile).svg.style.opacity=event.detail?.visible===true?'1':'0';
   });
 
   window.BattleNetworkCrackOut=Object.freeze({
