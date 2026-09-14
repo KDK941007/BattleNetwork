@@ -34,6 +34,7 @@
   function emit(){const v=getSnapshot();listeners.forEach(fn=>{try{fn(v)}catch(e){console.error('BattleNetworkWave listener failed.',e)}});return v}
   function subscribe(fn){if(typeof fn!=='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(fn)}
   function getPlayer(){return window.BattleNetworkPlayer||null}
+  function getEvil(){return window.BattleNetworkEvil||null}
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
   function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),r=Math.floor(FIELD.GRID_ROWS/2),c=Math.floor(FIELD.GRID_COLS/2),p=FIELD.tileToWorldCenter(r+tile.rowOffset,c+tile.colOffset);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
@@ -57,10 +58,10 @@
       enemyIds=TEST_CONFIG.spawnTiles.map(tile=>spawnEnemy(tile,{maxHp:hp}));
       if(spreadTest)TEST_CONFIG.spreadDummyTiles.forEach(tile=>enemyIds.push(spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.spreadTestHp})));
     }
-    state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds};render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
+    state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds};getEvil()?.onWaveStart?.();render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
   }
   function openNextWaveCustom(){if(state.status!=='CLEARING')return getSnapshot();state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();return getSnapshot()}
-  function onEnemyState(e){if(state.status!=='ACTIVE'||!e.allDefeated)return;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();state={...state,pendingWaveNumber:state.waveNumber+1,status:'CLEARING'};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,openNextWaveCustom)}
+  function onEnemyState(e){if(state.status!=='ACTIVE'||!e.allDefeated)return;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();getEvil()?.onWaveEnd?.();state={...state,pendingWaveNumber:state.waveNumber+1,status:'CLEARING'};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,openNextWaveCustom)}
   function startNextWave(){if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();const n=state.pendingWaveNumber;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[]};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()}
   window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);render();
 })();
