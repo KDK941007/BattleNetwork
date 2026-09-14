@@ -11,8 +11,8 @@
   const NAVIGATION_POLICY=NAV?.POLICY||Object.freeze({PATHFIND_ON_BLOCK:'PATHFIND_ON_BLOCK',DIRECT:'DIRECT'});
   // Temporary Kokoro Window verification setting. Restore after Kokoro state checks are complete.
   const ENEMY1_DEFAULTS=Object.freeze({maxHp:999,hitBoxWidthTiles:1.32,hitBoxHeightTiles:1.32,hitBoxOffsetXTiles:0,hitBoxOffsetYTiles:0,visualWidthPx:116,visualHeightPx:140,visualOffsetXPx:0,visualOffsetYPx:-29,allowPlayerOverlap:false,allowEnemyOverlap:false});
-  // Temporary anger flinch/paralysis verification damage. Keep below the 300 heavy-damage trigger.
-  const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
+  // Temporary anxious-state verification damage. Keep below the 300 heavy-damage anger trigger.
+  const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:200,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
   const ENEMY1_OVERRIDES=Object.freeze({perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
   const useOrDefault=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
   const enemyConfig=Object.freeze({
