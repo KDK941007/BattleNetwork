@@ -5,12 +5,13 @@
   const SAVE=window.BattleNetworkSaveData;
   const MASTER=window.BattleNetworkMaster;
   const battle=document.getElementById('battle');
+  const shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!PLAYER||!HEALTH||!SAVE||!MASTER||!battle)throw new Error('BattleNetworkBattleReward: required dependency is missing.');
 
   if(!document.querySelector('link[data-battle-reward-style]')){
     const styleLink=document.createElement('link');
     styleLink.rel='stylesheet';
-    styleLink.href='./css/battle-reward.css?v=5';
+    styleLink.href='./css/battle-reward.css?v=6';
     styleLink.dataset.battleRewardStyle='1';
     document.head.appendChild(styleLink);
   }
@@ -320,7 +321,7 @@
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
       <div class="battleRewardAdvanceHint" id="battleRewardAdvanceHint">TAP TO NEXT</div>
     </div>`;
-    battle.appendChild(modal);
+    shell.appendChild(modal);
     return modal;
   }
 
