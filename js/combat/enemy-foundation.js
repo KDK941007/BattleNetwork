@@ -4,12 +4,13 @@
   if(!FIELD)throw new Error('BattleNetworkEnemy: logical field grid is not loaded.');
   if(!RANGE)throw new Error('BattleNetworkEnemy: range geometry is not loaded.');
 
-  const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2;
+  const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,DEPTH_Z_BASE=100;
   const enemies=[];
   const listeners=new Set();
   let nextId=1;
 
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
+  function depthZAtWorld(x,y,tie=0){const p=project(x,y);return DEPTH_Z_BASE+Math.max(0,Math.round(p.y*10))+Math.trunc(Number(tie)||0)}
   function positive(value,fallback){const n=Number(value);return Number.isFinite(n)&&n>0?n:fallback}
   function finite(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback}
   function normalizeVisual(visual){
@@ -77,6 +78,7 @@
     enemy.el.style.width=v.width+'px';
     enemy.el.style.height=v.height+'px';
     enemy.el.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
+    enemy.el.style.zIndex=String(depthZAtWorld(enemy.x,enemy.y));
   }
   function createDefeatLabel(){
     const defeatEl=document.createElement('div');
@@ -127,26 +129,25 @@
   function spawnDefeatParticles(enemy){
     const scene=enemy.el?.parentElement;if(!scene)return;
     const p=project(enemy.x,enemy.y),v=enemy.visual,centerX=p.x+v.offsetX,centerY=p.y-v.height*.54+v.offsetY;
-    const vectors=[[-32,-30],[30,-34],[-40,4],[39,7],[-23,34],[25,37]];
+    const vectors=[[-16,-10],[15,-11],[-19,1],[19,2],[-11,13],[12,14]];
     vectors.forEach(([dx,dy],index)=>{
       const particle=document.createElement('span');
       particle.dataset.enemyDeleteParticle='1';
       const size=index%2===0?7:5;
-      particle.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:${size}px;height:${size}px;margin:${-size/2}px 0 0 ${-size/2}px;border-radius:50%;background:#fffbe0;box-shadow:0 0 8px rgba(255,245,170,.96),0 0 16px rgba(110,220,255,.72);pointer-events:none;z-index:10;opacity:0;`;
+      particle.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:${size}px;height:${size}px;margin:${-size/2}px 0 0 ${-size/2}px;border-radius:50%;background:#fffbe0;box-shadow:0 0 8px rgba(255,245,170,.96),0 0 14px rgba(110,220,255,.68);pointer-events:none;z-index:${depthZAtWorld(enemy.x,enemy.y,3)};opacity:0;`;
       scene.appendChild(particle);enemy.defeatParticles.add(particle);
       const remove=()=>{enemy.defeatParticles.delete(particle);particle.remove()};
       if(typeof particle.animate==='function'){
         const animation=particle.animate([
-          {opacity:0,transform:'translate(0,0) scale(.4)'},
-          {opacity:1,transform:`translate(${dx*.25}px,${dy*.25}px) scale(1)`,offset:.22},
-          {opacity:.82,transform:`translate(${dx*.68}px,${dy*.68}px) scale(.72)`,offset:.62},
-          {opacity:0,transform:`translate(${dx}px,${dy}px) scale(.2)`}
-        ],{duration:430,easing:'cubic-bezier(.18,.72,.26,1)',fill:'forwards'});
+          {opacity:0,transform:'translate(0,0) scale(.25)'},
+          {opacity:1,transform:'translate(0,0) scale(1.2)',offset:.18},
+          {opacity:.9,transform:`translate(${dx*.55}px,${dy*.55}px) scale(.78)`,offset:.55},
+          {opacity:0,transform:`translate(${dx}px,${dy}px) scale(.15)`}
+        ],{duration:170,delay:300,easing:'cubic-bezier(.12,.72,.28,1)',fill:'both'});
         animation.onfinish=remove;
         animation.oncancel=remove;
       }else{
-        particle.style.opacity='1';
-        setTimeout(remove,430);
+        enemy.defeatTimer=setTimeout(()=>{particle.style.opacity='1';setTimeout(remove,170)},300);
       }
     });
   }
@@ -180,9 +181,10 @@
     if(typeof enemy.el.animate==='function'){
       const animation=enemy.el.animate([
         {opacity:1,filter:'brightness(1) saturate(1)',clipPath:'inset(0% 0% 0% 0%)'},
-        {opacity:1,filter:'brightness(2.7) saturate(.35)',clipPath:'inset(0% 0% 0% 0%)',offset:.18},
-        {opacity:.88,filter:'brightness(3.3) saturate(0)',clipPath:'inset(10% 6% 10% 6%)',offset:.42},
-        {opacity:0,filter:'brightness(4) saturate(0)',clipPath:'inset(48% 42% 48% 42%)'}
+        {opacity:1,filter:'brightness(3.1) saturate(.25)',clipPath:'inset(0% 0% 0% 0%)',offset:.17},
+        {opacity:.96,filter:'brightness(3.7) saturate(0)',clipPath:'inset(13% 10% 13% 10%)',offset:.42},
+        {opacity:.72,filter:'brightness(4.2) saturate(0)',clipPath:'inset(31% 28% 31% 28%)',offset:.72},
+        {opacity:0,filter:'brightness(4.8) saturate(0)',clipPath:'inset(48% 45% 48% 45%)'}
       ],{duration:520,easing:'cubic-bezier(.2,.68,.25,1)',fill:'forwards'});
       enemy.defeatAnimation=animation;
       animation.onfinish=finish;
@@ -210,7 +212,7 @@
     const el=document.createElement('div');
     el.className='enemyPrototype';
     el.setAttribute('aria-label','テスト敵');
-    el.style.cssText='position:absolute;will-change:transform;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);z-index:7;pointer-events:none;';
+    el.style.cssText='position:absolute;will-change:transform;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);pointer-events:none;';
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
@@ -318,5 +320,5 @@
     const token=enemy.flashToken;el.style.opacity='.88';setTimeout(()=>{if(enemy.flashToken===token)el.style.opacity='0'},140);
   }
 
-  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,isPlayerBoundsBlocked,wouldOverlapBounds,pushBlockingEnemiesFromBounds,debugFlash});
+  window.BattleNetworkEnemy=Object.freeze({spawn,getEnemy,getEnemies,getActiveEnemies,setPosition,getBattleState,subscribe,clearAll,configureHealth,applyDamage,containsPoint,findEnemyIdAtPoint,intersectsRange,getHitEnemies,isPlayerBoundsBlocked,wouldOverlapBounds,pushBlockingEnemiesFromBounds,debugFlash,getDepthZAtWorld:(x,y)=>depthZAtWorld(x,y)});
 })();
