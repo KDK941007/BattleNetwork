@@ -5,13 +5,12 @@
   const SAVE=window.BattleNetworkSaveData;
   const MASTER=window.BattleNetworkMaster;
   const battle=document.getElementById('battle');
-  const shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!PLAYER||!HEALTH||!SAVE||!MASTER||!battle)throw new Error('BattleNetworkBattleReward: required dependency is missing.');
 
   if(!document.querySelector('link[data-battle-reward-style]')){
     const styleLink=document.createElement('link');
     styleLink.rel='stylesheet';
-    styleLink.href='./css/battle-reward.css?v=4';
+    styleLink.href='./css/battle-reward.css?v=5';
     styleLink.dataset.battleRewardStyle='1';
     document.head.appendChild(styleLink);
   }
@@ -278,10 +277,14 @@
     const hitScore=hitPoints(result.hits);
     const moveScore=movementPoints(result.movements);
     const multiScore=Math.max(0,Math.trunc(Number(result.multiDeleteBonus)||0));
-    modal.querySelector('#battleRewardBreakdownTime').textContent=`${formatTime(result.deleteTimeSeconds)}  ${signedPoints(timeScore)}`;
-    modal.querySelector('#battleRewardBreakdownDamage').textContent=`${result.hits} HIT  ${signedPoints(hitScore)}`;
-    modal.querySelector('#battleRewardBreakdownMove').textContent=`${result.movements}  ${signedPoints(moveScore)}`;
-    modal.querySelector('#battleRewardBreakdownMulti').textContent=signedPoints(multiScore);
+    modal.querySelector('#battleRewardBreakdownTimeResult').textContent=formatTime(result.deleteTimeSeconds);
+    modal.querySelector('#battleRewardBreakdownTimeScore').textContent=signedPoints(timeScore);
+    modal.querySelector('#battleRewardBreakdownDamageResult').textContent=`${result.hits} HIT`;
+    modal.querySelector('#battleRewardBreakdownDamageScore').textContent=signedPoints(hitScore);
+    modal.querySelector('#battleRewardBreakdownMoveResult').textContent=String(result.movements);
+    modal.querySelector('#battleRewardBreakdownMoveScore').textContent=signedPoints(moveScore);
+    modal.querySelector('#battleRewardBreakdownMultiResult').textContent=String(result.multiDeleteBonus);
+    modal.querySelector('#battleRewardBreakdownMultiScore').textContent=signedPoints(multiScore);
     modal.querySelector('#battleRewardBreakdownTotal').textContent=`${result.bustingPoints}  →  ${result.bustingLevel}`;
   }
 
@@ -306,17 +309,18 @@
         <div class="battleRewardImageFrame"><img id="battleRewardImage" hidden alt="" draggable="false"></div>
         <div class="battleRewardBreakdown" id="battleRewardBreakdown" hidden>
           <div class="battleRewardBreakdownTitle">BUSTING DETAIL</div>
-          <div><span>TIME</span><strong id="battleRewardBreakdownTime"></strong></div>
-          <div><span>DAMAGE</span><strong id="battleRewardBreakdownDamage"></strong></div>
-          <div><span>MOVE</span><strong id="battleRewardBreakdownMove"></strong></div>
-          <div><span>MULTI DELETE</span><strong id="battleRewardBreakdownMulti"></strong></div>
+          <div class="battleRewardBreakdownHeader"><span></span><span>RESULT</span><span>SCORE</span></div>
+          <div class="battleRewardBreakdownRow"><span>TIME</span><strong id="battleRewardBreakdownTimeResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownTimeScore"></strong></div>
+          <div class="battleRewardBreakdownRow"><span>DAMAGE</span><strong id="battleRewardBreakdownDamageResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownDamageScore"></strong></div>
+          <div class="battleRewardBreakdownRow"><span>MOVE</span><strong id="battleRewardBreakdownMoveResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownMoveScore"></strong></div>
+          <div class="battleRewardBreakdownRow"><span>MULTI DELETE</span><strong id="battleRewardBreakdownMultiResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownMultiScore"></strong></div>
           <div class="battleRewardBreakdownTotal"><span>TOTAL</span><strong id="battleRewardBreakdownTotal"></strong></div>
         </div>
       </div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
       <div class="battleRewardAdvanceHint" id="battleRewardAdvanceHint">TAP TO NEXT</div>
     </div>`;
-    shell.appendChild(modal);
+    battle.appendChild(modal);
     return modal;
   }
 
