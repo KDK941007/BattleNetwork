@@ -123,13 +123,19 @@
     enemy.defeatFallbackTimers.add(timer);
     return timer;
   }
-  function resetPreparedAnimation(animation){
-    if(!animation)return;
-    try{animation.pause();animation.currentTime=0}catch{}
+  function clearActiveDefeatAnimations(enemy){
+    const fx=enemy.defeatFx;if(!fx)return;
+    for(const animation of fx.activeAnimations||[]){try{animation.cancel()}catch{}}
+    fx.activeAnimations.length=0;
+    enemy.defeatAnimation=null;
   }
-  function playPreparedAnimation(animation){
-    if(!animation)return false;
-    try{animation.pause();animation.currentTime=0;animation.play();return true}catch{return false}
+  function startFxAnimation(fx,target,keyframes,options){
+    if(typeof target?.animate!=='function')return null;
+    try{
+      const animation=target.animate(keyframes,options);
+      fx.activeAnimations.push(animation);
+      return animation;
+    }catch{return null}
   }
   function positionDefeatFx(enemy){
     const fx=enemy.defeatFx;if(!fx)return;
@@ -171,7 +177,7 @@
       line.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:10%;width:48px;height:80%;margin-left:-24px;background:linear-gradient(90deg,transparent 0 7px,rgba(154,235,255,.84) 7px 8px,transparent 8px 23px,rgba(235,253,255,.98) 23px 24px,transparent 24px 39px,rgba(154,235,255,.84) 39px 40px,transparent 40px 100%);opacity:0;transform:scaleY(.18);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity;`;
       wrapper.appendChild(line);
       root.appendChild(wrapper);
-      fragmentEntries.push({band,wrapper,line,fragmentAnimation:null,lineAnimation:null});
+      fragmentEntries.push({band,wrapper,line});
     });
 
     const flash=document.createElement('div');
@@ -185,46 +191,7 @@
     root.appendChild(enemy.defeatEl);
     scene.appendChild(root);
 
-    const animations=[];
-    if(typeof root.animate==='function'){
-      fragmentEntries.forEach(entry=>{
-        const {band,wrapper,line}=entry;
-        entry.fragmentAnimation=wrapper.animate([
-          {opacity:1,transform:'translate3d(0,0,0)'},
-          {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
-          {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
-          {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
-        ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
-        entry.lineAnimation=line.animate([
-          {opacity:0,transform:'scaleY(.18)'},
-          {opacity:1,transform:'scaleY(1)',offset:.42},
-          {opacity:.85,transform:'scaleY(.7)',offset:.68},
-          {opacity:0,transform:'scaleY(.2)'}
-        ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
-        resetPreparedAnimation(entry.fragmentAnimation);
-        resetPreparedAnimation(entry.lineAnimation);
-        animations.push(entry.fragmentAnimation,entry.lineAnimation);
-      });
-    }
-
-    const flashAnimation=typeof flash.animate==='function'?flash.animate([
-      {opacity:0},
-      {opacity:1,offset:.42},
-      {opacity:0}
-    ],{duration:180,easing:'ease-out',fill:'both'}):null;
-    resetPreparedAnimation(flashAnimation);
-    if(flashAnimation)animations.push(flashAnimation);
-
-    const fadeAnimation=typeof enemy.el.animate==='function'?enemy.el.animate([
-      {opacity:1},
-      {opacity:1,offset:.23},
-      {opacity:0,offset:.28},
-      {opacity:0}
-    ],{duration:600,easing:'linear',fill:'forwards'}):null;
-    resetPreparedAnimation(fadeAnimation);
-    if(fadeAnimation)animations.push(fadeAnimation);
-
-    return{root,flash,fragmentEntries,animations,fadeAnimation};
+    return{root,flash,fragmentEntries,activeAnimations:[]};
   }
   function finishDefeatVisual(enemy){
     enemy.defeatTimer=null;
@@ -236,10 +203,15 @@
   function resetDefeatVisual(enemy){
     clearDefeatTimer(enemy);
     clearDefeatFallbackTimers(enemy);
-    for(const animation of enemy.defeatFx?.animations||[])resetPreparedAnimation(animation);
+    clearActiveDefeatAnimations(enemy);
     if(enemy.defeatFx){
       enemy.defeatFx.root.style.visibility='hidden';
-      enemy.defeatFx.fragmentEntries.forEach(entry=>{entry.wrapper.style.opacity='0';entry.line.style.opacity='0'});
+      enemy.defeatFx.fragmentEntries.forEach(entry=>{
+        entry.wrapper.style.opacity='0';
+        entry.wrapper.style.transform='translate3d(0,0,0)';
+        entry.line.style.opacity='0';
+        entry.line.style.transform='scaleY(.18)';
+      });
       enemy.defeatFx.flash.style.opacity='0';
     }
     enemy.defeatVisualStarted=false;
@@ -265,6 +237,60 @@
     scheduleDefeatFallback(enemy,()=>{enemy.el.style.opacity='0'},168);
     enemy.defeatTimer=setTimeout(()=>finishDefeatVisual(enemy),600);
   }
+  function playDefeatFx(enemy){
+    const fx=enemy.defeatFx;if(!fx)return false;
+    clearActiveDefeatAnimations(enemy);
+    clearDefeatFallbackTimers(enemy);
+    fx.fragmentEntries.forEach(entry=>{
+      entry.wrapper.style.opacity='0';
+      entry.wrapper.style.transform='translate3d(0,0,0)';
+      entry.line.style.opacity='0';
+      entry.line.style.transform='scaleY(.18)';
+    });
+    fx.flash.style.opacity='0';
+    enemy.el.style.opacity='1';
+
+    let ok=true;
+    for(const entry of fx.fragmentEntries){
+      const {band,wrapper,line}=entry;
+      const fragmentAnimation=startFxAnimation(fx,wrapper,[
+        {opacity:1,transform:'translate3d(0,0,0)'},
+        {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
+        {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
+        {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
+      ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
+      const lineAnimation=startFxAnimation(fx,line,[
+        {opacity:0,transform:'scaleY(.18)'},
+        {opacity:1,transform:'scaleY(1)',offset:.42},
+        {opacity:.85,transform:'scaleY(.7)',offset:.68},
+        {opacity:0,transform:'scaleY(.2)'}
+      ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
+      if(!fragmentAnimation||!lineAnimation)ok=false;
+    }
+
+    const flashAnimation=startFxAnimation(fx,fx.flash,[
+      {opacity:0},
+      {opacity:1,offset:.42},
+      {opacity:0}
+    ],{duration:180,easing:'ease-out',fill:'both'});
+    const fadeAnimation=startFxAnimation(fx,enemy.el,[
+      {opacity:1},
+      {opacity:1,offset:.23},
+      {opacity:0,offset:.28},
+      {opacity:0}
+    ],{duration:600,easing:'linear',fill:'forwards'});
+    if(!flashAnimation||!fadeAnimation)ok=false;
+    if(!ok){
+      clearActiveDefeatAnimations(enemy);
+      fx.fragmentEntries.forEach(entry=>{entry.wrapper.style.opacity='0';entry.line.style.opacity='0'});
+      fx.flash.style.opacity='0';
+      enemy.el.style.opacity='1';
+      return false;
+    }
+    enemy.defeatAnimation=fadeAnimation;
+    fadeAnimation.onfinish=()=>finishDefeatVisual(enemy);
+    return true;
+  }
   function startDefeatVisual(enemy){
     if(!enemy||enemy.defeatVisualStarted)return;
     enemy.defeatVisualStarted=true;
@@ -273,11 +299,7 @@
     if(enemy.hpEl)enemy.hpEl.style.display='none';
     positionDefeatFx(enemy);
     if(enemy.defeatFx)enemy.defeatFx.root.style.visibility='visible';
-    const fx=enemy.defeatFx;
-    if(fx?.animations?.length){
-      fx.fadeAnimation.onfinish=()=>finishDefeatVisual(enemy);
-      for(const animation of fx.animations)playPreparedAnimation(animation);
-    }else playDefeatFxFallback(enemy);
+    if(!playDefeatFx(enemy))playDefeatFxFallback(enemy);
   }
   function syncDefeatPresentation(enemy){
     const defeated=isDefeatedRaw(enemy);
@@ -303,7 +325,6 @@
     const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatFallbackTimers:new Set(),defeatFx:null};
     scene.appendChild(el);
     enemy.defeatFx=createDefeatFx(enemy,scene);
-    enemy.defeatAnimation=enemy.defeatFx?.fadeAnimation||null;
     enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
@@ -326,7 +347,7 @@
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);clearDefeatFallbackTimers(enemy);enemy.hitFlashAnimation?.cancel?.();for(const animation of enemy.defeatFx?.animations||[])animation?.cancel?.();enemy.defeatFx?.root?.remove();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);clearDefeatFallbackTimers(enemy);enemy.hitFlashAnimation?.cancel?.();clearActiveDefeatAnimations(enemy);enemy.defeatFx?.root?.remove();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
