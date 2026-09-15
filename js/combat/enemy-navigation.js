@@ -10,21 +10,18 @@
   const STEP=FIELD.TILE_SIZE*.5;
   const NAV_COLS=Math.ceil(FIELD.WORLD_SIZE/STEP);
   const NAV_ROWS=Math.ceil(FIELD.WORLD_SIZE/STEP);
-  const FRAME_MS=1000/60;
-  const MAX_PATH_SEARCHES_PER_FRAME=2;
+  const PATH_SEARCH_INTERVAL_MS=80;
+  const MAX_EXPANDED_NODES=600;
   const NEIGHBORS=Object.freeze([
     Object.freeze({dr:-1,dc:0,cost:1}),Object.freeze({dr:1,dc:0,cost:1}),Object.freeze({dr:0,dc:-1,cost:1}),Object.freeze({dr:0,dc:1,cost:1}),
     Object.freeze({dr:-1,dc:-1,cost:Math.SQRT2}),Object.freeze({dr:-1,dc:1,cost:Math.SQRT2}),Object.freeze({dr:1,dc:-1,cost:Math.SQRT2}),Object.freeze({dr:1,dc:1,cost:Math.SQRT2})
   ]);
 
-  let budgetFrame=-1;
-  let budgetUsed=0;
+  let nextSearchAt=0;
 
   function reservePathSearch(now=performance.now()){
-    const frame=Math.floor(now/FRAME_MS);
-    if(frame!==budgetFrame){budgetFrame=frame;budgetUsed=0}
-    if(budgetUsed>=MAX_PATH_SEARCHES_PER_FRAME)return false;
-    budgetUsed+=1;
+    if(now<nextSearchAt)return false;
+    nextSearchAt=now+PATH_SEARCH_INTERVAL_MS;
     return true;
   }
 
@@ -222,13 +219,14 @@
     const startKey=nodeKey(start.row,start.col);
     g.set(startKey,0);
     open.push(start,heuristic(start,target));
+    let expanded=0;
 
-    while(open.size){
+    while(open.size&&expanded<MAX_EXPANDED_NODES){
       const item=open.pop();
       if(!item)break;
       const current=item.node,ck=nodeKey(current.row,current.col);
       if(closed.has(ck))continue;
-      closed.add(ck);
+      closed.add(ck);expanded++;
       if(current.row===target.row&&current.col===target.col){
         const nodes=reconstruct(came,current).slice(1);
         const points=nodes.map(node=>Object.freeze({...node,...gridPoint(node.row,node.col)}));
@@ -264,7 +262,8 @@
     POLICY,
     DEFAULT_POLICY,
     STEP,
-    MAX_PATH_SEARCHES_PER_FRAME,
+    PATH_SEARCH_INTERVAL_MS,
+    MAX_EXPANDED_NODES,
     canStandAt,
     canTraverse,
     findPath,
