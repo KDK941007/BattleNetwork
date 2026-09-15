@@ -268,10 +268,17 @@
     if(code){code.style.transition='opacity 120ms ease-out';code.style.opacity=opacity}
   }
 
+  function setRewardAdvanceVisible(modal,visible){
+    const hint=modal.querySelector('#battleRewardAdvanceHint');
+    if(hint)hint.textContent=visible?(modal.dataset.rewardAdvanceText||''):'';
+  }
+
   function cancelRewardReveal(modal){
     if(rewardRevealFrame!==null){cancelAnimationFrame(rewardRevealFrame);rewardRevealFrame=null}
     const overlay=modal?.querySelector('#battleRewardPixelReveal');
     if(overlay)overlay.hidden=true;
+    const prompt=modal?.querySelector('#battleRewardRevealPrompt');
+    if(prompt)prompt.hidden=true;
   }
 
   function ensureChipRevealOverlay(modal){
@@ -294,30 +301,84 @@
     return overlay;
   }
 
-  function positionChipRevealOverlay(overlay,image){
+  function ensureChipRevealPrompt(modal){
+    const frame=modal.querySelector('.battleRewardImageFrame');
+    if(!frame)return null;
+    frame.style.position='relative';
+    let prompt=frame.querySelector('#battleRewardRevealPrompt');
+    if(prompt)return prompt;
+    prompt=document.createElement('div');
+    prompt.id='battleRewardRevealPrompt';
+    prompt.textContent='TAP TO REVEAL';
+    prompt.hidden=true;
+    prompt.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:6px;border:1px solid rgba(142,232,255,.7);background:rgba(3,20,48,.72);color:#9fe8ff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:11px;font-weight:900;line-height:1;letter-spacing:.08em;text-align:center;text-shadow:0 2px 0 #061326;pointer-events:none;z-index:4;";
+    frame.appendChild(prompt);
+    return prompt;
+  }
+
+  function setChipRevealState(modal,state){
+    modal.dataset.rewardRevealState=state;
+    const pending=state==='pending';
+    const blocked=pending||state==='running';
+    const frame=modal.querySelector('.battleRewardImageFrame');
+    if(frame)frame.style.cursor=pending?'pointer':'';
+    const prompt=modal.querySelector('#battleRewardRevealPrompt');
+    if(prompt)prompt.hidden=!pending;
+    setRewardAdvanceVisible(modal,!blocked);
+  }
+
+  function positionChipRevealLayers(overlay,prompt,image){
     const border=2;
     const width=Math.max(0,image.offsetWidth-border*2);
     const height=Math.max(0,image.offsetHeight-border*2);
     if(!(width>0&&height>0))return false;
-    overlay.style.left=`${image.offsetLeft+border}px`;
-    overlay.style.top=`${image.offsetTop+border}px`;
+    const left=image.offsetLeft+border;
+    const top=image.offsetTop+border;
+    overlay.style.left=`${left}px`;
+    overlay.style.top=`${top}px`;
     overlay.style.width=`${width}px`;
     overlay.style.height=`${height}px`;
+    if(prompt){
+      prompt.style.left=`${left}px`;
+      prompt.style.top=`${top}px`;
+      prompt.style.width=`${width}px`;
+      prompt.style.height=`${height}px`;
+    }
     return true;
   }
 
-  function startChipReveal(modal,image,token){
+  function prepareChipReveal(modal,image,token){
     if(token!==rewardRevealToken)return;
     const overlay=ensureChipRevealOverlay(modal);
-    if(!overlay)return;
-    if(!positionChipRevealOverlay(overlay,image)){
+    const prompt=ensureChipRevealPrompt(modal);
+    if(!overlay||!prompt)return;
+    if(!positionChipRevealLayers(overlay,prompt,image)){
+      rewardRevealFrame=requestAnimationFrame(()=>prepareChipReveal(modal,image,token));
+      return;
+    }
+    rewardRevealFrame=null;
+    for(const tile of overlay.children)tile.style.opacity='1';
+    overlay.hidden=false;
+    image.style.visibility='hidden';
+    setChipRevealState(modal,'pending');
+    if(modal.dataset.rewardRevealRequested==='1')startChipReveal(modal,image,token);
+  }
+
+  function startChipReveal(modal,image,token){
+    if(token!==rewardRevealToken||modal.dataset.rewardRevealState!=='pending')return;
+    const overlay=ensureChipRevealOverlay(modal);
+    const prompt=ensureChipRevealPrompt(modal);
+    if(!overlay||!prompt)return;
+    if(!positionChipRevealLayers(overlay,prompt,image)){
       rewardRevealFrame=requestAnimationFrame(()=>startChipReveal(modal,image,token));
       return;
     }
     const tiles=overlay.children;
     for(const tile of tiles)tile.style.opacity='1';
     overlay.hidden=false;
+    prompt.hidden=true;
     image.style.visibility='visible';
+    setChipRevealState(modal,'running');
     const start=performance.now()+CHIP_REVEAL_DELAY;
     let revealed=0;
     const step=now=>{
@@ -337,12 +398,22 @@
         }
         overlay.hidden=true;
         rewardRevealFrame=null;
+        modal.dataset.rewardRevealRequested='0';
         setRewardTextVisible(modal,true);
+        setChipRevealState(modal,'complete');
         return;
       }
       rewardRevealFrame=requestAnimationFrame(step);
     };
     rewardRevealFrame=requestAnimationFrame(step);
+  }
+
+  function requestChipReveal(modal){
+    if(modal.dataset.rewardRevealState!=='pending')return false;
+    modal.dataset.rewardRevealRequested='1';
+    const image=modal.querySelector('#battleRewardImage');
+    if(image&&!image.hidden&&image.naturalWidth>0)startChipReveal(modal,image,rewardRevealToken);
+    return true;
   }
 
   function renderRewardGet(modal,reward){
@@ -353,10 +424,14 @@
     const image=modal.querySelector('#battleRewardImage');
     const parts=rewardDisplayParts(reward);
     const revealChip=reward?.type==='CHIP';
+    modal.dataset.rewardRevealRequested='0';
+    const prompt=ensureChipRevealPrompt(modal);
+    if(prompt)prompt.hidden=!revealChip;
     name.textContent=parts.name;
     code.textContent=parts.code;
     code.hidden=!parts.code;
     setRewardTextVisible(modal,!revealChip);
+    setChipRevealState(modal,revealChip?'pending':'complete');
     image.onload=null;
     image.onerror=null;
     image.hidden=true;
@@ -367,6 +442,7 @@
       image.alt='';
       image.style.visibility='visible';
       setRewardTextVisible(modal,true);
+      setChipRevealState(modal,'complete');
       return;
     }
     let started=false;
@@ -375,10 +451,11 @@
       started=true;
       image.hidden=false;
       if(revealChip){
-        requestAnimationFrame(()=>startChipReveal(modal,image,token));
+        requestAnimationFrame(()=>prepareChipReveal(modal,image,token));
       }else{
         image.style.visibility='visible';
         setRewardTextVisible(modal,true);
+        setChipRevealState(modal,'complete');
       }
     };
     image.onload=reveal;
@@ -389,6 +466,7 @@
       image.style.visibility='visible';
       image.removeAttribute('src');
       setRewardTextVisible(modal,true);
+      setChipRevealState(modal,'complete');
     };
     image.alt=info.alt;
     image.src=info.src;
@@ -454,13 +532,16 @@
     const panel=modal.querySelector('.battleRewardPanel');
     const rankRow=modal.querySelector('#battleRewardRankRow');
     const breakdown=modal.querySelector('#battleRewardBreakdown');
+    const imageFrame=modal.querySelector('.battleRewardImageFrame');
+    const advanceText=isFinal?'TAP TO COMPLETE':'TAP TO NEXT';
+    modal.dataset.rewardAdvanceText=advanceText;
     modal.querySelector('#battleRewardWave').textContent=`WAVE ${result.waveNumber}`;
     modal.querySelector('#battleRewardTime').textContent=formatTime(result.deleteTimeSeconds);
     modal.querySelector('#battleRewardLevel').textContent=result.bustingLevel;
     renderRewardGet(modal,result.reward);
     renderBustingBreakdown(modal,result);
     modal.querySelector('#battleRewardStatus').textContent=applied.ok?'':'報酬の保存に失敗しました';
-    modal.querySelector('#battleRewardAdvanceHint').textContent=isFinal?'TAP TO COMPLETE':'TAP TO NEXT';
+    setRewardAdvanceVisible(modal,modal.dataset.rewardRevealState!=='pending'&&modal.dataset.rewardRevealState!=='running');
     breakdown.hidden=true;
     rankRow.setAttribute('aria-expanded','false');
     rankRow.onclick=event=>{
@@ -470,6 +551,15 @@
       rankRow.setAttribute('aria-expanded',open?'true':'false');
     };
     breakdown.onclick=event=>event.stopPropagation();
+    imageFrame.onclick=event=>{
+      const state=modal.dataset.rewardRevealState;
+      if(state==='pending'){
+        event.stopPropagation();
+        requestChipReveal(modal);
+        return;
+      }
+      if(state==='running')event.stopPropagation();
+    };
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     panel.focus({preventScroll:true});
@@ -485,6 +575,8 @@
         if(image){image.onload=null;image.onerror=null}
         panel.onclick=null;
         panel.onkeydown=null;
+        imageFrame.onclick=null;
+        imageFrame.style.cursor='';
         rankRow.onclick=null;
         breakdown.onclick=null;
         modal.classList.remove('open');
@@ -493,12 +585,16 @@
       };
       panel.onclick=event=>{
         if(event.target.closest('.battleRewardRankRow,.battleRewardBreakdown'))return;
+        const revealState=modal.dataset.rewardRevealState;
+        if(revealState==='pending'||revealState==='running')return;
         if(!breakdown.hidden){closeBreakdown();return}
         finish();
       };
       panel.onkeydown=event=>{
         if(event.key!=='Enter'&&event.key!==' ')return;
         if(event.target.closest('.battleRewardRankRow'))return;
+        const revealState=modal.dataset.rewardRevealState;
+        if(revealState==='pending'||revealState==='running'){event.preventDefault();return}
         event.preventDefault();
         if(!breakdown.hidden){closeBreakdown();return}
         finish();
