@@ -1,7 +1,7 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/battle-reward-system.js?v=6','./js/combat/enemy-navigation.js?v=4','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=147','./js/combat/enemy1-movement.js?v=145','./js/combat/enemy1-shockwave.js?v=145','./js/ui/enemy1-pattern-test-ui.js?v=157','./js/debug/hitbox-debug-ui.js?v=3'];
+  const MODULES=['./js/combat/battle-reward-system.js?v=7','./js/combat/enemy-navigation.js?v=4','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=147','./js/combat/enemy1-movement.js?v=145','./js/combat/enemy1-shockwave.js?v=145','./js/ui/enemy1-pattern-test-ui.js?v=157','./js/debug/hitbox-debug-ui.js?v=3'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
@@ -43,7 +43,7 @@
     swordTestHp:999
   });
   const listeners=new Set(),notice=document.createElement('div');notice.className='waveStatusNotice';notice.setAttribute('aria-live','polite');battle.appendChild(notice);
-  let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[]},transitionToken=0;
+  let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[],prepared:false},transitionToken=0;
   function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,missionWaveCount:TEST_CONFIG.missionWaveCount,missionComplete:state.status==='MISSION_CLEAR',enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
   function render(){notice.dataset.status=state.status;if(state.status==='MISSION_CLEAR'){notice.textContent='MISSION CLEAR';return}if(state.status==='CLEARING'){notice.textContent='WAVE CLEAR';return}if(state.status==='REWARD'){notice.textContent='GET DATA';return}if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}if(state.status==='WAITING_CUSTOM'&&state.waveNumber>0){notice.textContent=`WAVE ${state.pendingWaveNumber} READY`;return}notice.textContent=`WAVE ${state.status==='ACTIVE'?state.waveNumber:state.pendingWaveNumber}`}
   function emit(){const v=getSnapshot();listeners.forEach(fn=>{try{fn(v)}catch(e){console.error('BattleNetworkWave listener failed.',e)}});return v}
@@ -52,6 +52,7 @@
   function getEvil(){return window.BattleNetworkEvil||null}
   function getReward(){return window.BattleNetworkBattleReward||null}
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
+  function showBattlefield(){document.getElementById('customModal')?.classList.remove('open');document.getElementById('chipDetailModal')?.classList.remove('open')}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
   function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),r=Math.floor(FIELD.GRID_ROWS/2),c=Math.floor(FIELD.GRID_COLS/2),p=FIELD.tileToWorldCenter(r+tile.rowOffset,c+tile.colOffset);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
   function spawnEnemy(tile,{maxHp=null}={}){const id=spawnBaseEnemy(tile,{maxHp});const m=AI.assignBehavior(id,TEST_CONFIG.movementBehaviorId);if(!m.ok)throw new Error(`BattleNetworkWave: movement assign failed: ${m.reason}`);const a=AI.assignBehavior(id,TEST_CONFIG.attackBehaviorId);if(!a.ok)throw new Error(`BattleNetworkWave: attack assign failed: ${a.reason}`);return id}
@@ -62,7 +63,7 @@
   function isSwordTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='SWORD'}
   function isLongSwordTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='LONG'}
   function isChipDetailTest(){return getTestTarget()?.enabled===true}
-  function spawnWave(n){
+  function createWaveEnemies(n){
     const longSwordTest=isLongSwordTest(),swordTest=!longSwordTest&&isSwordTest(),vulcanTest=!longSwordTest&&!swordTest&&isVulcanTest(),spreadTest=!longSwordTest&&!swordTest&&!vulcanTest&&isSpreadGunTest(),hp=isChipDetailTest()?TEST_CONFIG.chipDetailTestHp:spreadTest?TEST_CONFIG.spreadTestHp:null;
     let enemyIds;
     if(longSwordTest){
@@ -75,19 +76,46 @@
       enemyIds=getWaveSpawnTiles(n).map(tile=>spawnEnemy(tile,{maxHp:hp}));
       if(spreadTest)TEST_CONFIG.spreadDummyTiles.forEach(tile=>enemyIds.push(spawnBaseEnemy(tile,{staticDummy:true,maxHp:TEST_CONFIG.spreadTestHp})));
     }
-    state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds};getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
+    return enemyIds
+  }
+  function activateWave(n,enemyIds,{initializeSystems=true}={}){
+    const ids=Array.isArray(enemyIds)?enemyIds:createWaveEnemies(n);
+    state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds:ids,prepared:false};
+    if(initializeSystems){getEvil()?.onWaveStart?.();getReward()?.startWave?.(n)}
+    render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
+  }
+  function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
+  function prepareNextWaveIntro(n){
+    AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();
+    state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();
+    enemy1Ready.then(()=>{
+      if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;
+      const enemyIds=createWaveEnemies(n);getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);
+      state={...state,enemyIds,prepared:true};render();emit();
+      scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
+        if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
+        state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
+      });
+    }).catch(()=>{state={...state,status:'WAITING_CUSTOM',prepared:false};render();emit();getPlayer()?.openNextWaveCustom?.()});
+    return getSnapshot()
   }
   async function openWaveReward(rewardResult){
     if(state.status!=='CLEARING')return getSnapshot();
     const completedWave=state.waveNumber;
     const finalWave=completedWave>=TEST_CONFIG.missionWaveCount;
+    showBattlefield();
     state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'REWARD'};render();emit();
     await getReward()?.show?.(rewardResult,{isFinal:finalWave});
     if(state.status!=='REWARD'||state.waveNumber!==completedWave)return getSnapshot();
-    if(finalWave){state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR'};render();return emit()}
-    state={...state,pendingWaveNumber:completedWave+1,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();return getSnapshot()
+    if(finalWave){state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR',prepared:false};render();return emit()}
+    return prepareNextWaveIntro(completedWave+1)
   }
-  function onEnemyState(e){if(state.status!=='ACTIVE'||!e.allDefeated)return;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();const rewardResult=getReward()?.finishWave?.()||null;getEvil()?.onWaveEnd?.();const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING'};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})}
-  function startNextWave(){if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();const n=state.pendingWaveNumber;AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[]};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()}
+  function onEnemyState(e){if(state.status!=='ACTIVE'||!e.allDefeated)return;showBattlefield();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();const rewardResult=getReward()?.finishWave?.()||null;getEvil()?.onWaveEnd?.();const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})}
+  function startNextWave(){
+    if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();
+    const n=state.pendingWaveNumber;
+    if(state.prepared&&state.enemyIds.length){return activateWave(n,state.enemyIds.slice(),{initializeSystems:false})}
+    AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()
+  }
   window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);render();
 })();
