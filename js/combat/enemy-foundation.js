@@ -174,17 +174,24 @@
 
       const pixelCloud=document.createElement('span');
       pixelCloud.dataset.enemyDeletePixels='1';
-      pixelCloud.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:50%;width:52px;height:28px;margin:-14px 0 0 -26px;opacity:0;transform:translate3d(0,4px,0);pointer-events:none;will-change:transform,opacity;`;
+      pixelCloud.style.cssText=`position:absolute;left:0;top:50%;width:${v.width}px;height:32px;margin:-16px 0 0 0;opacity:0;transform:translate3d(0,4px,0);pointer-events:none;will-change:transform,opacity;`;
       const pixelSpecs=[
-        {x:5,y:17,size:3,color:'rgba(154,235,255,.86)'},
-        {x:15,y:8,size:4,color:'rgba(235,253,255,.98)'},
-        {x:26,y:15,size:3,color:'rgba(183,244,255,.94)'},
-        {x:37,y:5,size:3,color:'rgba(235,253,255,.96)'},
-        {x:45,y:13,size:2,color:'rgba(154,235,255,.82)'}
+        {x:.03,y:21,size:3,color:'rgba(154,235,255,.86)'},
+        {x:.11,y:9,size:4,color:'rgba(235,253,255,.98)'},
+        {x:.19,y:17,size:2,color:'rgba(183,244,255,.90)'},
+        {x:.27,y:5,size:3,color:'rgba(235,253,255,.96)'},
+        {x:.35,y:22,size:3,color:'rgba(154,235,255,.82)'},
+        {x:.43,y:12,size:4,color:'rgba(206,249,255,.96)'},
+        {x:.52,y:4,size:2,color:'rgba(154,235,255,.88)'},
+        {x:.60,y:19,size:3,color:'rgba(235,253,255,.98)'},
+        {x:.68,y:8,size:3,color:'rgba(183,244,255,.94)'},
+        {x:.76,y:23,size:2,color:'rgba(154,235,255,.84)'},
+        {x:.84,y:13,size:4,color:'rgba(235,253,255,.96)'},
+        {x:.93,y:6,size:3,color:'rgba(183,244,255,.92)'}
       ];
       pixelSpecs.forEach(spec=>{
         const pixel=document.createElement('i');
-        pixel.style.cssText=`position:absolute;left:${spec.x}px;top:${spec.y}px;width:${spec.size}px;height:${spec.size}px;background:${spec.color};pointer-events:none;`;
+        pixel.style.cssText=`position:absolute;left:${Math.round(v.width*spec.x)}px;top:${spec.y}px;width:${spec.size}px;height:${spec.size}px;background:${spec.color};pointer-events:none;`;
         pixelCloud.appendChild(pixel);
       });
       wrapper.appendChild(pixelCloud);
