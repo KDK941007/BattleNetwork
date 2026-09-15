@@ -11,7 +11,7 @@
   if(!document.querySelector('link[data-battle-reward-style]')){
     const styleLink=document.createElement('link');
     styleLink.rel='stylesheet';
-    styleLink.href='./css/battle-reward.css?v=2';
+    styleLink.href='./css/battle-reward.css?v=3';
     styleLink.dataset.battleRewardStyle='1';
     document.head.appendChild(styleLink);
   }
@@ -271,14 +271,19 @@
     modal.id='battleRewardModal';
     modal.className='battleRewardModal';
     modal.setAttribute('aria-hidden','true');
-    modal.innerHTML=`<div class="battleRewardPanel" role="dialog" aria-modal="true" aria-labelledby="battleRewardTitle">
+    modal.innerHTML=`<div class="battleRewardPanel" role="dialog" aria-modal="true" aria-label="バトル報酬">
       <div class="battleRewardWave" id="battleRewardWave"></div>
-      <div class="battleRewardTitle" id="battleRewardTitle">GET DATA</div>
       <div class="battleRewardRows">
         <div><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
         <div><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></div>
       </div>
-      <div class="battleRewardGet"><span>GET</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;min-width:0"><img id="battleRewardImage" hidden alt="" draggable="false" style="width:96px;height:96px;object-fit:contain;border:2px solid #8ee8ff;background:#061326;box-shadow:0 0 10px rgba(93,200,255,.35)"><strong id="battleRewardGet">---</strong></div></div>
+      <div class="battleRewardData">
+        <div class="battleRewardDataText">
+          <div class="battleRewardDataTitle">GET DATA</div>
+          <strong class="battleRewardValue" id="battleRewardGet">---</strong>
+        </div>
+        <div class="battleRewardImageFrame"><img id="battleRewardImage" hidden alt="" draggable="false"></div>
+      </div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
       <button class="battleRewardNext" id="battleRewardNext" type="button">NEXT</button>
     </div>`;
