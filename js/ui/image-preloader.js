@@ -96,6 +96,17 @@
       .filter(Boolean);
   }
 
+  function collectBattleRewardImageUrls(){
+    const urls=['./assets/rewards/zenny.png','./assets/rewards/hp.png'];
+    const master=window.BattleNetworkMaster;
+    try{
+      const chip=master?.getChip?.('CHIP_EXE4_S103');
+      const src=master?.getChipImagePath?.(chip||'CHIP_EXE4_S103');
+      if(src)urls.push(src);
+    }catch{}
+    return urls;
+  }
+
   const kokoroImages=[
     './assets/ui/kokoro-normal.webp?v=2',
     './assets/ui/kokoro-fullsynchro.webp?v=3',
@@ -119,7 +130,7 @@
   const ready=preload(criticalUrls).finally(()=>{
     document.documentElement.dataset.criticalImagesReady='true';
   });
-  preloadOne('./assets/rewards/zenny.png');
+  preload(collectBattleRewardImageUrls());
 
   const observer=new MutationObserver(records=>{
     const urls=[];
