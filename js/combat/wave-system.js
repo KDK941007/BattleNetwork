@@ -43,6 +43,12 @@
     swordTestHp:999
   });
   const listeners=new Set(),notice=document.createElement('div');notice.className='waveStatusNotice';notice.setAttribute('aria-live','polite');battle.appendChild(notice);
+  const settingsList=document.querySelector('#settingsModal .settingsList'),settingsWaveInfo=document.createElement('div');
+  settingsWaveInfo.id='settingsWaveInfo';
+  settingsWaveInfo.setAttribute('aria-label','現在のウェーブ');
+  settingsWaveInfo.style.cssText='min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #315d70;border-radius:8px;background:#0b2a38;color:#eafaff;font-weight:900;';
+  settingsWaveInfo.innerHTML='<span>WAVE</span><strong id="settingsWaveValue">1 / 3</strong>';
+  settingsList?.prepend(settingsWaveInfo);
   let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[],prepared:false},transitionToken=0;
   let lastActiveCount=0,multiDeleteBatchCount=0,maxMultiDeleteCount=0,multiDeleteResetTimer=null;
   let carryFullSynchroAcrossWave=false;
@@ -62,7 +68,18 @@
   }
   function multiDeleteBonus(count){const value=Math.max(0,Math.trunc(Number(count)||0));return value>=3?4:value===2?2:0}
   function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,missionWaveCount:TEST_CONFIG.missionWaveCount,missionComplete:state.status==='MISSION_CLEAR',enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
-  function render(){notice.dataset.status=state.status;if(state.status==='MISSION_CLEAR'){notice.textContent='MISSION CLEAR';return}if(state.status==='CLEARING'){notice.textContent='WAVE CLEAR';return}if(state.status==='REWARD'){notice.textContent='GET DATA';return}if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}if(state.status==='WAITING_CUSTOM'&&state.waveNumber>0){notice.textContent=`WAVE ${state.pendingWaveNumber} READY`;return}notice.textContent=`WAVE ${state.status==='ACTIVE'?state.waveNumber:state.pendingWaveNumber}`}
+  function displayedWaveNumber(){if((state.status==='STARTING'||state.status==='WAITING_CUSTOM')&&Number.isFinite(state.pendingWaveNumber))return state.pendingWaveNumber;if(state.waveNumber>0)return state.waveNumber;return Number.isFinite(state.pendingWaveNumber)?state.pendingWaveNumber:1}
+  function updateSettingsWave(){const value=document.getElementById('settingsWaveValue');if(value)value.textContent=`${displayedWaveNumber()} / ${TEST_CONFIG.missionWaveCount}`}
+  function render(){
+    notice.dataset.status=state.status;
+    notice.hidden=false;
+    updateSettingsWave();
+    if(state.status==='MISSION_CLEAR'){notice.textContent='MISSION CLEAR';return}
+    if(state.status==='CLEARING'){notice.textContent='WAVE CLEAR';return}
+    if(state.status==='REWARD'){notice.textContent='GET DATA';return}
+    if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}
+    notice.textContent='';notice.hidden=true;
+  }
   function emit(){const v=getSnapshot();listeners.forEach(fn=>{try{fn(v)}catch(e){console.error('BattleNetworkWave listener failed.',e)}});return v}
   function subscribe(fn){if(typeof fn!=='function')return()=>{};listeners.add(fn);fn(getSnapshot());return()=>listeners.delete(fn)}
   function getPlayer(){return window.BattleNetworkPlayer||null}
