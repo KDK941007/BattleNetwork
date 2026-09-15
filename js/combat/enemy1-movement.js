@@ -5,7 +5,7 @@
   const EDGE=FIELD.TILE_SIZE*.7;
   const PUSH_STUN_MS=100;
   const PATH_RECALC_MS=250;
-  const PATH_RETRY_MS=34;
+  const PATH_RETRY_MS=100;
   const WAYPOINT_REACHED=Math.max(12,FIELD.TILE_SIZE*.12);
   function random(a,b){return a+Math.random()*(b-a)}
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
