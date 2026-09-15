@@ -19,6 +19,12 @@
   const PLAYER_ID='PLAYER_1';
   const METTAUR_CHIP_ID='CHIP_EXE4_S103';
   const LOW_HP_RATIO=.375;
+  const CHIP_REVEAL_COLS=10;
+  const CHIP_REVEAL_ROWS=10;
+  const CHIP_REVEAL_COUNT=CHIP_REVEAL_COLS*CHIP_REVEAL_ROWS;
+  const CHIP_REVEAL_DELAY=100;
+  const CHIP_REVEAL_DURATION=720;
+  const CHIP_REVEAL_ORDER=Object.freeze(Array.from({length:CHIP_REVEAL_COUNT},(_,index)=>index).sort((a,b)=>((a*37)%CHIP_REVEAL_COUNT)-((b*37)%CHIP_REVEAL_COUNT)));
   const REWARD_IMAGE_PATHS=Object.freeze({
     ZENNY:'./assets/rewards/zenny.png',
     HP:'./assets/rewards/hp.png'
@@ -32,6 +38,8 @@
   const appliedRewards=new Map();
   let tracker=null;
   let rewardSerial=0;
+  let rewardRevealFrame=null;
+  let rewardRevealToken=0;
   let lastFrame=performance.now();
 
   function isBattleTimeAdvancing(){
@@ -252,28 +260,139 @@
     return null;
   }
 
+  function setRewardTextVisible(modal,visible){
+    const opacity=visible?'1':'0';
+    const name=modal.querySelector('#battleRewardGetName');
+    const code=modal.querySelector('#battleRewardGetCode');
+    if(name){name.style.transition='opacity 120ms ease-out';name.style.opacity=opacity}
+    if(code){code.style.transition='opacity 120ms ease-out';code.style.opacity=opacity}
+  }
+
+  function cancelRewardReveal(modal){
+    if(rewardRevealFrame!==null){cancelAnimationFrame(rewardRevealFrame);rewardRevealFrame=null}
+    const overlay=modal?.querySelector('#battleRewardPixelReveal');
+    if(overlay)overlay.hidden=true;
+  }
+
+  function ensureChipRevealOverlay(modal){
+    const frame=modal.querySelector('.battleRewardImageFrame');
+    if(!frame)return null;
+    frame.style.position='relative';
+    let overlay=frame.querySelector('#battleRewardPixelReveal');
+    if(overlay)return overlay;
+    overlay=document.createElement('div');
+    overlay.id='battleRewardPixelReveal';
+    overlay.hidden=true;
+    overlay.setAttribute('aria-hidden','true');
+    overlay.style.cssText=`position:absolute;display:grid;grid-template-columns:repeat(${CHIP_REVEAL_COLS},minmax(0,1fr));grid-template-rows:repeat(${CHIP_REVEAL_ROWS},minmax(0,1fr));gap:0;pointer-events:none;z-index:3;overflow:hidden;`;
+    for(let index=0;index<CHIP_REVEAL_COUNT;index++){
+      const tile=document.createElement('span');
+      tile.style.cssText='display:block;min-width:0;min-height:0;background:#061326;opacity:1;';
+      overlay.appendChild(tile);
+    }
+    frame.appendChild(overlay);
+    return overlay;
+  }
+
+  function positionChipRevealOverlay(overlay,image){
+    const border=2;
+    const width=Math.max(0,image.offsetWidth-border*2);
+    const height=Math.max(0,image.offsetHeight-border*2);
+    if(!(width>0&&height>0))return false;
+    overlay.style.left=`${image.offsetLeft+border}px`;
+    overlay.style.top=`${image.offsetTop+border}px`;
+    overlay.style.width=`${width}px`;
+    overlay.style.height=`${height}px`;
+    return true;
+  }
+
+  function startChipReveal(modal,image,token){
+    if(token!==rewardRevealToken)return;
+    const overlay=ensureChipRevealOverlay(modal);
+    if(!overlay)return;
+    if(!positionChipRevealOverlay(overlay,image)){
+      rewardRevealFrame=requestAnimationFrame(()=>startChipReveal(modal,image,token));
+      return;
+    }
+    const tiles=overlay.children;
+    for(const tile of tiles)tile.style.opacity='1';
+    overlay.hidden=false;
+    image.style.visibility='visible';
+    const start=performance.now()+CHIP_REVEAL_DELAY;
+    let revealed=0;
+    const step=now=>{
+      if(token!==rewardRevealToken)return;
+      const progress=Math.max(0,Math.min(1,(now-start)/CHIP_REVEAL_DURATION));
+      const target=Math.floor(progress*CHIP_REVEAL_COUNT);
+      while(revealed<target){
+        const tile=tiles[CHIP_REVEAL_ORDER[revealed]];
+        if(tile)tile.style.opacity='0';
+        revealed++;
+      }
+      if(progress>=1){
+        while(revealed<CHIP_REVEAL_COUNT){
+          const tile=tiles[CHIP_REVEAL_ORDER[revealed]];
+          if(tile)tile.style.opacity='0';
+          revealed++;
+        }
+        overlay.hidden=true;
+        rewardRevealFrame=null;
+        setRewardTextVisible(modal,true);
+        return;
+      }
+      rewardRevealFrame=requestAnimationFrame(step);
+    };
+    rewardRevealFrame=requestAnimationFrame(step);
+  }
+
   function renderRewardGet(modal,reward){
+    const token=++rewardRevealToken;
+    cancelRewardReveal(modal);
     const name=modal.querySelector('#battleRewardGetName');
     const code=modal.querySelector('#battleRewardGetCode');
     const image=modal.querySelector('#battleRewardImage');
     const parts=rewardDisplayParts(reward);
+    const revealChip=reward?.type==='CHIP';
     name.textContent=parts.name;
     code.textContent=parts.code;
     code.hidden=!parts.code;
+    setRewardTextVisible(modal,!revealChip);
+    image.onload=null;
+    image.onerror=null;
     image.hidden=true;
-    image.onload=()=>{image.hidden=false};
-    image.onerror=()=>{
-      image.hidden=true;
-      image.removeAttribute('src');
-    };
+    image.style.visibility='hidden';
     const info=rewardImageInfo(reward);
     if(!info){
       image.removeAttribute('src');
       image.alt='';
+      image.style.visibility='visible';
+      setRewardTextVisible(modal,true);
       return;
     }
+    let started=false;
+    const reveal=()=>{
+      if(started||token!==rewardRevealToken)return;
+      started=true;
+      image.hidden=false;
+      if(revealChip){
+        requestAnimationFrame(()=>startChipReveal(modal,image,token));
+      }else{
+        image.style.visibility='visible';
+        setRewardTextVisible(modal,true);
+      }
+    };
+    image.onload=reveal;
+    image.onerror=()=>{
+      if(token!==rewardRevealToken)return;
+      cancelRewardReveal(modal);
+      image.hidden=true;
+      image.style.visibility='visible';
+      image.removeAttribute('src');
+      setRewardTextVisible(modal,true);
+    };
     image.alt=info.alt;
     image.src=info.src;
+    if(image.complete&&image.naturalWidth>0)queueMicrotask(reveal);
   }
 
   function renderBustingBreakdown(modal,result){
@@ -360,6 +479,10 @@
         rankRow.setAttribute('aria-expanded','false');
       };
       const finish=()=>{
+        rewardRevealToken++;
+        cancelRewardReveal(modal);
+        const image=modal.querySelector('#battleRewardImage');
+        if(image){image.onload=null;image.onerror=null}
         panel.onclick=null;
         panel.onkeydown=null;
         rankRow.onclick=null;
