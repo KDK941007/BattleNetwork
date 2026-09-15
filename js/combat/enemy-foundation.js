@@ -172,12 +172,24 @@
       clone.style.boxShadow='none';
       wrapper.appendChild(clone);
 
-      const line=document.createElement('span');
-      line.dataset.enemyDeleteLight='1';
-      line.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:10%;width:48px;height:80%;margin-left:-24px;background:linear-gradient(90deg,transparent 0 7px,rgba(154,235,255,.84) 7px 8px,transparent 8px 23px,rgba(235,253,255,.98) 23px 24px,transparent 24px 39px,rgba(154,235,255,.84) 39px 40px,transparent 40px 100%);opacity:0;transform:scaleY(.18);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity;`;
-      wrapper.appendChild(line);
+      const pixelCloud=document.createElement('span');
+      pixelCloud.dataset.enemyDeletePixels='1';
+      pixelCloud.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:50%;width:52px;height:28px;margin:-14px 0 0 -26px;opacity:0;transform:translate3d(0,4px,0);pointer-events:none;will-change:transform,opacity;`;
+      const pixelSpecs=[
+        {x:5,y:17,size:3,color:'rgba(154,235,255,.86)'},
+        {x:15,y:8,size:4,color:'rgba(235,253,255,.98)'},
+        {x:26,y:15,size:3,color:'rgba(183,244,255,.94)'},
+        {x:37,y:5,size:3,color:'rgba(235,253,255,.96)'},
+        {x:45,y:13,size:2,color:'rgba(154,235,255,.82)'}
+      ];
+      pixelSpecs.forEach(spec=>{
+        const pixel=document.createElement('i');
+        pixel.style.cssText=`position:absolute;left:${spec.x}px;top:${spec.y}px;width:${spec.size}px;height:${spec.size}px;background:${spec.color};pointer-events:none;`;
+        pixelCloud.appendChild(pixel);
+      });
+      wrapper.appendChild(pixelCloud);
       root.appendChild(wrapper);
-      fragmentEntries.push({band,wrapper,line});
+      fragmentEntries.push({band,wrapper,pixelCloud});
     });
 
     const flash=document.createElement('div');
@@ -209,8 +221,8 @@
       enemy.defeatFx.fragmentEntries.forEach(entry=>{
         entry.wrapper.style.opacity='0';
         entry.wrapper.style.transform='translate3d(0,0,0)';
-        entry.line.style.opacity='0';
-        entry.line.style.transform='scaleY(.18)';
+        entry.pixelCloud.style.opacity='0';
+        entry.pixelCloud.style.transform='translate3d(0,4px,0)';
       });
       enemy.defeatFx.flash.style.opacity='0';
     }
@@ -225,11 +237,11 @@
   function playDefeatFxFallback(enemy){
     const fx=enemy.defeatFx;if(!fx)return;
     fx.fragmentEntries.forEach(entry=>{
-      const {band,wrapper,line}=entry;
+      const {band,wrapper,pixelCloud}=entry;
       scheduleDefeatFallback(enemy,()=>{wrapper.style.opacity='1'},140);
-      const lineAt=Math.max(140,140+Math.round(band.duration*band.hold)-20);
-      scheduleDefeatFallback(enemy,()=>{line.style.opacity='1'},lineAt);
-      scheduleDefeatFallback(enemy,()=>{line.style.opacity='0'},lineAt+120);
+      const pixelAt=Math.max(140,140+Math.round(band.duration*band.hold)-20);
+      scheduleDefeatFallback(enemy,()=>{pixelCloud.style.opacity='1';pixelCloud.style.transform='translate3d(0,-6px,0)'},pixelAt);
+      scheduleDefeatFallback(enemy,()=>{pixelCloud.style.opacity='0';pixelCloud.style.transform='translate3d(0,-15px,0)'},pixelAt+120);
       scheduleDefeatFallback(enemy,()=>{wrapper.style.opacity='0'},140+band.duration);
     });
     fx.flash.style.opacity='1';
@@ -244,28 +256,28 @@
     fx.fragmentEntries.forEach(entry=>{
       entry.wrapper.style.opacity='0';
       entry.wrapper.style.transform='translate3d(0,0,0)';
-      entry.line.style.opacity='0';
-      entry.line.style.transform='scaleY(.18)';
+      entry.pixelCloud.style.opacity='0';
+      entry.pixelCloud.style.transform='translate3d(0,4px,0)';
     });
     fx.flash.style.opacity='0';
     enemy.el.style.opacity='1';
 
     let ok=true;
     for(const entry of fx.fragmentEntries){
-      const {band,wrapper,line}=entry;
+      const {band,wrapper,pixelCloud}=entry;
       const fragmentAnimation=startFxAnimation(fx,wrapper,[
         {opacity:1,transform:'translate3d(0,0,0)'},
         {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
         {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
         {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
       ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
-      const lineAnimation=startFxAnimation(fx,line,[
-        {opacity:0,transform:'scaleY(.18)'},
-        {opacity:1,transform:'scaleY(1)',offset:.42},
-        {opacity:.85,transform:'scaleY(.7)',offset:.68},
-        {opacity:0,transform:'scaleY(.2)'}
+      const pixelAnimation=startFxAnimation(fx,pixelCloud,[
+        {opacity:0,transform:'translate3d(0,4px,0)'},
+        {opacity:1,transform:'translate3d(0,-3px,0)',offset:.4},
+        {opacity:.86,transform:'translate3d(0,-8px,0)',offset:.7},
+        {opacity:0,transform:'translate3d(0,-15px,0)'}
       ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
-      if(!fragmentAnimation||!lineAnimation)ok=false;
+      if(!fragmentAnimation||!pixelAnimation)ok=false;
     }
 
     const flashAnimation=startFxAnimation(fx,fx.flash,[
@@ -282,7 +294,7 @@
     if(!flashAnimation||!fadeAnimation)ok=false;
     if(!ok){
       clearActiveDefeatAnimations(enemy);
-      fx.fragmentEntries.forEach(entry=>{entry.wrapper.style.opacity='0';entry.line.style.opacity='0'});
+      fx.fragmentEntries.forEach(entry=>{entry.wrapper.style.opacity='0';entry.pixelCloud.style.opacity='0'});
       fx.flash.style.opacity='0';
       enemy.el.style.opacity='1';
       return false;
