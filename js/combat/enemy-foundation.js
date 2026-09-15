@@ -108,7 +108,8 @@
     if(enemy.defeatTimer!==null){clearTimeout(enemy.defeatTimer);enemy.defeatTimer=null}
   }
   function removeDefeatParticles(enemy){
-    enemy.el?.querySelectorAll?.('[data-enemy-delete-particle="1"]').forEach(el=>el.remove());
+    for(const particle of enemy.defeatParticles||[])particle.remove();
+    enemy.defeatParticles?.clear?.();
   }
   function resetDefeatVisual(enemy){
     clearDefeatTimer(enemy);
@@ -124,13 +125,16 @@
     if(enemy.defeatEl)enemy.defeatEl.style.display='none';
   }
   function spawnDefeatParticles(enemy){
+    const scene=enemy.el?.parentElement;if(!scene)return;
+    const p=project(enemy.x,enemy.y),v=enemy.visual,centerX=p.x+v.offsetX,centerY=p.y-v.height*.54+v.offsetY;
     const vectors=[[-32,-30],[30,-34],[-40,4],[39,7],[-23,34],[25,37]];
     vectors.forEach(([dx,dy],index)=>{
       const particle=document.createElement('span');
       particle.dataset.enemyDeleteParticle='1';
       const size=index%2===0?7:5;
-      particle.style.cssText=`position:absolute;left:50%;top:46%;width:${size}px;height:${size}px;margin:${-size/2}px 0 0 ${-size/2}px;border-radius:50%;background:#fffbe0;box-shadow:0 0 8px rgba(255,245,170,.96),0 0 16px rgba(110,220,255,.72);pointer-events:none;z-index:9;opacity:0;`;
-      enemy.el.appendChild(particle);
+      particle.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:${size}px;height:${size}px;margin:${-size/2}px 0 0 ${-size/2}px;border-radius:50%;background:#fffbe0;box-shadow:0 0 8px rgba(255,245,170,.96),0 0 16px rgba(110,220,255,.72);pointer-events:none;z-index:10;opacity:0;`;
+      scene.appendChild(particle);enemy.defeatParticles.add(particle);
+      const remove=()=>{enemy.defeatParticles.delete(particle);particle.remove()};
       if(typeof particle.animate==='function'){
         const animation=particle.animate([
           {opacity:0,transform:'translate(0,0) scale(.4)'},
@@ -138,8 +142,11 @@
           {opacity:.82,transform:`translate(${dx*.68}px,${dy*.68}px) scale(.72)`,offset:.62},
           {opacity:0,transform:`translate(${dx}px,${dy}px) scale(.2)`}
         ],{duration:430,easing:'cubic-bezier(.18,.72,.26,1)',fill:'forwards'});
-        animation.onfinish=()=>particle.remove();
-        animation.oncancel=()=>particle.remove();
+        animation.onfinish=remove;
+        animation.oncancel=remove;
+      }else{
+        particle.style.opacity='1';
+        setTimeout(remove,430);
       }
     });
   }
@@ -207,7 +214,7 @@
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatParticles:new Set()};
     scene.appendChild(el);enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
@@ -230,7 +237,7 @@
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);removeDefeatParticles(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
