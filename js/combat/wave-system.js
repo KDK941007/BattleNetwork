@@ -6,7 +6,7 @@
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
     testOnly:true,
-    missionWaveCount:3,
+    missionWaveCount:4,
     attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',
     movementBehaviorId:'ENEMY1_MOVEMENT',
     clearNoticeMs:1500,
@@ -24,6 +24,18 @@
         Object.freeze({rowOffset:0,colOffset:4}),
         Object.freeze({rowOffset:2,colOffset:3}),
         Object.freeze({rowOffset:2,colOffset:5})
+      ]),
+      4:Object.freeze([
+        Object.freeze({rowOffset:-4,colOffset:3}),
+        Object.freeze({rowOffset:-4,colOffset:5}),
+        Object.freeze({rowOffset:-2,colOffset:3}),
+        Object.freeze({rowOffset:-2,colOffset:5}),
+        Object.freeze({rowOffset:0,colOffset:3}),
+        Object.freeze({rowOffset:0,colOffset:5}),
+        Object.freeze({rowOffset:2,colOffset:3}),
+        Object.freeze({rowOffset:2,colOffset:5}),
+        Object.freeze({rowOffset:4,colOffset:3}),
+        Object.freeze({rowOffset:4,colOffset:5})
       ])
     }),
     swordDummyTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:1})]),
