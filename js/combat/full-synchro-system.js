@@ -18,6 +18,7 @@
   let destroyed=false;
   let frameId=0;
   let lastTransform='';
+  let lastDepth=null;
   let lastWidth=0;
   let lastHeight=0;
   let resizeObserver=null;
@@ -107,6 +108,17 @@
     resizeObserver.observe(PLAYER_EL);
   }
 
+  function syncDepth(){
+    const position=window.BattleNetworkPlayer?.getPosition?.();
+    const depth=position?window.BattleNetworkEnemy?.getDepthZAtWorld?.(position.x,position.y):null;
+    if(!Number.isFinite(depth)||depth===lastDepth)return;
+    lastDepth=depth;
+    const playerDepth=depth+1;
+    PLAYER_EL.style.zIndex=String(playerDepth);
+    ringBack.style.zIndex=String(playerDepth-1);
+    ringFront.style.zIndex=String(playerDepth+1);
+  }
+
   function syncRingTransform(){
     const transform=PLAYER_EL.style.transform||'';
     if(transform!==lastTransform){
@@ -114,6 +126,7 @@
       ringBack.style.transform=transform;
       ringFront.style.transform=transform;
     }
+    syncDepth();
     if(!destroyed)frameId=requestAnimationFrame(syncRingTransform);
   }
 
