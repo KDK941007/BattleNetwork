@@ -126,29 +126,24 @@
     enemy.el.style.background='rgba(96,10,24,.88)';
     if(enemy.defeatEl)enemy.defeatEl.style.display='none';
   }
-  function trackDefeatElement(enemy,scene,el){
-    scene.appendChild(el);enemy.defeatParticles.add(el);
-    return()=>{enemy.defeatParticles.delete(el);el.remove()};
-  }
   function spawnDefeatFragments(enemy){
     const scene=enemy.el?.parentElement;if(!scene)return;
     const p=project(enemy.x,enemy.y),v=enemy.visual;
     const left=p.x-v.width/2+v.offsetX,top=p.y-v.height+v.offsetY;
     const z=depthZAtWorld(enemy.x,enemy.y,1);
     const bands=[
-      {start:0,end:.31,duration:220,hold:.42,dx:-2,dy:-1},
-      {start:.31,end:.67,duration:320,hold:.55,dx:2,dy:0},
-      {start:.67,end:1,duration:400,hold:.66,dx:-1,dy:2}
+      {start:0,end:.31,duration:220,hold:.42,dx:-2,dy:-1,lineX:-5},
+      {start:.31,end:.67,duration:320,hold:.55,dx:2,dy:0,lineX:6},
+      {start:.67,end:1,duration:400,hold:.66,dx:-1,dy:2,lineX:-2}
     ];
+    const batch=document.createDocumentFragment(),starters=[];
     bands.forEach(band=>{
       const y=Math.round(v.height*band.start),height=Math.max(1,Math.ceil(v.height*(band.end-band.start))+1);
       const wrapper=document.createElement('div');
       wrapper.dataset.enemyDeleteFragment='1';
-      wrapper.style.cssText=`position:absolute;left:${left}px;top:${top+y}px;width:${v.width}px;height:${height}px;overflow:hidden;pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;contain:layout paint;`;
-      const clone=enemy.el.cloneNode(true);
+      wrapper.style.cssText=`position:absolute;left:${left}px;top:${top+y}px;width:${v.width}px;height:${height}px;overflow:hidden;pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;contain:layout paint style;`;
+      const clone=enemy.el.cloneNode(false);
       clone.removeAttribute('id');
-      clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-      clone.querySelectorAll('.enemyPrototypeHp,.enemyPrototypeDefeat,.enemyPrototypeHitFlash').forEach(node=>node.remove());
       clone.style.position='absolute';
       clone.style.left='0';
       clone.style.top=`${-y}px`;
@@ -161,67 +156,41 @@
       clone.style.clipPath='';
       clone.style.pointerEvents='none';
       clone.style.willChange='auto';
+      clone.style.boxShadow='none';
       wrapper.appendChild(clone);
-      const remove=trackDefeatElement(enemy,scene,wrapper);
-      if(typeof wrapper.animate==='function'){
-        const animation=wrapper.animate([
-          {opacity:1,transform:'translate3d(0,0,0)'},
-          {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
-          {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
-          {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
-        ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
-        animation.onfinish=remove;animation.oncancel=remove;
-      }else{
-        setTimeout(()=>{wrapper.style.opacity='1';setTimeout(remove,band.duration)},140);
-      }
+
+      const line=document.createElement('span');
+      line.dataset.enemyDeleteLight='1';
+      line.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:10%;width:1px;height:80%;background:rgba(235,253,255,.98);box-shadow:-20px 0 0 rgba(154,235,255,.84),20px 0 0 rgba(154,235,255,.84);opacity:0;transform:scaleY(.18);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity;`;
+      wrapper.appendChild(line);
+      enemy.defeatParticles.add(wrapper);
+      batch.appendChild(wrapper);
+
+      starters.push(()=>{
+        const remove=()=>{enemy.defeatParticles.delete(wrapper);wrapper.remove()};
+        if(typeof wrapper.animate==='function'){
+          const animation=wrapper.animate([
+            {opacity:1,transform:'translate3d(0,0,0)'},
+            {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
+            {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
+            {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
+          ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
+          animation.onfinish=remove;animation.oncancel=remove;
+          if(typeof line.animate==='function'){
+            line.animate([
+              {opacity:0,transform:'scaleY(.18)'},
+              {opacity:1,transform:'scaleY(1)',offset:.42},
+              {opacity:.85,transform:'scaleY(.7)',offset:.68},
+              {opacity:0,transform:'scaleY(.2)'}
+            ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
+          }
+        }else{
+          setTimeout(()=>{wrapper.style.opacity='1';setTimeout(remove,band.duration)},140);
+        }
+      });
     });
-  }
-  function spawnDefeatParticles(enemy){
-    const scene=enemy.el?.parentElement;if(!scene)return;
-    const p=project(enemy.x,enemy.y),v=enemy.visual,centerX=p.x+v.offsetX,centerY=p.y-v.height*.54+v.offsetY;
-    const z=depthZAtWorld(enemy.x,enemy.y,3);
-
-    const core=document.createElement('span');
-    core.dataset.enemyDeleteParticle='1';
-    core.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:rgba(255,255,245,.98);box-shadow:0 0 14px rgba(255,248,190,.92);pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;`;
-    const removeCore=trackDefeatElement(enemy,scene,core);
-    if(typeof core.animate==='function'){
-      const animation=core.animate([
-        {opacity:0,transform:'scale(.2)'},
-        {opacity:1,transform:'scale(1.35)',offset:.45},
-        {opacity:0,transform:'scale(.2)'}
-      ],{duration:120,delay:390,easing:'ease-out',fill:'both'});
-      animation.onfinish=removeCore;animation.oncancel=removeCore;
-    }else setTimeout(()=>{core.style.opacity='1';setTimeout(removeCore,120)},390);
-
-    const ring=document.createElement('span');
-    ring.dataset.enemyDeleteParticle='1';
-    ring.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:24px;height:24px;margin:-12px 0 0 -12px;border:3px solid rgba(210,248,255,.96);border-radius:50%;pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;`;
-    const removeRing=trackDefeatElement(enemy,scene,ring);
-    if(typeof ring.animate==='function'){
-      const animation=ring.animate([
-        {opacity:0,transform:'scale(.35)'},
-        {opacity:1,transform:'scale(.55)',offset:.2},
-        {opacity:0,transform:'scale(1.9)'}
-      ],{duration:155,delay:430,easing:'cubic-bezier(.12,.72,.24,1)',fill:'both'});
-      animation.onfinish=removeRing;animation.oncancel=removeRing;
-    }else setTimeout(()=>{ring.style.opacity='1';setTimeout(removeRing,155)},430);
-
-    const vectors=[[-10,-7],[10,-7],[-10,7],[10,7]];
-    vectors.forEach(([dx,dy])=>{
-      const spark=document.createElement('span');
-      spark.dataset.enemyDeleteParticle='1';
-      spark.style.cssText=`position:absolute;left:${centerX}px;top:${centerY}px;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#fffbe0;pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;`;
-      const remove=trackDefeatElement(enemy,scene,spark);
-      if(typeof spark.animate==='function'){
-        const animation=spark.animate([
-          {opacity:0,transform:'translate(0,0) scale(.4)'},
-          {opacity:1,transform:`translate(${dx*.35}px,${dy*.35}px) scale(1)`,offset:.3},
-          {opacity:0,transform:`translate(${dx}px,${dy}px) scale(.15)`}
-        ],{duration:105,delay:445,easing:'ease-out',fill:'both'});
-        animation.onfinish=remove;animation.oncancel=remove;
-      }else setTimeout(()=>{spark.style.opacity='1';setTimeout(remove,105)},445);
-    });
+    scene.appendChild(batch);
+    starters.forEach(start=>start());
   }
   function startDefeatVisual(enemy){
     if(!enemy||enemy.defeatVisualStarted)return;
@@ -231,23 +200,18 @@
     if(enemy.hpEl)enemy.hpEl.style.display='none';
     if(enemy.defeatEl)enemy.defeatEl.style.display='none';
     spawnDefeatFragments(enemy);
-    spawnDefeatParticles(enemy);
     if(enemy.hitFlashEl){
       enemy.hitFlashEl.style.background='rgba(255,255,255,.98)';
       enemy.hitFlashEl.style.borderColor='rgba(255,255,255,1)';
       if(typeof enemy.hitFlashEl.animate==='function'){
         enemy.hitFlashEl.animate([
           {opacity:0},
-          {opacity:0,offset:.12},
-          {opacity:1,offset:.25},
-          {opacity:.25,offset:.38},
-          {opacity:1,offset:.49},
-          {opacity:0,offset:.62},
+          {opacity:1,offset:.42},
           {opacity:0}
-        ],{duration:360,easing:'linear',fill:'forwards'});
+        ],{duration:180,easing:'ease-out',fill:'forwards'});
       }else{
         enemy.hitFlashEl.style.opacity='1';
-        setTimeout(()=>{if(enemy.hitFlashEl)enemy.hitFlashEl.style.opacity='0'},280);
+        setTimeout(()=>{if(enemy.hitFlashEl)enemy.hitFlashEl.style.opacity='0'},180);
       }
     }
     const finish=()=>{
