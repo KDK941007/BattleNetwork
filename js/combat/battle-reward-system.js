@@ -46,28 +46,24 @@
     return true;
   }
 
-  function currentTile(){
-    const p=PLAYER.getPosition?.();
-    return p?FIELD.getTileAtWorld(p.x,p.y):null;
-  }
-
   function startWave(waveNumber){
     const health=HEALTH.getSnapshot();
-    const tile=currentTile();
+    const dashState=PLAYER.getDashState?.();
     tracker={
       waveNumber:Number(waveNumber)||0,
       elapsedSeconds:0,
       hits:0,
-      movements:0,
+      dashes:0,
       lastHp:Number(health.hp),
-      lastTile:tile?{row:tile.row,col:tile.col}:null
+      lastDashActive:PLAYER.isDashing?.()===true,
+      lastDashQueued:dashState?.queued===true
     };
     lastFrame=performance.now();
     return getTrackingSnapshot();
   }
 
   function getTrackingSnapshot(){
-    return tracker?Object.freeze({...tracker,lastTile:tracker.lastTile?Object.freeze({...tracker.lastTile}):null}):null;
+    return tracker?Object.freeze({...tracker}):null;
   }
 
   HEALTH.subscribe(health=>{
@@ -80,15 +76,18 @@
   function tick(now){
     const elapsed=Math.max(0,(now-lastFrame)/1000);
     lastFrame=now;
-    if(tracker&&isBattleTimeAdvancing()){
-      tracker.elapsedSeconds+=elapsed;
-      const tile=currentTile();
-      if(tile){
-        if(tracker.lastTile){
-          tracker.movements+=Math.abs(tile.row-tracker.lastTile.row)+Math.abs(tile.col-tracker.lastTile.col);
-        }
-        tracker.lastTile={row:tile.row,col:tile.col};
+    if(tracker){
+      const advancing=isBattleTimeAdvancing();
+      const dashActive=PLAYER.isDashing?.()===true;
+      const dashQueued=PLAYER.getDashState?.()?.queued===true;
+      if(advancing){
+        tracker.elapsedSeconds+=elapsed;
+        const directStart=!tracker.lastDashActive&&dashActive;
+        const queuedStart=tracker.lastDashActive&&tracker.lastDashQueued&&dashActive&&!dashQueued;
+        if(directStart||queuedStart)tracker.dashes+=1;
       }
+      tracker.lastDashActive=dashActive;
+      tracker.lastDashQueued=dashQueued;
     }
     requestAnimationFrame(tick);
   }
@@ -111,7 +110,7 @@
     return -3;
   }
 
-  function movementPoints(movements){return movements<=2?1:0}
+  function dashPoints(dashes){return dashes<=1?1:0}
   function rankFromPoints(points){return points>=11?'S':String(Math.max(1,Math.min(10,Math.trunc(points))))}
   function rankNumber(rank){return rank==='S'?11:Math.max(1,Math.min(10,Math.trunc(Number(rank)||1)))}
 
@@ -153,9 +152,9 @@
     const health=HEALTH.getSnapshot();
     const deleteTimeSeconds=Math.max(0,tracker.elapsedSeconds);
     const hits=Math.max(0,Math.trunc(tracker.hits));
-    const movements=Math.max(0,Math.trunc(tracker.movements));
+    const dashes=Math.max(0,Math.trunc(tracker.dashes));
     const multiBonus=Math.max(0,Math.trunc(Number(multiDeleteBonus)||0));
-    const points=timePoints(deleteTimeSeconds)+hitPoints(hits)+movementPoints(movements)+multiBonus;
+    const points=timePoints(deleteTimeSeconds)+hitPoints(hits)+dashPoints(dashes)+multiBonus;
     const bustingLevel=rankFromPoints(points);
     const hp=Number(health.hp),maxHp=Number(health.maxHp);
     const lowHp=Number.isFinite(hp)&&Number.isFinite(maxHp)&&maxHp>0&&hp/maxHp<LOW_HP_RATIO;
@@ -165,7 +164,7 @@
       waveNumber:tracker.waveNumber,
       deleteTimeSeconds,
       hits,
-      movements,
+      dashes,
       multiDeleteBonus:multiBonus,
       bustingPoints:points,
       bustingLevel,
@@ -276,14 +275,14 @@
   function renderBustingBreakdown(modal,result){
     const timeScore=timePoints(result.deleteTimeSeconds);
     const hitScore=hitPoints(result.hits);
-    const moveScore=movementPoints(result.movements);
+    const dashScore=dashPoints(result.dashes);
     const multiScore=Math.max(0,Math.trunc(Number(result.multiDeleteBonus)||0));
     modal.querySelector('#battleRewardBreakdownTimeResult').textContent=formatTime(result.deleteTimeSeconds);
     modal.querySelector('#battleRewardBreakdownTimeScore').textContent=signedPoints(timeScore);
     modal.querySelector('#battleRewardBreakdownDamageResult').textContent=`${result.hits} HIT`;
     modal.querySelector('#battleRewardBreakdownDamageScore').textContent=signedPoints(hitScore);
-    modal.querySelector('#battleRewardBreakdownMoveResult').textContent=String(result.movements);
-    modal.querySelector('#battleRewardBreakdownMoveScore').textContent=signedPoints(moveScore);
+    modal.querySelector('#battleRewardBreakdownMoveResult').textContent=String(result.dashes);
+    modal.querySelector('#battleRewardBreakdownMoveScore').textContent=signedPoints(dashScore);
     modal.querySelector('#battleRewardBreakdownMultiResult').textContent=String(result.multiDeleteBonus);
     modal.querySelector('#battleRewardBreakdownMultiScore').textContent=signedPoints(multiScore);
     modal.querySelector('#battleRewardBreakdownTotal').textContent=`${result.bustingPoints}  →  ${result.bustingLevel}`;
@@ -313,7 +312,7 @@
           <div class="battleRewardBreakdownHeader"><span></span><span>RESULT</span><span>SCORE</span></div>
           <div class="battleRewardBreakdownRow"><span>TIME</span><strong id="battleRewardBreakdownTimeResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownTimeScore"></strong></div>
           <div class="battleRewardBreakdownRow"><span>DAMAGE</span><strong id="battleRewardBreakdownDamageResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownDamageScore"></strong></div>
-          <div class="battleRewardBreakdownRow"><span>MOVE</span><strong id="battleRewardBreakdownMoveResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownMoveScore"></strong></div>
+          <div class="battleRewardBreakdownRow"><span>DASH</span><strong id="battleRewardBreakdownMoveResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownMoveScore"></strong></div>
           <div class="battleRewardBreakdownRow"><span>MULTI DELETE</span><strong id="battleRewardBreakdownMultiResult"></strong><strong class="battleRewardBreakdownScore" id="battleRewardBreakdownMultiScore"></strong></div>
           <div class="battleRewardBreakdownTotal"><span>TOTAL</span><strong id="battleRewardBreakdownTotal"></strong></div>
         </div>
