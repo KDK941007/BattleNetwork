@@ -111,7 +111,6 @@
 
   const criticalUrls=[
     ...kokoroImages,
-    './assets/rewards/zenny.png',
     ...collectCssImageUrls(),
     ...collectActiveFolderImageUrls(),
     ...collectAttributeImageUrls()
@@ -120,6 +119,7 @@
   const ready=preload(criticalUrls).finally(()=>{
     document.documentElement.dataset.criticalImagesReady='true';
   });
+  preloadOne('./assets/rewards/zenny.png');
 
   const observer=new MutationObserver(records=>{
     const urls=[];
