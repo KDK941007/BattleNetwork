@@ -111,6 +111,7 @@
 
   const criticalUrls=[
     ...kokoroImages,
+    './assets/rewards/zenny.png',
     ...collectCssImageUrls(),
     ...collectActiveFolderImageUrls(),
     ...collectAttributeImageUrls()
