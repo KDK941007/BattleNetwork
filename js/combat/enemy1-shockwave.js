@@ -8,8 +8,8 @@
   const style=document.createElement('style');
   style.dataset.testOnly='enemy1-telegraph-glow';
   style.textContent=`
-    .enemyPrototype.enemy1TelegraphTest{outline:4px solid rgba(255,214,82,.98);box-shadow:0 0 0 4px rgba(255,214,82,.24),0 0 28px rgba(255,200,48,.95)!important;}
-    .enemyPrototype.enemy1FullSyncTest{outline:5px solid rgba(104,255,255,1);box-shadow:0 0 0 5px rgba(104,255,255,.30),0 0 38px rgba(86,235,255,1)!important;}
+    .enemyPrototype.enemy1TelegraphTest{outline:3px solid rgba(255,214,82,.98);outline-offset:2px;}
+    .enemyPrototype.enemy1FullSyncTest{outline:4px solid rgba(104,255,255,1);outline-offset:2px;}
   `;
   document.head.appendChild(style);
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
@@ -25,7 +25,7 @@
       if(!enemyEl)return;
       const debug=RUNTIME.getDebugState();
       const fullSynchroActive=window.BattleNetworkPlayerHud?.getKokoroState?.()==='FULL_SYNCHRO';
-      const next=mode==='FULL_SYNC'&&fullSynchroActive?'FULL_SYNC':debug.enabled&&debug.showAttackGlow?mode:'NONE';
+      const next=!debug.showAttackGlow?'NONE':mode==='FULL_SYNC'&&fullSynchroActive?'FULL_SYNC':mode;
       if(next===lastGlowMode)return;
       enemyEl.classList.toggle('enemy1TelegraphTest',next==='TELEGRAPH');
       enemyEl.classList.toggle('enemy1FullSyncTest',next==='FULL_SYNC');
