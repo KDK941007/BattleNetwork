@@ -42,7 +42,7 @@
       if(enemy.isDefeated)continue;
       const center=enemyVisualCenter(enemy),aware=RUNTIME.getPerception(enemy.id);
       drawEllipse(center,releaseRadius,'rgba(84,235,255,.98)',aware?1:.56,2);
-      drawEllipse(center,startRadius,'rgba(255,211,82,.98)',aware?.58:1,2.5);
+      drawEllipse(center,startRadius,'rgba(255,211,82,.98)',aware ? .58 : 1,2.5);
       drawCenter(center);
     }
     rangeTimer=setTimeout(drawPerception,PERCEPTION_REFRESH_MS);
