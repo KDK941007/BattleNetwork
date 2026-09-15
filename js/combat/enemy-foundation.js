@@ -104,12 +104,92 @@
     const text=String(Math.ceil(enemy.hp));
     if(enemy.hpEl.textContent!==text)enemy.hpEl.textContent=text;
   }
+  function clearDefeatTimer(enemy){
+    if(enemy.defeatTimer!==null){clearTimeout(enemy.defeatTimer);enemy.defeatTimer=null}
+  }
+  function removeDefeatParticles(enemy){
+    enemy.el?.querySelectorAll?.('[data-enemy-delete-particle="1"]').forEach(el=>el.remove());
+  }
+  function resetDefeatVisual(enemy){
+    clearDefeatTimer(enemy);
+    enemy.defeatAnimation?.cancel?.();enemy.defeatAnimation=null;
+    removeDefeatParticles(enemy);
+    enemy.defeatVisualStarted=false;
+    enemy.el.style.visibility='visible';
+    enemy.el.style.opacity='1';
+    enemy.el.style.filter='';
+    enemy.el.style.clipPath='';
+    enemy.el.style.borderColor='#ff5b67';
+    enemy.el.style.background='rgba(96,10,24,.88)';
+    if(enemy.defeatEl)enemy.defeatEl.style.display='none';
+  }
+  function spawnDefeatParticles(enemy){
+    const vectors=[[-32,-30],[30,-34],[-40,4],[39,7],[-23,34],[25,37]];
+    vectors.forEach(([dx,dy],index)=>{
+      const particle=document.createElement('span');
+      particle.dataset.enemyDeleteParticle='1';
+      const size=index%2===0?7:5;
+      particle.style.cssText=`position:absolute;left:50%;top:46%;width:${size}px;height:${size}px;margin:${-size/2}px 0 0 ${-size/2}px;border-radius:50%;background:#fffbe0;box-shadow:0 0 8px rgba(255,245,170,.96),0 0 16px rgba(110,220,255,.72);pointer-events:none;z-index:9;opacity:0;`;
+      enemy.el.appendChild(particle);
+      if(typeof particle.animate==='function'){
+        const animation=particle.animate([
+          {opacity:0,transform:'translate(0,0) scale(.4)'},
+          {opacity:1,transform:`translate(${dx*.25}px,${dy*.25}px) scale(1)`,offset:.22},
+          {opacity:.82,transform:`translate(${dx*.68}px,${dy*.68}px) scale(.72)`,offset:.62},
+          {opacity:0,transform:`translate(${dx}px,${dy}px) scale(.2)`}
+        ],{duration:430,easing:'cubic-bezier(.18,.72,.26,1)',fill:'forwards'});
+        animation.onfinish=()=>particle.remove();
+        animation.oncancel=()=>particle.remove();
+      }
+    });
+  }
+  function startDefeatVisual(enemy){
+    if(!enemy||enemy.defeatVisualStarted)return;
+    enemy.defeatVisualStarted=true;
+    enemy.flashToken++;
+    enemy.hitFlashAnimation?.cancel?.();enemy.hitFlashAnimation=null;
+    if(enemy.hpEl)enemy.hpEl.style.display='none';
+    if(enemy.defeatEl)enemy.defeatEl.style.display='none';
+    enemy.el.style.borderColor='rgba(220,245,255,.96)';
+    enemy.el.style.background='rgba(210,245,255,.32)';
+    spawnDefeatParticles(enemy);
+    if(enemy.hitFlashEl){
+      enemy.hitFlashEl.style.background='rgba(255,255,255,.96)';
+      enemy.hitFlashEl.style.borderColor='rgba(255,255,255,1)';
+      if(typeof enemy.hitFlashEl.animate==='function'){
+        enemy.hitFlashEl.animate([{opacity:1},{opacity:.92,offset:.28},{opacity:0}],{duration:210,easing:'ease-out',fill:'forwards'});
+      }else{
+        enemy.hitFlashEl.style.opacity='1';
+        setTimeout(()=>{if(enemy.hitFlashEl)enemy.hitFlashEl.style.opacity='0'},210);
+      }
+    }
+    const finish=()=>{
+      enemy.defeatAnimation=null;
+      enemy.defeatTimer=null;
+      if(!isDefeatedRaw(enemy))return;
+      enemy.el.style.opacity='0';
+      enemy.el.style.visibility='hidden';
+    };
+    if(typeof enemy.el.animate==='function'){
+      const animation=enemy.el.animate([
+        {opacity:1,filter:'brightness(1) saturate(1)',clipPath:'inset(0% 0% 0% 0%)'},
+        {opacity:1,filter:'brightness(2.7) saturate(.35)',clipPath:'inset(0% 0% 0% 0%)',offset:.18},
+        {opacity:.88,filter:'brightness(3.3) saturate(0)',clipPath:'inset(10% 6% 10% 6%)',offset:.42},
+        {opacity:0,filter:'brightness(4) saturate(0)',clipPath:'inset(48% 42% 48% 42%)'}
+      ],{duration:520,easing:'cubic-bezier(.2,.68,.25,1)',fill:'forwards'});
+      enemy.defeatAnimation=animation;
+      animation.onfinish=finish;
+      animation.oncancel=()=>{if(enemy.defeatAnimation===animation)enemy.defeatAnimation=null};
+    }else{
+      enemy.el.style.filter='brightness(3) saturate(0)';
+      enemy.el.style.opacity='.9';
+      enemy.defeatTimer=setTimeout(finish,520);
+    }
+  }
   function syncDefeatPresentation(enemy){
     const defeated=isDefeatedRaw(enemy);
     enemy.el.classList.toggle('defeated',defeated);
-    enemy.el.style.borderColor=defeated?'rgba(160,160,170,.9)':'#ff5b67';
-    enemy.el.style.background=defeated?'rgba(38,40,48,.72)':'rgba(96,10,24,.88)';
-    if(enemy.defeatEl)enemy.defeatEl.style.display=defeated?'block':'none';
+    if(defeated)startDefeatVisual(enemy);else resetDefeatVisual(enemy);
     renderHealth(enemy);
     return defeated;
   }
@@ -127,7 +207,7 @@
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null};
     scene.appendChild(el);enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
@@ -150,7 +230,7 @@
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;enemy.hitFlashAnimation?.cancel?.();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
