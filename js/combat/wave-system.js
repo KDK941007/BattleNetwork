@@ -19,11 +19,11 @@
         Object.freeze({rowOffset:1,colOffset:4})
       ]),
       3:Object.freeze([
-        Object.freeze({rowOffset:-1,colOffset:3}),
-        Object.freeze({rowOffset:-1,colOffset:5}),
+        Object.freeze({rowOffset:-2,colOffset:3}),
+        Object.freeze({rowOffset:-2,colOffset:5}),
         Object.freeze({rowOffset:0,colOffset:4}),
-        Object.freeze({rowOffset:1,colOffset:3}),
-        Object.freeze({rowOffset:1,colOffset:5})
+        Object.freeze({rowOffset:2,colOffset:3}),
+        Object.freeze({rowOffset:2,colOffset:5})
       ])
     }),
     swordDummyTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:1})]),
@@ -54,7 +54,24 @@
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function showBattlefield(){document.getElementById('customModal')?.classList.remove('open');document.getElementById('chipDetailModal')?.classList.remove('open')}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
-  function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),r=Math.floor(FIELD.GRID_ROWS/2),c=Math.floor(FIELD.GRID_COLS/2),p=FIELD.tileToWorldCenter(r+tile.rowOffset,c+tile.colOffset);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
+  function boundsOverlap(a,b){return !!a&&!!b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top}
+  function spawnBoundsAt(position,defaults){const width=FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height=FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX=FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY=FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles,centerX=position.x+offsetX,centerY=position.y+offsetY;return{left:centerX-width/2,right:centerX+width/2,top:centerY-height/2,bottom:centerY+height/2}}
+  function canUseSpawnCell(row,col,defaults){const p=FIELD.tileToWorldCenter(row,col);if(!p||!FIELD.canOccupyWorld?.(p.x,p.y))return false;const candidate=spawnBoundsAt(p,defaults);for(const enemy of ENEMY.getActiveEnemies()){if(boundsOverlap(candidate,enemy.bounds))return false}return true}
+  function resolveSpawnPosition(tile,defaults){
+    const baseRow=Math.floor(FIELD.GRID_ROWS/2)+tile.rowOffset,baseCol=Math.floor(FIELD.GRID_COLS/2)+tile.colOffset;
+    if(canUseSpawnCell(baseRow,baseCol,defaults))return FIELD.tileToWorldCenter(baseRow,baseCol);
+    const maxRadius=Math.max(FIELD.GRID_ROWS,FIELD.GRID_COLS);
+    for(let radius=1;radius<=maxRadius;radius++){
+      for(let dr=-radius;dr<=radius;dr++)for(let dc=-radius;dc<=radius;dc++){
+        if(Math.max(Math.abs(dr),Math.abs(dc))!==radius)continue;
+        const row=baseRow+dr,col=baseCol+dc;
+        if(row<0||row>=FIELD.GRID_ROWS||col<0||col>=FIELD.GRID_COLS)continue;
+        if(canUseSpawnCell(row,col,defaults))return FIELD.tileToWorldCenter(row,col);
+      }
+    }
+    throw new Error('BattleNetworkWave: no non-overlapping spawn tile is available.');
+  }
+  function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),p=staticDummy?FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2)+tile.rowOffset,Math.floor(FIELD.GRID_COLS/2)+tile.colOffset):resolveSpawnPosition(tile,defaults);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
   function spawnEnemy(tile,{maxHp=null}={}){const id=spawnBaseEnemy(tile,{maxHp});const m=AI.assignBehavior(id,TEST_CONFIG.movementBehaviorId);if(!m.ok)throw new Error(`BattleNetworkWave: movement assign failed: ${m.reason}`);const a=AI.assignBehavior(id,TEST_CONFIG.attackBehaviorId);if(!a.ok)throw new Error(`BattleNetworkWave: attack assign failed: ${a.reason}`);return id}
   function getWaveSpawnTiles(n){return TEST_CONFIG.waveSpawnTiles[n]||TEST_CONFIG.waveSpawnTiles[1]}
   function getTestTarget(){return window.BattleNetworkFolder?.getTestTarget?.()||null}
