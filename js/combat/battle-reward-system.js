@@ -273,12 +273,17 @@
     if(hint)hint.textContent=visible?(modal.dataset.rewardAdvanceText||''):'';
   }
 
+  function setChipRevealPromptVisible(prompt,visible){
+    if(!prompt)return;
+    prompt.hidden=!visible;
+    prompt.style.display=visible?'flex':'none';
+  }
+
   function cancelRewardReveal(modal){
     if(rewardRevealFrame!==null){cancelAnimationFrame(rewardRevealFrame);rewardRevealFrame=null}
     const overlay=modal?.querySelector('#battleRewardPixelReveal');
     if(overlay)overlay.hidden=true;
-    const prompt=modal?.querySelector('#battleRewardRevealPrompt');
-    if(prompt)prompt.hidden=true;
+    setChipRevealPromptVisible(modal?.querySelector('#battleRewardRevealPrompt'),false);
   }
 
   function ensureChipRevealOverlay(modal){
@@ -309,9 +314,9 @@
     if(prompt)return prompt;
     prompt=document.createElement('div');
     prompt.id='battleRewardRevealPrompt';
-    prompt.textContent='TAP TO REVEAL';
+    prompt.textContent='TAP';
     prompt.hidden=true;
-    prompt.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:6px;border:1px solid rgba(142,232,255,.7);background:rgba(3,20,48,.72);color:#9fe8ff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:11px;font-weight:900;line-height:1;letter-spacing:.08em;text-align:center;text-shadow:0 2px 0 #061326;pointer-events:none;z-index:4;";
+    prompt.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;box-sizing:border-box;padding:6px;border:1px solid rgba(142,232,255,.7);background:rgba(3,20,48,.72);color:#9fe8ff;font-family:'Orbitron',var(--bn-ui-font),system-ui,sans-serif;font-size:11px;font-weight:900;line-height:1;letter-spacing:.08em;text-align:center;text-shadow:0 2px 0 #061326;pointer-events:none;z-index:4;";
     frame.appendChild(prompt);
     return prompt;
   }
@@ -322,8 +327,7 @@
     const blocked=pending||state==='running';
     const frame=modal.querySelector('.battleRewardImageFrame');
     if(frame)frame.style.cursor=pending?'pointer':'';
-    const prompt=modal.querySelector('#battleRewardRevealPrompt');
-    if(prompt)prompt.hidden=!pending;
+    setChipRevealPromptVisible(modal.querySelector('#battleRewardRevealPrompt'),pending);
     setRewardAdvanceVisible(modal,!blocked);
   }
 
@@ -376,7 +380,7 @@
     const tiles=overlay.children;
     for(const tile of tiles)tile.style.opacity='1';
     overlay.hidden=false;
-    prompt.hidden=true;
+    setChipRevealPromptVisible(prompt,false);
     image.style.visibility='visible';
     setChipRevealState(modal,'running');
     const start=performance.now()+CHIP_REVEAL_DELAY;
@@ -411,6 +415,7 @@
   function requestChipReveal(modal){
     if(modal.dataset.rewardRevealState!=='pending')return false;
     modal.dataset.rewardRevealRequested='1';
+    setChipRevealPromptVisible(modal.querySelector('#battleRewardRevealPrompt'),false);
     const image=modal.querySelector('#battleRewardImage');
     if(image&&!image.hidden&&image.naturalWidth>0)startChipReveal(modal,image,rewardRevealToken);
     return true;
@@ -426,7 +431,7 @@
     const revealChip=reward?.type==='CHIP';
     modal.dataset.rewardRevealRequested='0';
     const prompt=ensureChipRevealPrompt(modal);
-    if(prompt)prompt.hidden=!revealChip;
+    setChipRevealPromptVisible(prompt,revealChip);
     name.textContent=parts.name;
     code.textContent=parts.code;
     code.hidden=!parts.code;
