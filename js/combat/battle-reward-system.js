@@ -111,6 +111,7 @@
   }
 
   function dashPoints(dashes){return dashes<=1?1:0}
+  function multiDeletePoints(count){const value=Math.max(0,Math.trunc(Number(count)||0));return value>=3?4:value===2?2:0}
   function rankFromPoints(points){return points>=11?'S':String(Math.max(1,Math.min(10,Math.trunc(points))))}
   function rankNumber(rank){return rank==='S'?11:Math.max(1,Math.min(10,Math.trunc(Number(rank)||1)))}
 
@@ -147,13 +148,15 @@
     return [{type:'CHIP',chipId:METTAUR_CHIP_ID,code:'A',amount:1,weight:100}];
   }
 
-  function finishWave({multiDeleteBonus=0}={}){
+  function finishWave({multiDeleteCount=0,multiDeleteBonus=null}={}){
     if(!tracker)return null;
     const health=HEALTH.getSnapshot();
     const deleteTimeSeconds=Math.max(0,tracker.elapsedSeconds);
     const hits=Math.max(0,Math.trunc(tracker.hits));
     const dashes=Math.max(0,Math.trunc(tracker.dashes));
-    const multiBonus=Math.max(0,Math.trunc(Number(multiDeleteBonus)||0));
+    const multiCount=Math.max(0,Math.trunc(Number(multiDeleteCount)||0));
+    const explicitMultiBonus=Number(multiDeleteBonus);
+    const multiBonus=Number.isFinite(explicitMultiBonus)?Math.max(0,Math.trunc(explicitMultiBonus)):multiDeletePoints(multiCount);
     const points=timePoints(deleteTimeSeconds)+hitPoints(hits)+dashPoints(dashes)+multiBonus;
     const bustingLevel=rankFromPoints(points);
     const hp=Number(health.hp),maxHp=Number(health.maxHp);
@@ -165,6 +168,7 @@
       deleteTimeSeconds,
       hits,
       dashes,
+      multiDeleteCount:multiCount,
       multiDeleteBonus:multiBonus,
       bustingPoints:points,
       bustingLevel,
@@ -283,7 +287,7 @@
     modal.querySelector('#battleRewardBreakdownDamageScore').textContent=signedPoints(hitScore);
     modal.querySelector('#battleRewardBreakdownMoveResult').textContent=String(result.dashes);
     modal.querySelector('#battleRewardBreakdownMoveScore').textContent=signedPoints(dashScore);
-    modal.querySelector('#battleRewardBreakdownMultiResult').textContent=String(result.multiDeleteBonus);
+    modal.querySelector('#battleRewardBreakdownMultiResult').textContent=String(result.multiDeleteCount||0);
     modal.querySelector('#battleRewardBreakdownMultiScore').textContent=signedPoints(multiScore);
     modal.querySelector('#battleRewardBreakdownTotal').textContent=`${result.bustingPoints}  →  ${result.bustingLevel}`;
   }
@@ -387,6 +391,7 @@
     finishWave,
     show,
     applyReward,
-    getTrackingSnapshot
+    getTrackingSnapshot,
+    multiDeletePoints
   });
 })();
