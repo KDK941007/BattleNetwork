@@ -7,6 +7,11 @@
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,DEPTH_Z_BASE=100;
   const enemies=[];
   const listeners=new Set();
+  const DEFEAT_CLIP_STEPS=[
+    {at:150,clip:'polygon(0 0,100% 0,100% 72%,90% 72%,90% 100%,0 100%)'},
+    {at:215,clip:'polygon(0 0,84% 0,84% 9%,100% 9%,100% 58%,91% 58%,91% 76%,100% 76%,100% 100%,0 100%,0 82%,10% 82%,10% 61%,0 61%)'},
+    {at:280,clip:'polygon(0 0,68% 0,68% 12%,100% 12%,100% 42%,86% 42%,86% 58%,100% 58%,100% 80%,76% 80%,76% 100%,0 100%,0 72%,14% 72%,14% 50%,0 50%)'}
+  ];
   let nextId=1;
 
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
@@ -109,12 +114,17 @@
   function clearDefeatTimer(enemy){
     if(enemy.defeatTimer!==null){clearTimeout(enemy.defeatTimer);enemy.defeatTimer=null}
   }
+  function clearDefeatStepTimers(enemy){
+    for(const timer of enemy.defeatStepTimers||[])clearTimeout(timer);
+    enemy.defeatStepTimers?.clear?.();
+  }
   function removeDefeatParticles(enemy){
     for(const particle of enemy.defeatParticles||[])particle.remove();
     enemy.defeatParticles?.clear?.();
   }
   function resetDefeatVisual(enemy){
     clearDefeatTimer(enemy);
+    clearDefeatStepTimers(enemy);
     enemy.defeatAnimation?.cancel?.();enemy.defeatAnimation=null;
     removeDefeatParticles(enemy);
     enemy.defeatVisualStarted=false;
@@ -174,6 +184,18 @@
       }else setTimeout(()=>{spark.style.opacity='1';setTimeout(remove,105)},220);
     });
   }
+  function scheduleDefeatClipSteps(enemy){
+    clearDefeatStepTimers(enemy);
+    enemy.el.style.clipPath='polygon(0 0,100% 0,100% 100%,0 100%)';
+    for(const step of DEFEAT_CLIP_STEPS){
+      const timer=setTimeout(()=>{
+        enemy.defeatStepTimers.delete(timer);
+        if(!enemy.defeatVisualStarted||!isDefeatedRaw(enemy))return;
+        enemy.el.style.clipPath=step.clip;
+      },step.at);
+      enemy.defeatStepTimers.add(timer);
+    }
+  }
   function startDefeatVisual(enemy){
     if(!enemy||enemy.defeatVisualStarted)return;
     enemy.defeatVisualStarted=true;
@@ -181,6 +203,7 @@
     enemy.hitFlashAnimation?.cancel?.();enemy.hitFlashAnimation=null;
     if(enemy.hpEl)enemy.hpEl.style.display='none';
     if(enemy.defeatEl)enemy.defeatEl.style.display='none';
+    scheduleDefeatClipSteps(enemy);
     spawnDefeatParticles(enemy);
     if(enemy.hitFlashEl){
       enemy.hitFlashEl.style.background='rgba(255,255,255,.98)';
@@ -203,6 +226,7 @@
     const finish=()=>{
       enemy.defeatAnimation=null;
       enemy.defeatTimer=null;
+      clearDefeatStepTimers(enemy);
       if(!isDefeatedRaw(enemy))return;
       enemy.el.style.opacity='0';
       enemy.el.style.visibility='hidden';
@@ -245,7 +269,7 @@
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
     el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatParticles:new Set()};
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatStepTimers:new Set(),defeatParticles:new Set()};
     scene.appendChild(el);enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
@@ -268,7 +292,7 @@
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);removeDefeatParticles(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);clearDefeatStepTimers(enemy);removeDefeatParticles(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
