@@ -25,7 +25,7 @@
     keepDistanceMaxTiles:null
   });
   let patternIndex=0;
-  let debugState={enabled:false,showPerception:true,showAttackGlow:true};
+  let debugState={showPerception:false,showAttackGlow:false};
   const patterns=Object.freeze([
     Object.freeze({id:'B',label:'B',moveSpeedWorld:DEFAULTS.enemyMoveSpeed,telegraphMs:DEFAULTS.enemyAttackTelegraphMs,fullSyncWindowMs:DEFAULTS.fullSyncWindowMs,recoveryMs:DEFAULTS.enemyAttackRecoveryMs,cooldownMs:DEFAULTS.attackCooldownMs,projectileSpeed:ATTACK_DEFAULTS.projectileSpeed,attackStartRangeTiles:ATTACK_DEFAULTS.attackStartRangeTiles,projectileMaxRangeTiles:ATTACK_DEFAULTS.projectileMaxRangeTiles})
   ]);
@@ -34,9 +34,9 @@
   function getEnemyDefaults(){return ENEMY1_DEFAULTS}
   function getEnemyConfig(){return enemyConfig}
   function getAttackDefaults(){return ATTACK_DEFAULTS}
-  function getDebugState(){return Object.freeze({...debugState})}
+  function getDebugState(){return Object.freeze({enabled:debugState.showPerception||debugState.showAttackGlow,...debugState})}
   function emitDebug(){const snapshot=getDebugState();debugListeners.forEach(fn=>{try{fn(snapshot)}catch(error){console.error('BattleNetworkEnemy1Runtime debug listener failed.',error)}});return snapshot}
-  function setDebugEnabled(value){debugState={...debugState,enabled:value===true};return emitDebug()}
+  function setDebugEnabled(value){const enabled=value===true;debugState={showPerception:enabled,showAttackGlow:enabled};return emitDebug()}
   function setDebugOption(name,value){if(name!=='showPerception'&&name!=='showAttackGlow')return getDebugState();debugState={...debugState,[name]:value===true};return emitDebug()}
   function subscribeDebug(fn){if(typeof fn!=='function')return()=>{};debugListeners.add(fn);fn(getDebugState());return()=>debugListeners.delete(fn)}
   function isAttackLocked(enemyId){return attackLocks.has(enemyId)}
