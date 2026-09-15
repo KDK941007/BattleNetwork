@@ -7,6 +7,11 @@
   const PX=.72,PY=.36,SW=FIELD.WORLD_SIZE*PX*2,DEPTH_Z_BASE=100;
   const enemies=[];
   const listeners=new Set();
+  const DEFEAT_BANDS=Object.freeze([
+    Object.freeze({start:0,end:.31,duration:220,hold:.42,dx:-2,dy:-1,lineX:-5}),
+    Object.freeze({start:.31,end:.67,duration:320,hold:.55,dx:2,dy:0,lineX:6}),
+    Object.freeze({start:.67,end:1,duration:400,hold:.66,dx:-1,dy:2,lineX:-2})
+  ]);
   let nextId=1;
 
   function project(x,y){return{x:(x-y)*PX+SW/2,y:(x+y)*PY}}
@@ -109,39 +114,41 @@
   function clearDefeatTimer(enemy){
     if(enemy.defeatTimer!==null){clearTimeout(enemy.defeatTimer);enemy.defeatTimer=null}
   }
-  function removeDefeatParticles(enemy){
-    for(const particle of enemy.defeatParticles||[])particle.remove();
-    enemy.defeatParticles?.clear?.();
+  function clearDefeatFallbackTimers(enemy){
+    for(const timer of enemy.defeatFallbackTimers||[])clearTimeout(timer);
+    enemy.defeatFallbackTimers?.clear?.();
   }
-  function resetDefeatVisual(enemy){
-    clearDefeatTimer(enemy);
-    enemy.defeatAnimation?.cancel?.();enemy.defeatAnimation=null;
-    removeDefeatParticles(enemy);
-    enemy.defeatVisualStarted=false;
-    enemy.el.style.visibility='visible';
-    enemy.el.style.opacity='1';
-    enemy.el.style.filter='';
-    enemy.el.style.clipPath='';
-    enemy.el.style.borderColor='#ff5b67';
-    enemy.el.style.background='rgba(96,10,24,.88)';
-    if(enemy.defeatEl)enemy.defeatEl.style.display='none';
+  function scheduleDefeatFallback(enemy,fn,delay){
+    const timer=setTimeout(()=>{enemy.defeatFallbackTimers.delete(timer);fn()},delay);
+    enemy.defeatFallbackTimers.add(timer);
+    return timer;
   }
-  function spawnDefeatFragments(enemy){
-    const scene=enemy.el?.parentElement;if(!scene)return;
+  function resetPreparedAnimation(animation){
+    if(!animation)return;
+    try{animation.pause();animation.currentTime=0}catch{}
+  }
+  function playPreparedAnimation(animation){
+    if(!animation)return false;
+    try{animation.pause();animation.currentTime=0;animation.play();return true}catch{return false}
+  }
+  function positionDefeatFx(enemy){
+    const fx=enemy.defeatFx;if(!fx)return;
     const p=project(enemy.x,enemy.y),v=enemy.visual;
-    const left=p.x-v.width/2+v.offsetX,top=p.y-v.height+v.offsetY;
-    const z=depthZAtWorld(enemy.x,enemy.y,1);
-    const bands=[
-      {start:0,end:.31,duration:220,hold:.42,dx:-2,dy:-1,lineX:-5},
-      {start:.31,end:.67,duration:320,hold:.55,dx:2,dy:0,lineX:6},
-      {start:.67,end:1,duration:400,hold:.66,dx:-1,dy:2,lineX:-2}
-    ];
-    const batch=document.createDocumentFragment(),starters=[];
-    bands.forEach(band=>{
+    fx.root.style.width=v.width+'px';
+    fx.root.style.height=v.height+'px';
+    fx.root.style.transform=`translate(${p.x-v.width/2+v.offsetX}px,${p.y-v.height+v.offsetY}px)`;
+    fx.root.style.zIndex=String(depthZAtWorld(enemy.x,enemy.y,1));
+  }
+  function createDefeatFx(enemy,scene){
+    const v=enemy.visual,root=document.createElement('div'),fragmentEntries=[];
+    root.dataset.enemyDeleteFx='1';
+    root.style.cssText='position:absolute;visibility:hidden;opacity:1;pointer-events:none;contain:layout paint style;';
+
+    DEFEAT_BANDS.forEach(band=>{
       const y=Math.round(v.height*band.start),height=Math.max(1,Math.ceil(v.height*(band.end-band.start))+1);
       const wrapper=document.createElement('div');
       wrapper.dataset.enemyDeleteFragment='1';
-      wrapper.style.cssText=`position:absolute;left:${left}px;top:${top+y}px;width:${v.width}px;height:${height}px;overflow:hidden;pointer-events:none;z-index:${z};opacity:0;will-change:transform,opacity;contain:layout paint style;`;
+      wrapper.style.cssText=`position:absolute;left:0;top:${y}px;width:${v.width}px;height:${height}px;overflow:hidden;pointer-events:none;opacity:0;will-change:transform,opacity;contain:layout paint style;`;
       const clone=enemy.el.cloneNode(false);
       clone.removeAttribute('id');
       clone.style.position='absolute';
@@ -161,36 +168,102 @@
 
       const line=document.createElement('span');
       line.dataset.enemyDeleteLight='1';
-      line.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:10%;width:1px;height:80%;background:rgba(235,253,255,.98);box-shadow:-20px 0 0 rgba(154,235,255,.84),20px 0 0 rgba(154,235,255,.84);opacity:0;transform:scaleY(.18);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity;`;
+      line.style.cssText=`position:absolute;left:calc(50% + ${band.lineX}px);top:10%;width:48px;height:80%;margin-left:-24px;background:linear-gradient(90deg,transparent 0 7px,rgba(154,235,255,.84) 7px 8px,transparent 8px 23px,rgba(235,253,255,.98) 23px 24px,transparent 24px 39px,rgba(154,235,255,.84) 39px 40px,transparent 40px 100%);opacity:0;transform:scaleY(.18);transform-origin:50% 50%;pointer-events:none;will-change:transform,opacity;`;
       wrapper.appendChild(line);
-      enemy.defeatParticles.add(wrapper);
-      batch.appendChild(wrapper);
-
-      starters.push(()=>{
-        const remove=()=>{enemy.defeatParticles.delete(wrapper);wrapper.remove()};
-        if(typeof wrapper.animate==='function'){
-          const animation=wrapper.animate([
-            {opacity:1,transform:'translate3d(0,0,0)'},
-            {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
-            {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
-            {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
-          ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
-          animation.onfinish=remove;animation.oncancel=remove;
-          if(typeof line.animate==='function'){
-            line.animate([
-              {opacity:0,transform:'scaleY(.18)'},
-              {opacity:1,transform:'scaleY(1)',offset:.42},
-              {opacity:.85,transform:'scaleY(.7)',offset:.68},
-              {opacity:0,transform:'scaleY(.2)'}
-            ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
-          }
-        }else{
-          setTimeout(()=>{wrapper.style.opacity='1';setTimeout(remove,band.duration)},140);
-        }
-      });
+      root.appendChild(wrapper);
+      fragmentEntries.push({band,wrapper,line,fragmentAnimation:null,lineAnimation:null});
     });
-    scene.appendChild(batch);
-    starters.forEach(start=>start());
+
+    const flash=document.createElement('div');
+    flash.dataset.enemyDeleteFlash='1';
+    flash.style.cssText='position:absolute;inset:-3px;border:2px solid rgba(255,255,255,1);border-radius:18px;background:rgba(255,255,255,.98);opacity:0;pointer-events:none;z-index:4;will-change:opacity;transform:translateZ(0);';
+    root.appendChild(flash);
+
+    enemy.defeatEl.style.display='block';
+    enemy.defeatEl.style.opacity='1';
+    enemy.defeatEl.style.zIndex='5';
+    root.appendChild(enemy.defeatEl);
+    scene.appendChild(root);
+
+    const animations=[];
+    if(typeof root.animate==='function'){
+      fragmentEntries.forEach(entry=>{
+        const {band,wrapper,line}=entry;
+        entry.fragmentAnimation=wrapper.animate([
+          {opacity:1,transform:'translate3d(0,0,0)'},
+          {opacity:1,transform:'translate3d(0,0,0)',offset:band.hold},
+          {opacity:.82,transform:`translate3d(${band.dx*.35}px,${band.dy*.35}px,0)`,offset:Math.min(.9,band.hold+.18)},
+          {opacity:0,transform:`translate3d(${band.dx}px,${band.dy}px,0)`}
+        ],{duration:band.duration,delay:140,easing:'linear',fill:'forwards'});
+        entry.lineAnimation=line.animate([
+          {opacity:0,transform:'scaleY(.18)'},
+          {opacity:1,transform:'scaleY(1)',offset:.42},
+          {opacity:.85,transform:'scaleY(.7)',offset:.68},
+          {opacity:0,transform:'scaleY(.2)'}
+        ],{duration:120,delay:Math.max(140,140+Math.round(band.duration*band.hold)-20),easing:'ease-out',fill:'both'});
+        resetPreparedAnimation(entry.fragmentAnimation);
+        resetPreparedAnimation(entry.lineAnimation);
+        animations.push(entry.fragmentAnimation,entry.lineAnimation);
+      });
+    }
+
+    const flashAnimation=typeof flash.animate==='function'?flash.animate([
+      {opacity:0},
+      {opacity:1,offset:.42},
+      {opacity:0}
+    ],{duration:180,easing:'ease-out',fill:'both'}):null;
+    resetPreparedAnimation(flashAnimation);
+    if(flashAnimation)animations.push(flashAnimation);
+
+    const fadeAnimation=typeof enemy.el.animate==='function'?enemy.el.animate([
+      {opacity:1},
+      {opacity:1,offset:.23},
+      {opacity:0,offset:.28},
+      {opacity:0}
+    ],{duration:600,easing:'linear',fill:'forwards'}):null;
+    resetPreparedAnimation(fadeAnimation);
+    if(fadeAnimation)animations.push(fadeAnimation);
+
+    return{root,flash,fragmentEntries,animations,fadeAnimation};
+  }
+  function finishDefeatVisual(enemy){
+    enemy.defeatTimer=null;
+    if(!isDefeatedRaw(enemy))return;
+    enemy.el.style.opacity='0';
+    enemy.el.style.visibility='hidden';
+    if(enemy.defeatFx)enemy.defeatFx.root.style.visibility='hidden';
+  }
+  function resetDefeatVisual(enemy){
+    clearDefeatTimer(enemy);
+    clearDefeatFallbackTimers(enemy);
+    for(const animation of enemy.defeatFx?.animations||[])resetPreparedAnimation(animation);
+    if(enemy.defeatFx){
+      enemy.defeatFx.root.style.visibility='hidden';
+      enemy.defeatFx.fragmentEntries.forEach(entry=>{entry.wrapper.style.opacity='0';entry.line.style.opacity='0'});
+      enemy.defeatFx.flash.style.opacity='0';
+    }
+    enemy.defeatVisualStarted=false;
+    enemy.el.style.visibility='visible';
+    enemy.el.style.opacity='1';
+    enemy.el.style.filter='';
+    enemy.el.style.clipPath='';
+    enemy.el.style.borderColor='#ff5b67';
+    enemy.el.style.background='rgba(96,10,24,.88)';
+  }
+  function playDefeatFxFallback(enemy){
+    const fx=enemy.defeatFx;if(!fx)return;
+    fx.fragmentEntries.forEach(entry=>{
+      const {band,wrapper,line}=entry;
+      scheduleDefeatFallback(enemy,()=>{wrapper.style.opacity='1'},140);
+      const lineAt=Math.max(140,140+Math.round(band.duration*band.hold)-20);
+      scheduleDefeatFallback(enemy,()=>{line.style.opacity='1'},lineAt);
+      scheduleDefeatFallback(enemy,()=>{line.style.opacity='0'},lineAt+120);
+      scheduleDefeatFallback(enemy,()=>{wrapper.style.opacity='0'},140+band.duration);
+    });
+    fx.flash.style.opacity='1';
+    scheduleDefeatFallback(enemy,()=>{fx.flash.style.opacity='0'},180);
+    scheduleDefeatFallback(enemy,()=>{enemy.el.style.opacity='0'},168);
+    enemy.defeatTimer=setTimeout(()=>finishDefeatVisual(enemy),600);
   }
   function startDefeatVisual(enemy){
     if(!enemy||enemy.defeatVisualStarted)return;
@@ -198,43 +271,13 @@
     enemy.flashToken++;
     enemy.hitFlashAnimation?.cancel?.();enemy.hitFlashAnimation=null;
     if(enemy.hpEl)enemy.hpEl.style.display='none';
-    if(enemy.defeatEl)enemy.defeatEl.style.display='none';
-    spawnDefeatFragments(enemy);
-    if(enemy.hitFlashEl){
-      enemy.hitFlashEl.style.background='rgba(255,255,255,.98)';
-      enemy.hitFlashEl.style.borderColor='rgba(255,255,255,1)';
-      if(typeof enemy.hitFlashEl.animate==='function'){
-        enemy.hitFlashEl.animate([
-          {opacity:0},
-          {opacity:1,offset:.42},
-          {opacity:0}
-        ],{duration:180,easing:'ease-out',fill:'forwards'});
-      }else{
-        enemy.hitFlashEl.style.opacity='1';
-        setTimeout(()=>{if(enemy.hitFlashEl)enemy.hitFlashEl.style.opacity='0'},180);
-      }
-    }
-    const finish=()=>{
-      enemy.defeatAnimation=null;
-      enemy.defeatTimer=null;
-      if(!isDefeatedRaw(enemy))return;
-      enemy.el.style.opacity='0';
-      enemy.el.style.visibility='hidden';
-    };
-    if(typeof enemy.el.animate==='function'){
-      const animation=enemy.el.animate([
-        {opacity:1},
-        {opacity:1,offset:.23},
-        {opacity:0,offset:.28},
-        {opacity:0}
-      ],{duration:600,easing:'linear',fill:'forwards'});
-      enemy.defeatAnimation=animation;
-      animation.onfinish=finish;
-      animation.oncancel=()=>{if(enemy.defeatAnimation===animation)enemy.defeatAnimation=null};
-    }else{
-      enemy.el.style.opacity='1';
-      enemy.defeatTimer=setTimeout(finish,600);
-    }
+    positionDefeatFx(enemy);
+    if(enemy.defeatFx)enemy.defeatFx.root.style.visibility='visible';
+    const fx=enemy.defeatFx;
+    if(fx?.animations?.length){
+      fx.fadeAnimation.onfinish=()=>finishDefeatVisual(enemy);
+      for(const animation of fx.animations)playPreparedAnimation(animation);
+    }else playDefeatFxFallback(enemy);
   }
   function syncDefeatPresentation(enemy){
     const defeated=isDefeatedRaw(enemy);
@@ -255,10 +298,13 @@
     el.setAttribute('aria-label','テスト敵');
     el.style.cssText='position:absolute;will-change:transform,opacity;border:3px solid #ff5b67;border-radius:18px;background:rgba(96,10,24,.88);box-shadow:0 0 0 3px rgba(255,255,255,.18) inset,0 0 20px rgba(255,70,90,.55);pointer-events:none;';
     const hpEl=createHealthLabel(),defeatEl=createDefeatLabel(),hitFlashEl=createHitFlash();
-    el.appendChild(hpEl);el.appendChild(defeatEl);el.appendChild(hitFlashEl);
+    el.appendChild(hpEl);el.appendChild(hitFlashEl);
     const health=normalizeHealth(config.health);
-    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatParticles:new Set()};
-    scene.appendChild(el);enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
+    const enemy={id:nextId++,x,y,visual:normalizeVisual(config.visual),hitBox:normalizeHitBox(config.hitBox),collision:normalizeCollision(config.collision),maxHp:health.maxHp,hp:health.hp,el,hpEl,defeatEl,hitFlashEl,hitFlashAnimation:null,flashToken:0,defeatVisualStarted:false,defeatAnimation:null,defeatTimer:null,defeatFallbackTimers:new Set(),defeatFx:null};
+    scene.appendChild(el);
+    enemy.defeatFx=createDefeatFx(enemy,scene);
+    enemy.defeatAnimation=enemy.defeatFx?.fadeAnimation||null;
+    enemies.push(enemy);FIELD.trackOccupant?.(`enemy:${enemy.id}`,x,y);syncDefeatPresentation(enemy);render(enemy);emitBattleState();
     return enemy.id;
   }
   function getById(id){return enemies.find(enemy=>enemy.id===id)||null}
@@ -280,7 +326,7 @@
     return Object.freeze({applied:true,reason:null,enemy:getSnapshot(enemy)});
   }
   function clearAll(){
-    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);removeDefeatParticles(enemy);enemy.hitFlashAnimation?.cancel?.();enemy.defeatAnimation?.cancel?.();enemy.el?.remove()});
+    enemies.forEach(enemy=>{FIELD.untrackOccupant?.(`enemy:${enemy.id}`);enemy.flashToken++;clearDefeatTimer(enemy);clearDefeatFallbackTimers(enemy);enemy.hitFlashAnimation?.cancel?.();for(const animation of enemy.defeatFx?.animations||[])animation?.cancel?.();enemy.defeatFx?.root?.remove();enemy.el?.remove()});
     enemies.length=0;
     return emitBattleState();
   }
