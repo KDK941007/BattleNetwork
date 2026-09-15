@@ -22,7 +22,12 @@
   let lastHeight=0;
   let resizeObserver=null;
 
+  function isEvilActive(){
+    return window.BattleNetworkEvil?.isActive?.()===true||HUD.getKokoroState?.()==='EVIL';
+  }
+
   function isActive(){
+    if(isEvilActive())return false;
     return HUD.getKokoroValue?.()===255||HUD.getKokoroState?.()==='FULL_SYNCHRO';
   }
 
@@ -61,7 +66,7 @@
       return Object.freeze({applied:false,reason:'NOT_ATTACK_CHIP',before:HUD.getKokoroValue(),after:HUD.getKokoroValue()});
     }
     const state=HUD.getKokoroState?.();
-    if(context.blockedByAnger===true||state==='ANGRY'||state==='EVIL'||window.BattleNetworkSoulUnison?.isActive?.()===true){
+    if(isEvilActive()||context.blockedByAnger===true||state==='ANGRY'||window.BattleNetworkSoulUnison?.isActive?.()===true){
       return Object.freeze({applied:false,reason:'EMOTION_PRIORITY',before:HUD.getKokoroValue(),after:HUD.getKokoroValue()});
     }
     const before=HUD.getKokoroValue();
@@ -113,7 +118,7 @@
   }
 
   function syncVisual(snapshot=HUD.getKokoroSnapshot?.()){
-    const active=snapshot?.state==='FULL_SYNCHRO';
+    const active=snapshot?.state==='FULL_SYNCHRO'&&!isEvilActive();
     PLAYER_EL.classList.toggle('fullSynchro',active);
     ringBack.classList.toggle('active',active);
     ringFront.classList.toggle('active',active);
