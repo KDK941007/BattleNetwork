@@ -142,6 +142,7 @@
     if(state.status!=='CLEARING')return getSnapshot();
     const completedWave=state.waveNumber;
     const finalWave=completedWave>=TEST_CONFIG.missionWaveCount;
+    if(!finalWave&&isFullSynchroActive())carryFullSynchroAcrossWave=true;
     showBattlefield();
     state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'REWARD'};render();emit();
     await getReward()?.show?.(rewardResult,{isFinal:finalWave});
@@ -155,7 +156,7 @@
     showBattlefield();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();
     const multiDeleteCount=maxMultiDeleteCount,multiDeleteScore=multiDeleteBonus(multiDeleteCount);
     const rewardResult=getReward()?.finishWave?.({multiDeleteCount,multiDeleteBonus:multiDeleteScore})||null;
-    carryFullSynchroAcrossWave=isFullSynchroActive();
+    carryFullSynchroAcrossWave=carryFullSynchroAcrossWave||isFullSynchroActive();
     getEvil()?.onWaveEnd?.();restoreFullSynchroCarry();
     const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
   }
