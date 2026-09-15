@@ -87,16 +87,12 @@
   function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();
-    state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();
-    enemy1Ready.then(()=>{
-      if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;
-      const enemyIds=createWaveEnemies(n);getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);
-      state={...state,enemyIds,prepared:true};render();emit();
-      scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
-        if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
-        state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
-      });
-    }).catch(()=>{state={...state,status:'WAITING_CUSTOM',prepared:false};render();emit();getPlayer()?.openNextWaveCustom?.()});
+    getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);
+    state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:true};render();emit();
+    scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
+      if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
+      state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
+    });
     return getSnapshot()
   }
   async function openWaveReward(rewardResult){
@@ -114,7 +110,7 @@
   function startNextWave(){
     if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();
     const n=state.pendingWaveNumber;
-    if(state.prepared&&state.enemyIds.length){return activateWave(n,state.enemyIds.slice(),{initializeSystems:false})}
+    if(state.prepared){return activateWave(n,createWaveEnemies(n),{initializeSystems:false})}
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()
   }
   window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);render();
