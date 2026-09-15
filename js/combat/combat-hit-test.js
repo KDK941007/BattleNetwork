@@ -13,7 +13,6 @@
   if(!FIELD)throw new Error('BattleNetworkCombatHitTest: field grid is not loaded.');
 
   let lastObservedAttack=null;
-  const firstLineHitCache=new WeakMap();
   function perf(name,fn){const p=window.BattleNetworkPerfTest;return p?.measure?p.measure(name,fn):fn()}
   function trace(name,detail=''){window.BattleNetworkPerfTest?.trace?.(name,detail)}
   function behaviorParam(behaviorId,paramId,fallback){const row=DATA.BEHAVIOR_PARAM_MASTER?.find(item=>item.behaviorId===behaviorId&&item.paramId===paramId);const value=Number(row?.defaultValue);return Number.isFinite(value)?value:fallback}
@@ -58,8 +57,8 @@
   function rayEntryDistance(origin,direction,bounds,padding=0){const left=bounds.left-padding,right=bounds.right+padding,top=bounds.top-padding,bottom=bounds.bottom+padding;let near=0,far=Infinity;for(const [o,d,min,max] of [[origin.x,direction.x,left,right],[origin.y,direction.y,top,bottom]]){if(Math.abs(d)<1e-9){if(o<min||o>max)return null;continue}let a=(min-o)/d,b=(max-o)/d;if(a>b)[a,b]=[b,a];near=Math.max(near,a);far=Math.min(far,b);if(near>far)return null}return far>=0?Math.max(0,near):null}
   function getFirstCannonHit(input){
     const attack=input?.shape?input:{shape:input};const shape=attack.shape;
-    if(!shape||shape.rangeTypeId!=='LINE')return null;if(firstLineHitCache.has(shape))return firstLineHitCache.get(shape);
-    return perf('firstHit',()=>{let first=null;testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});const result=first?Object.freeze({enemy:first.enemy,distance:first.distance}):null;firstLineHitCache.set(shape,result);return result});
+    if(!shape||shape.rangeTypeId!=='LINE')return null;
+    return perf('firstHit',()=>{let first=null;testRange(shape).forEach(enemy=>{const distance=rayEntryDistance(shape.origin,shape.direction,enemy.bounds,(shape.widthWorld||0)/2);if(distance===null||distance>shape.lengthWorld)return;if(!first||distance<first.distance)first={enemy,distance}});return first?Object.freeze({enemy:first.enemy,distance:first.distance}):null});
   }
   function isAirShot(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S004'}
   function isVulcan1(attack){return attack?.sourceType==='CHIP'&&attack?.sourceId==='CHIP_EXE4_S005'}
@@ -95,15 +94,24 @@
   }
   function scheduleCannon(attack){
     const airShot=isAirShot(attack),vulcan1=isVulcan1(attack),darkVulcan=isDarkVulcan(attack),vulcanInduction=vulcan1||darkVulcan,spreadGun=isSpreadGun(attack),cannon=isCannon(attack);const speed=airShot?airShotSpeed():vulcanInduction?vulcan1Speed():spreadGun?spreadGunSpeed():cannon?cannonSpeed():behaviorParam('CANNON_SHOT','PROJECTILE_SPEED',2000);if(!(speed>0))return;
-    const first=getFirstCannonHit(attack);if(!first)return;if(spreadGun)trace('SPREAD:scheduled',`${first.distance.toFixed(0)}u`);
-    setTimeout(()=>{
-      if(spreadGun)trace('SPREAD:directHit:start');
-      const inductionTile=vulcanInduction?getVulcanInductionTile(first.enemy,attack.shape.direction):null;
-      const result=damageAndFlash(first.enemy,attack.damage,attack);
-      if(airShot&&!result?.defeatedNow)pushAirShotEnemy(first.enemy.id,attack.shape.direction);
-      if(vulcanInduction&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,first.enemy.id,attack);
-      if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,first.enemy);trace('SPREAD:directHit:end')}
-    },first.distance/speed*1000)
+    const initial=getFirstCannonHit(attack);if(!initial)return;if(spreadGun)trace('SPREAD:scheduled',`${initial.distance.toFixed(0)}u`);
+    const resolveAtDistance=travelled=>{
+      const candidate=getFirstCannonHit(attack);if(!candidate)return;
+      const delay=Math.max(0,candidate.distance-travelled)/speed*1000;
+      setTimeout(()=>{
+        const current=getFirstCannonHit(attack);
+        if(!current)return;
+        if(current.enemy.id!==candidate.enemy.id||current.distance>candidate.distance+.5){resolveAtDistance(Math.max(travelled,candidate.distance));return}
+        const target=current.enemy;
+        if(spreadGun)trace('SPREAD:directHit:start');
+        const inductionTile=vulcanInduction?getVulcanInductionTile(target,attack.shape.direction):null;
+        const result=damageAndFlash(target,attack.damage,attack);
+        if(airShot&&!result?.defeatedNow)pushAirShotEnemy(target.id,attack.shape.direction);
+        if(vulcanInduction&&result?.applied)triggerVulcanInduction(inductionTile,attack.damage,target.id,attack);
+        if(spreadGun){window.BattleNetworkSpreadGun?.onDirectHit?.(attack,target);trace('SPREAD:directHit:end')}
+      },delay);
+    };
+    resolveAtDistance(0);
   }
   function scheduleBomb(attack){const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);setTimeout(()=>flashHits(attack.shape,attack.damage,attack),Math.max(0,delay)*1000)}
   function resolveBehavior(input){if(!input)return;const attack=input.shape?input:{shape:input,damage:null};const shape=attack.shape;if(!shape)return;if(isSpreadGun(attack))trace('SPREAD:attackObserved');if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage,attack);return}if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack)}
