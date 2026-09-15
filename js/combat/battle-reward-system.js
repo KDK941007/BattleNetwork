@@ -11,7 +11,7 @@
   if(!document.querySelector('link[data-battle-reward-style]')){
     const styleLink=document.createElement('link');
     styleLink.rel='stylesheet';
-    styleLink.href='./css/battle-reward.css?v=3';
+    styleLink.href='./css/battle-reward.css?v=4';
     styleLink.dataset.battleRewardStyle='1';
     document.head.appendChild(styleLink);
   }
@@ -221,15 +221,20 @@
     return `${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')}:${String(centis).padStart(2,'0')}`;
   }
 
-  function rewardLabel(reward){
-    if(!reward)return '---';
+  function signedPoints(points){
+    const value=Math.trunc(Number(points)||0);
+    return `${value>=0?'+':''}${value}`;
+  }
+
+  function rewardDisplayParts(reward){
+    if(!reward)return Object.freeze({name:'---',code:''});
     if(reward.type==='CHIP'){
       const chip=MASTER.getChip?.(reward.chipId);
-      return `${chip?.chipName||'メットガード1'} ${reward.code}`;
+      return Object.freeze({name:chip?.chipName||'メットガード1',code:String(reward.code||'')});
     }
-    if(reward.type==='ZENNY')return `${reward.amount}z`;
-    if(reward.type==='HP')return `HP+${reward.amount}`;
-    return '---';
+    if(reward.type==='ZENNY')return Object.freeze({name:`${reward.amount}z`,code:''});
+    if(reward.type==='HP')return Object.freeze({name:`HP+${reward.amount}`,code:''});
+    return Object.freeze({name:'---',code:''});
   }
 
   function rewardImageInfo(reward){
@@ -245,9 +250,13 @@
   }
 
   function renderRewardGet(modal,reward){
-    const label=modal.querySelector('#battleRewardGet');
+    const name=modal.querySelector('#battleRewardGetName');
+    const code=modal.querySelector('#battleRewardGetCode');
     const image=modal.querySelector('#battleRewardImage');
-    label.textContent=rewardLabel(reward);
+    const parts=rewardDisplayParts(reward);
+    name.textContent=parts.name;
+    code.textContent=parts.code;
+    code.hidden=!parts.code;
     image.hidden=true;
     image.onload=()=>{image.hidden=false};
     image.onerror=()=>{
@@ -264,6 +273,18 @@
     image.src=info.src;
   }
 
+  function renderBustingBreakdown(modal,result){
+    const timeScore=timePoints(result.deleteTimeSeconds);
+    const hitScore=hitPoints(result.hits);
+    const moveScore=movementPoints(result.movements);
+    const multiScore=Math.max(0,Math.trunc(Number(result.multiDeleteBonus)||0));
+    modal.querySelector('#battleRewardBreakdownTime').textContent=`${formatTime(result.deleteTimeSeconds)}  ${signedPoints(timeScore)}`;
+    modal.querySelector('#battleRewardBreakdownDamage').textContent=`${result.hits} HIT  ${signedPoints(hitScore)}`;
+    modal.querySelector('#battleRewardBreakdownMove').textContent=`${result.movements}  ${signedPoints(moveScore)}`;
+    modal.querySelector('#battleRewardBreakdownMulti').textContent=signedPoints(multiScore);
+    modal.querySelector('#battleRewardBreakdownTotal').textContent=`${result.bustingPoints}  →  ${result.bustingLevel}`;
+  }
+
   function ensureRewardModal(){
     let modal=document.getElementById('battleRewardModal');
     if(modal)return modal;
@@ -271,21 +292,29 @@
     modal.id='battleRewardModal';
     modal.className='battleRewardModal';
     modal.setAttribute('aria-hidden','true');
-    modal.innerHTML=`<div class="battleRewardPanel" role="dialog" aria-modal="true" aria-label="バトル報酬">
+    modal.innerHTML=`<div class="battleRewardPanel" role="dialog" aria-modal="true" aria-label="バトル報酬" tabindex="0">
       <div class="battleRewardWave" id="battleRewardWave"></div>
       <div class="battleRewardRows">
-        <div><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
-        <div><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></div>
+        <div class="battleRewardMetricRow"><span>DELETE TIME</span><strong id="battleRewardTime">00:00:00</strong></div>
+        <button class="battleRewardMetricRow battleRewardRankRow" id="battleRewardRankRow" type="button" aria-expanded="false" aria-controls="battleRewardBreakdown"><span>BUSTING LV.</span><strong id="battleRewardLevel">1</strong></button>
       </div>
       <div class="battleRewardData">
         <div class="battleRewardDataText">
           <div class="battleRewardDataTitle">GET DATA</div>
-          <strong class="battleRewardValue" id="battleRewardGet">---</strong>
+          <div class="battleRewardValueRow"><strong class="battleRewardValue"><span class="battleRewardValueName" id="battleRewardGetName">---</span><span class="battleRewardCode" id="battleRewardGetCode" hidden></span></strong></div>
         </div>
         <div class="battleRewardImageFrame"><img id="battleRewardImage" hidden alt="" draggable="false"></div>
+        <div class="battleRewardBreakdown" id="battleRewardBreakdown" hidden>
+          <div class="battleRewardBreakdownTitle">BUSTING DETAIL</div>
+          <div><span>TIME</span><strong id="battleRewardBreakdownTime"></strong></div>
+          <div><span>DAMAGE</span><strong id="battleRewardBreakdownDamage"></strong></div>
+          <div><span>MOVE</span><strong id="battleRewardBreakdownMove"></strong></div>
+          <div><span>MULTI DELETE</span><strong id="battleRewardBreakdownMulti"></strong></div>
+          <div class="battleRewardBreakdownTotal"><span>TOTAL</span><strong id="battleRewardBreakdownTotal"></strong></div>
+        </div>
       </div>
       <div class="battleRewardStatus" id="battleRewardStatus"></div>
-      <button class="battleRewardNext" id="battleRewardNext" type="button">NEXT</button>
+      <div class="battleRewardAdvanceHint" id="battleRewardAdvanceHint">TAP TO NEXT</div>
     </div>`;
     shell.appendChild(modal);
     return modal;
@@ -295,23 +324,54 @@
     if(!result)return false;
     const applied=await applyReward(result);
     const modal=ensureRewardModal();
+    const panel=modal.querySelector('.battleRewardPanel');
+    const rankRow=modal.querySelector('#battleRewardRankRow');
+    const breakdown=modal.querySelector('#battleRewardBreakdown');
     modal.querySelector('#battleRewardWave').textContent=`WAVE ${result.waveNumber}`;
     modal.querySelector('#battleRewardTime').textContent=formatTime(result.deleteTimeSeconds);
     modal.querySelector('#battleRewardLevel').textContent=result.bustingLevel;
     renderRewardGet(modal,result.reward);
+    renderBustingBreakdown(modal,result);
     modal.querySelector('#battleRewardStatus').textContent=applied.ok?'':'報酬の保存に失敗しました';
-    const button=modal.querySelector('#battleRewardNext');
-    button.textContent=isFinal?'OK':'NEXT';
+    modal.querySelector('#battleRewardAdvanceHint').textContent=isFinal?'TAP TO COMPLETE':'TAP TO NEXT';
+    breakdown.hidden=true;
+    rankRow.setAttribute('aria-expanded','false');
+    rankRow.onclick=event=>{
+      event.stopPropagation();
+      const open=breakdown.hidden;
+      breakdown.hidden=!open;
+      rankRow.setAttribute('aria-expanded',open?'true':'false');
+    };
+    breakdown.onclick=event=>event.stopPropagation();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
+    panel.focus({preventScroll:true});
     return new Promise(resolve=>{
-      button.onclick=()=>{
-        button.onclick=null;
+      const closeBreakdown=()=>{
+        breakdown.hidden=true;
+        rankRow.setAttribute('aria-expanded','false');
+      };
+      const finish=()=>{
+        panel.onclick=null;
+        panel.onkeydown=null;
+        rankRow.onclick=null;
+        breakdown.onclick=null;
         modal.classList.remove('open');
         modal.setAttribute('aria-hidden','true');
         resolve(true);
       };
-      button.focus({preventScroll:true});
+      panel.onclick=event=>{
+        if(event.target.closest('.battleRewardRankRow,.battleRewardBreakdown'))return;
+        if(!breakdown.hidden){closeBreakdown();return}
+        finish();
+      };
+      panel.onkeydown=event=>{
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        if(event.target.closest('.battleRewardRankRow'))return;
+        event.preventDefault();
+        if(!breakdown.hidden){closeBreakdown();return}
+        finish();
+      };
     });
   }
 
