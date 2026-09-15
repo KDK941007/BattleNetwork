@@ -6,7 +6,7 @@
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
     testOnly:true,
-    missionWaveCount:4,
+    missionWaveCount:3,
     attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',
     movementBehaviorId:'ENEMY1_MOVEMENT',
     clearNoticeMs:1500,
@@ -24,18 +24,6 @@
         Object.freeze({rowOffset:0,colOffset:4}),
         Object.freeze({rowOffset:2,colOffset:3}),
         Object.freeze({rowOffset:2,colOffset:5})
-      ]),
-      4:Object.freeze([
-        Object.freeze({rowOffset:-4,colOffset:3}),
-        Object.freeze({rowOffset:-4,colOffset:5}),
-        Object.freeze({rowOffset:-2,colOffset:3}),
-        Object.freeze({rowOffset:-2,colOffset:5}),
-        Object.freeze({rowOffset:0,colOffset:3}),
-        Object.freeze({rowOffset:0,colOffset:5}),
-        Object.freeze({rowOffset:2,colOffset:3}),
-        Object.freeze({rowOffset:2,colOffset:5}),
-        Object.freeze({rowOffset:4,colOffset:3}),
-        Object.freeze({rowOffset:4,colOffset:5})
       ])
     }),
     swordDummyTiles:Object.freeze([Object.freeze({rowOffset:0,colOffset:1})]),
@@ -57,6 +45,7 @@
   const listeners=new Set(),notice=document.createElement('div');notice.className='waveStatusNotice';notice.setAttribute('aria-live','polite');battle.appendChild(notice);
   let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[],prepared:false},transitionToken=0;
   let lastActiveCount=0,multiDeleteBatchCount=0,maxMultiDeleteCount=0,multiDeleteResetTimer=null;
+  let carryFullSynchroAcrossWave=false;
   function clearMultiDeleteResetTimer(){if(multiDeleteResetTimer!==null){clearTimeout(multiDeleteResetTimer);multiDeleteResetTimer=null}}
   function resetMultiDeleteTracking(active=0){clearMultiDeleteResetTimer();lastActiveCount=Math.max(0,Math.trunc(Number(active)||0));multiDeleteBatchCount=0;maxMultiDeleteCount=0}
   function noteEnemyCountForMultiDelete(e){
@@ -79,6 +68,14 @@
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function getEvil(){return window.BattleNetworkEvil||null}
   function getReward(){return window.BattleNetworkBattleReward||null}
+  function isFullSynchroActive(){return window.BattleNetworkFullSynchro?.isActive?.()===true}
+  function restoreFullSynchroCarry(){
+    if(!carryFullSynchroAcrossWave||getEvil()?.isActive?.()===true)return false;
+    const hud=window.BattleNetworkPlayerHud;
+    if(typeof hud?.setKokoroValue!=='function')return false;
+    hud.setKokoroValue(255);
+    return true;
+  }
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function showBattlefield(){document.getElementById('customModal')?.classList.remove('open');document.getElementById('chipDetailModal')?.classList.remove('open')}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
@@ -133,7 +130,7 @@
   function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();resetMultiDeleteTracking(0);
-    getEvil()?.onWaveStart?.();getReward()?.startWave?.(n);
+    getEvil()?.onWaveStart?.();restoreFullSynchroCarry();getReward()?.startWave?.(n);
     state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:true};render();emit();
     scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
       if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
@@ -158,7 +155,9 @@
     showBattlefield();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();
     const multiDeleteCount=maxMultiDeleteCount,multiDeleteScore=multiDeleteBonus(multiDeleteCount);
     const rewardResult=getReward()?.finishWave?.({multiDeleteCount,multiDeleteBonus:multiDeleteScore})||null;
-    getEvil()?.onWaveEnd?.();const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
+    carryFullSynchroAcrossWave=isFullSynchroActive();
+    getEvil()?.onWaveEnd?.();restoreFullSynchroCarry();
+    const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
   }
   function startNextWave(){
     if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();
