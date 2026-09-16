@@ -26,11 +26,19 @@
   bottomDock.setAttribute('aria-hidden','true');
   shell.appendChild(bottomDock);
 
+  const bottomClassic=source.cloneNode(true);
+  bottomClassic.classList.remove('chipHudCompareLeft','chipHudSide');
+  bottomClassic.classList.add('chipHudCompareBottomClassic');
+  bottomClassic.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  bottomClassic.setAttribute('aria-hidden','true');
+  shell.appendChild(bottomClassic);
+
   const style=document.createElement('style');
   style.textContent=`
     .shell>.chipHud.chipHudSide,
     .shell>.chipHud.chipHudCompareKokoroRight,
-    .shell>.chipHud.chipHudCompareBottomDock{
+    .shell>.chipHud.chipHudCompareBottomDock,
+    .shell>.chipHud.chipHudCompareBottomClassic{
       position:absolute;
       min-height:0;
       z-index:44;
@@ -76,9 +84,22 @@
       box-shadow:0 0 0 1px rgba(135,230,255,.08) inset,0 4px 14px rgba(0,0,0,.38);
       overflow:hidden;
     }
+    .shell>.chipHud.chipHudCompareBottomClassic{
+      left:50%;
+      right:auto;
+      top:auto;
+      bottom:64px;
+      width:auto;
+      max-width:min(720px,64vw);
+      padding:0;
+      display:block;
+      transform:translateX(-50%);
+      overflow:hidden;
+    }
     .chipHudSide .chipNow,
     .chipHudCompareKokoroRight .chipNow,
-    .chipHudCompareBottomDock .chipNow{
+    .chipHudCompareBottomDock .chipNow,
+    .chipHudCompareBottomClassic .chipNow{
       display:none!important;
     }
     .chipHudSide .queue{
@@ -106,7 +127,17 @@
       gap:5px;
       overflow:hidden;
     }
-    .chipHudCompareBottomDock .queue.advance{
+    .chipHudCompareBottomClassic .queue{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-width:0;
+      overflow:hidden;
+    }
+    .chipHudCompareBottomDock .queue.advance,
+    .chipHudCompareBottomClassic .queue.advance{
       animation:chipDockAdvance .18s ease-out both;
     }
     @keyframes chipDockAdvance{
@@ -115,7 +146,8 @@
     }
     .chipHudSide .q,
     .chipHudCompareKokoroRight .q,
-    .chipHudCompareBottomDock .q{
+    .chipHudCompareBottomDock .q,
+    .chipHudCompareBottomClassic .q{
       display:block;
       min-height:24px;
       padding:5px 7px;
@@ -147,6 +179,38 @@
       text-align:center;
       opacity:.55;
     }
+    .chipHudCompareBottomClassic .q{
+      flex:0 1 auto;
+      max-width:170px;
+      min-height:30px;
+      padding:7px 11px;
+      border-width:2px;
+      border-color:rgba(88,180,210,.82);
+      background:rgba(5,30,42,.96);
+      color:#f4fdff;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.2;
+      opacity:.82;
+      text-shadow:0 1px 2px #000,0 0 3px rgba(0,0,0,.9);
+      box-shadow:0 3px 7px rgba(0,0,0,.38);
+    }
+    .chipHudCompareBottomClassic .q:first-child:not(.empty){
+      min-height:34px;
+      padding:8px 13px;
+      border-color:#d9f9ff;
+      background:rgba(8,47,63,.98);
+      color:#fff;
+      font-size:13px;
+      font-weight:1000;
+      opacity:1;
+      box-shadow:0 0 11px rgba(91,220,255,.62),0 3px 8px rgba(0,0,0,.46),inset 0 0 0 1px rgba(220,250,255,.2);
+    }
+    .chipHudCompareBottomClassic .q.empty{
+      min-width:90px;
+      text-align:center;
+      opacity:.62;
+    }
     .chipHudSide .q:first-child:not(.empty),
     .chipHudCompareKokoroRight .q:first-child:not(.empty){
       border-color:#9cecff;
@@ -160,7 +224,8 @@
   const mirrorQueue=mirror.querySelector('.queue');
   const horizontalQueue=kokoroHorizontal.querySelector('.queue');
   const bottomQueue=bottomDock.querySelector('.queue');
-  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomQueue)return;
+  const bottomClassicQueue=bottomClassic.querySelector('.queue');
+  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomQueue||!bottomClassicQueue)return;
 
   let previousBottomLabels=[];
   function sync(){
@@ -170,11 +235,14 @@
     mirrorQueue.innerHTML=sourceQueue.innerHTML;
     horizontalQueue.innerHTML=sourceQueue.innerHTML;
     bottomQueue.innerHTML=sourceQueue.innerHTML;
+    bottomClassicQueue.innerHTML=sourceQueue.innerHTML;
     [...bottomQueue.children].slice(3).forEach(el=>el.remove());
     if(advanced){
-      bottomQueue.classList.remove('advance');
-      void bottomQueue.offsetWidth;
-      bottomQueue.classList.add('advance');
+      [bottomQueue,bottomClassicQueue].forEach(queue=>{
+        queue.classList.remove('advance');
+        void queue.offsetWidth;
+        queue.classList.add('advance');
+      });
     }
     previousBottomLabels=nextLabels;
   }
