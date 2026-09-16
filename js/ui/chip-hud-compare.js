@@ -19,13 +19,6 @@
   kokoroHorizontal.setAttribute('aria-hidden','true');
   shell.appendChild(kokoroHorizontal);
 
-  const bottomDock=source.cloneNode(true);
-  bottomDock.classList.remove('chipHudCompareLeft','chipHudSide');
-  bottomDock.classList.add('chipHudCompareBottomDock');
-  bottomDock.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-  bottomDock.setAttribute('aria-hidden','true');
-  shell.appendChild(bottomDock);
-
   const bottomClassic=source.cloneNode(true);
   bottomClassic.classList.remove('chipHudCompareLeft','chipHudSide');
   bottomClassic.classList.add('chipHudCompareBottomClassic');
@@ -37,7 +30,6 @@
   style.textContent=`
     .shell>.chipHud.chipHudSide,
     .shell>.chipHud.chipHudCompareKokoroRight,
-    .shell>.chipHud.chipHudCompareBottomDock,
     .shell>.chipHud.chipHudCompareBottomClassic{
       position:absolute;
       min-height:0;
@@ -69,28 +61,12 @@
       gap:4px;
       overflow:hidden;
     }
-    .shell>.chipHud.chipHudCompareBottomDock{
+    .shell>.chipHud.chipHudCompareBottomClassic{
       left:50%;
       right:auto;
       top:auto;
       bottom:12px;
       width:min(520px,48vw);
-      padding:5px 6px;
-      display:block;
-      transform:translateX(-50%);
-      border:1px solid rgba(83,193,222,.72);
-      border-radius:10px;
-      background:rgba(4,17,25,.84);
-      box-shadow:0 0 0 1px rgba(135,230,255,.08) inset,0 4px 14px rgba(0,0,0,.38);
-      overflow:hidden;
-    }
-    .shell>.chipHud.chipHudCompareBottomClassic{
-      left:50%;
-      right:auto;
-      top:auto;
-      bottom:64px;
-      width:auto;
-      max-width:min(720px,64vw);
       padding:0;
       display:block;
       transform:translateX(-50%);
@@ -98,7 +74,6 @@
     }
     .chipHudSide .chipNow,
     .chipHudCompareKokoroRight .chipNow,
-    .chipHudCompareBottomDock .chipNow,
     .chipHudCompareBottomClassic .chipNow{
       display:none!important;
     }
@@ -118,35 +93,18 @@
       min-width:0;
       overflow:hidden;
     }
-    .chipHudCompareBottomDock .queue{
-      width:100%;
-      min-width:0;
-      display:grid;
-      grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr));
-      align-items:center;
-      gap:5px;
-      overflow:hidden;
-    }
     .chipHudCompareBottomClassic .queue{
+      width:100%;
       display:flex;
       flex-direction:row;
       align-items:center;
-      justify-content:center;
+      justify-content:flex-start;
       gap:6px;
       min-width:0;
       overflow:hidden;
     }
-    .chipHudCompareBottomDock .queue.advance,
-    .chipHudCompareBottomClassic .queue.advance{
-      animation:chipDockAdvance .18s ease-out both;
-    }
-    @keyframes chipDockAdvance{
-      from{transform:translateX(16px);opacity:.68}
-      to{transform:translateX(0);opacity:1}
-    }
     .chipHudSide .q,
     .chipHudCompareKokoroRight .q,
-    .chipHudCompareBottomDock .q,
     .chipHudCompareBottomClassic .q{
       display:block;
       min-height:24px;
@@ -160,28 +118,9 @@
     }
     .chipHudSide .q{width:100%}
     .chipHudCompareKokoroRight .q{width:auto;max-width:120px;flex:0 1 auto}
-    .chipHudCompareBottomDock .q{
-      width:100%;
-      min-width:0;
-      opacity:.72;
-    }
-    .chipHudCompareBottomDock .q:first-child:not(.empty){
-      min-height:31px;
-      padding:7px 9px;
-      font-size:11px;
-      font-weight:900;
-      opacity:1;
-      border-color:#b8f3ff;
-      box-shadow:0 0 10px rgba(91,220,255,.5),inset 0 0 0 1px rgba(218,250,255,.18);
-    }
-    .chipHudCompareBottomDock .q.empty{
-      grid-column:1/-1;
-      text-align:center;
-      opacity:.55;
-    }
     .chipHudCompareBottomClassic .q{
-      flex:0 1 auto;
-      max-width:170px;
+      flex:0 0 140px;
+      width:140px;
       min-height:30px;
       padding:7px 11px;
       border-width:2px;
@@ -196,6 +135,8 @@
       box-shadow:0 3px 7px rgba(0,0,0,.38);
     }
     .chipHudCompareBottomClassic .q:first-child:not(.empty){
+      flex-basis:170px;
+      width:170px;
       min-height:34px;
       padding:8px 13px;
       border-color:#d9f9ff;
@@ -207,7 +148,8 @@
       box-shadow:0 0 11px rgba(91,220,255,.62),0 3px 8px rgba(0,0,0,.46),inset 0 0 0 1px rgba(220,250,255,.2);
     }
     .chipHudCompareBottomClassic .q.empty{
-      min-width:90px;
+      flex-basis:170px;
+      width:170px;
       text-align:center;
       opacity:.62;
     }
@@ -223,28 +165,14 @@
   const sourceQueue=source.querySelector('.queue');
   const mirrorQueue=mirror.querySelector('.queue');
   const horizontalQueue=kokoroHorizontal.querySelector('.queue');
-  const bottomQueue=bottomDock.querySelector('.queue');
   const bottomClassicQueue=bottomClassic.querySelector('.queue');
-  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomQueue||!bottomClassicQueue)return;
+  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomClassicQueue)return;
 
-  let previousBottomLabels=[];
   function sync(){
     if(sourceTitle.textContent!=='')sourceTitle.textContent='';
-    const nextLabels=[...sourceQueue.children].map(el=>el.textContent.trim());
-    const advanced=previousBottomLabels.length>nextLabels.length&&nextLabels.length>0&&previousBottomLabels.slice(1).includes(nextLabels[0]);
     mirrorQueue.innerHTML=sourceQueue.innerHTML;
     horizontalQueue.innerHTML=sourceQueue.innerHTML;
-    bottomQueue.innerHTML=sourceQueue.innerHTML;
     bottomClassicQueue.innerHTML=sourceQueue.innerHTML;
-    [...bottomQueue.children].slice(3).forEach(el=>el.remove());
-    if(advanced){
-      [bottomQueue,bottomClassicQueue].forEach(queue=>{
-        queue.classList.remove('advance');
-        void queue.offsetWidth;
-        queue.classList.add('advance');
-      });
-    }
-    previousBottomLabels=nextLabels;
   }
 
   function layout(){
