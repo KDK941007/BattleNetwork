@@ -163,8 +163,6 @@
   function layout(){
     const shellRect=shell.getBoundingClientRect();
     const readout=document.querySelector('.kokoroValueReadout');
-    const kokoroRow=document.querySelector('.kokoroRow');
-    const hp=document.getElementById('playerHpWindow');
     const gauge=document.getElementById('customGauge');
 
     if(readout){
@@ -172,24 +170,19 @@
       source.style.top=`${Math.max(4,rect.bottom-shellRect.top+4)}px`;
     }
 
-    if(kokoroRow){
-      const rect=kokoroRow.getBoundingClientRect();
-      const left=Math.max(4,rect.right-shellRect.left+6);
-      const top=Math.max(4,rect.top-shellRect.top);
-      kokoroHorizontal.style.left=`${left}px`;
-      kokoroHorizontal.style.top=`${top}px`;
-      kokoroHorizontal.style.maxWidth=`${Math.max(0,shell.clientWidth-left-8)}px`;
-    }
+    if(gauge){
+      gauge.style.left='50%';
+      gauge.style.top='4px';
+      gauge.style.transform='translateX(-50%)';
+      gauge.style.maxWidth='';
 
-    if(hp&&gauge){
-      const hpRect=hp.getBoundingClientRect();
-      const gaugeHeight=gauge.offsetHeight||18;
-      const left=Math.max(4,hpRect.right-shellRect.left+8);
-      const top=Math.max(4,hpRect.top-shellRect.top+(hpRect.height-gaugeHeight)/2);
-      gauge.style.left=`${left}px`;
-      gauge.style.top=`${top}px`;
-      gauge.style.transform='none';
-      gauge.style.maxWidth=`calc(100% - ${left+8}px)`;
+      const gaugeRect=gauge.getBoundingClientRect();
+      kokoroHorizontal.style.left='50%';
+      kokoroHorizontal.style.right='auto';
+      kokoroHorizontal.style.top=`${Math.max(4,gaugeRect.bottom-shellRect.top+4)}px`;
+      kokoroHorizontal.style.width=`${gaugeRect.width}px`;
+      kokoroHorizontal.style.maxWidth='calc(100% - 16px)';
+      kokoroHorizontal.style.transform='translateX(-50%)';
     }
   }
 
@@ -199,6 +192,6 @@
   window.addEventListener('resize',layout);
   if(window.ResizeObserver){
     const ro=new ResizeObserver(layout);
-    [shell,document.getElementById('playerStatusHud'),document.getElementById('playerHpWindow')].filter(Boolean).forEach(el=>ro.observe(el));
+    [shell,document.getElementById('playerStatusHud'),document.getElementById('playerHpWindow'),document.getElementById('customGauge')].filter(Boolean).forEach(el=>ro.observe(el));
   }
 })();
