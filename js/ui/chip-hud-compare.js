@@ -106,6 +106,13 @@
       gap:5px;
       overflow:hidden;
     }
+    .chipHudCompareBottomDock .queue.advance{
+      animation:chipDockAdvance .18s ease-out both;
+    }
+    @keyframes chipDockAdvance{
+      from{transform:translateX(16px);opacity:.68}
+      to{transform:translateX(0);opacity:1}
+    }
     .chipHudSide .q,
     .chipHudCompareKokoroRight .q,
     .chipHudCompareBottomDock .q{
@@ -155,12 +162,21 @@
   const bottomQueue=bottomDock.querySelector('.queue');
   if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomQueue)return;
 
+  let previousBottomLabels=[];
   function sync(){
     if(sourceTitle.textContent!=='')sourceTitle.textContent='';
+    const nextLabels=[...sourceQueue.children].map(el=>el.textContent.trim());
+    const advanced=previousBottomLabels.length>nextLabels.length&&nextLabels.length>0&&previousBottomLabels.slice(1).includes(nextLabels[0]);
     mirrorQueue.innerHTML=sourceQueue.innerHTML;
     horizontalQueue.innerHTML=sourceQueue.innerHTML;
     bottomQueue.innerHTML=sourceQueue.innerHTML;
     [...bottomQueue.children].slice(3).forEach(el=>el.remove());
+    if(advanced){
+      bottomQueue.classList.remove('advance');
+      void bottomQueue.offsetWidth;
+      bottomQueue.classList.add('advance');
+    }
+    previousBottomLabels=nextLabels;
   }
 
   function layout(){
