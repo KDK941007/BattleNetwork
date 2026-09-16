@@ -13,26 +13,34 @@
   shell.appendChild(mirror);
 
   const kokoroHorizontal=source.cloneNode(true);
-  kokoroHorizontal.classList.remove('chipHudCompareLeft');
+  kokoroHorizontal.classList.remove('chipHudCompareLeft','chipHudSide');
   kokoroHorizontal.classList.add('chipHudCompareKokoroRight');
   kokoroHorizontal.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
   kokoroHorizontal.setAttribute('aria-hidden','true');
   shell.appendChild(kokoroHorizontal);
 
+  const bottomDock=source.cloneNode(true);
+  bottomDock.classList.remove('chipHudCompareLeft','chipHudSide');
+  bottomDock.classList.add('chipHudCompareBottomDock');
+  bottomDock.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  bottomDock.setAttribute('aria-hidden','true');
+  shell.appendChild(bottomDock);
+
   const style=document.createElement('style');
   style.textContent=`
     .shell>.chipHud.chipHudSide,
-    .shell>.chipHud.chipHudCompareKokoroRight{
+    .shell>.chipHud.chipHudCompareKokoroRight,
+    .shell>.chipHud.chipHudCompareBottomDock{
       position:absolute;
-      bottom:auto;
       min-height:0;
-      padding:0;
       z-index:44;
       pointer-events:none;
     }
     .shell>.chipHud.chipHudSide{
       top:50px;
+      bottom:auto;
       width:min(132px,24vw);
+      padding:0;
       display:flex;
       flex-direction:column;
       align-items:stretch;
@@ -42,17 +50,35 @@
     .shell>.chipHud.chipHudCompareRight{left:auto;right:6px}
     .shell>.chipHud.chipHudCompareKokoroRight{
       top:0;
+      bottom:auto;
       left:0;
       right:auto;
       width:auto;
       max-width:calc(100% - 12px);
+      padding:0;
       display:flex;
       align-items:center;
       gap:4px;
       overflow:hidden;
     }
+    .shell>.chipHud.chipHudCompareBottomDock{
+      left:50%;
+      right:auto;
+      top:auto;
+      bottom:12px;
+      width:min(520px,48vw);
+      padding:5px 6px;
+      display:block;
+      transform:translateX(-50%);
+      border:1px solid rgba(83,193,222,.72);
+      border-radius:10px;
+      background:rgba(4,17,25,.84);
+      box-shadow:0 0 0 1px rgba(135,230,255,.08) inset,0 4px 14px rgba(0,0,0,.38);
+      overflow:hidden;
+    }
     .chipHudSide .chipNow,
-    .chipHudCompareKokoroRight .chipNow{
+    .chipHudCompareKokoroRight .chipNow,
+    .chipHudCompareBottomDock .chipNow{
       display:none!important;
     }
     .chipHudSide .queue{
@@ -71,8 +97,18 @@
       min-width:0;
       overflow:hidden;
     }
+    .chipHudCompareBottomDock .queue{
+      width:100%;
+      min-width:0;
+      display:grid;
+      grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr));
+      align-items:center;
+      gap:5px;
+      overflow:hidden;
+    }
     .chipHudSide .q,
-    .chipHudCompareKokoroRight .q{
+    .chipHudCompareKokoroRight .q,
+    .chipHudCompareBottomDock .q{
       display:block;
       min-height:24px;
       padding:5px 7px;
@@ -85,6 +121,25 @@
     }
     .chipHudSide .q{width:100%}
     .chipHudCompareKokoroRight .q{width:auto;max-width:120px;flex:0 1 auto}
+    .chipHudCompareBottomDock .q{
+      width:100%;
+      min-width:0;
+      opacity:.72;
+    }
+    .chipHudCompareBottomDock .q:first-child:not(.empty){
+      min-height:31px;
+      padding:7px 9px;
+      font-size:11px;
+      font-weight:900;
+      opacity:1;
+      border-color:#b8f3ff;
+      box-shadow:0 0 10px rgba(91,220,255,.5),inset 0 0 0 1px rgba(218,250,255,.18);
+    }
+    .chipHudCompareBottomDock .q.empty{
+      grid-column:1/-1;
+      text-align:center;
+      opacity:.55;
+    }
     .chipHudSide .q:first-child:not(.empty),
     .chipHudCompareKokoroRight .q:first-child:not(.empty){
       border-color:#9cecff;
@@ -97,12 +152,15 @@
   const sourceQueue=source.querySelector('.queue');
   const mirrorQueue=mirror.querySelector('.queue');
   const horizontalQueue=kokoroHorizontal.querySelector('.queue');
-  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue)return;
+  const bottomQueue=bottomDock.querySelector('.queue');
+  if(!sourceTitle||!sourceQueue||!mirrorQueue||!horizontalQueue||!bottomQueue)return;
 
   function sync(){
     if(sourceTitle.textContent!=='')sourceTitle.textContent='';
     mirrorQueue.innerHTML=sourceQueue.innerHTML;
     horizontalQueue.innerHTML=sourceQueue.innerHTML;
+    bottomQueue.innerHTML=sourceQueue.innerHTML;
+    [...bottomQueue.children].slice(3).forEach(el=>el.remove());
   }
 
   function layout(){
