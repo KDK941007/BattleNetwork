@@ -1,4 +1,4 @@
-/* v99 temporary Wave verification UI. Normal Wave position is provisional; CLEAR/START use a centered lightweight transition effect. */
+/* v100 Wave transition UI. CLEAR / START use a cyber-space scan/glitch presentation. */
 .waveStatusNotice{
   position:absolute;
   left:50%;
@@ -21,45 +21,101 @@
   white-space:nowrap;
 }
 
-/* CLEAR / START are transition-only presentations. Keep effects to transform/opacity/box-shadow. */
 .waveStatusNotice[data-status="CLEARING"],
 .waveStatusNotice[data-status="STARTING"]{
+  --wave-accent:125,232,255;
   top:50%;
   z-index:45;
-  min-width:min(480px,78vw);
-  padding:15px 30px;
-  border-width:3px;
-  border-radius:10px;
-  font-size:clamp(26px,6vw,48px);
-  line-height:1.05;
-  letter-spacing:.12em;
-  background:rgba(8,14,24,.9);
-  will-change:transform,opacity;
+  min-width:min(500px,80vw);
+  padding:18px 34px;
+  border:1px solid rgba(var(--wave-accent),.9);
+  border-left-width:4px;
+  border-right-width:4px;
+  border-radius:2px;
+  background:
+    linear-gradient(90deg,rgba(var(--wave-accent),.08),rgba(2,13,22,.9) 18%,rgba(2,13,22,.9) 82%,rgba(var(--wave-accent),.08)),
+    repeating-linear-gradient(0deg,rgba(var(--wave-accent),.055) 0 1px,transparent 1px 5px);
+  color:rgb(var(--wave-accent));
+  font-size:clamp(27px,6vw,50px);
+  line-height:1;
+  letter-spacing:.16em;
+  text-shadow:0 0 6px rgba(var(--wave-accent),.95),0 0 18px rgba(var(--wave-accent),.55);
+  box-shadow:0 0 0 1px rgba(var(--wave-accent),.18) inset,0 0 22px rgba(var(--wave-accent),.2);
+  clip-path:polygon(3% 0,97% 0,100% 24%,100% 76%,97% 100%,3% 100%,0 76%,0 24%);
+  overflow:hidden;
+  isolation:isolate;
+  will-change:transform,opacity,filter;
 }
 .waveStatusNotice[data-status="CLEARING"]{
-  border-color:rgba(255,226,112,.98);
-  color:#fff3b0;
-  box-shadow:0 0 0 2px rgba(255,245,190,.16) inset,0 0 24px rgba(255,211,82,.42);
-  animation:waveClearBurst 1.5s cubic-bezier(.2,.72,.2,1) both;
+  --wave-accent:170,255,134;
+  animation:waveCyberClear 1.5s steps(1,end) both;
 }
 .waveStatusNotice[data-status="STARTING"]{
-  border-color:rgba(125,232,255,.98);
-  color:#d9faff;
-  box-shadow:0 0 0 2px rgba(205,250,255,.14) inset,0 0 24px rgba(72,211,255,.42);
-  animation:waveStartBurst 1.5s cubic-bezier(.2,.72,.2,1) both;
+  --wave-accent:102,232,255;
+  animation:waveCyberStart 1.5s steps(1,end) both;
 }
 
-@keyframes waveClearBurst{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.72);letter-spacing:.24em}
-  18%{opacity:1;transform:translate(-50%,-50%) scale(1.08);letter-spacing:.14em}
-  38%{opacity:1;transform:translate(-50%,-50%) scale(1);letter-spacing:.12em}
-  82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:.12;transform:translate(-50%,-50%) scale(1.02)}
+.waveStatusNotice[data-status="CLEARING"]::before,
+.waveStatusNotice[data-status="STARTING"]::before{
+  content:"";
+  position:absolute;
+  left:-10%;
+  right:-10%;
+  top:-5px;
+  height:3px;
+  z-index:-1;
+  background:linear-gradient(90deg,transparent,rgba(var(--wave-accent),.25) 12%,rgb(var(--wave-accent)) 50%,rgba(var(--wave-accent),.25) 88%,transparent);
+  box-shadow:0 0 12px rgba(var(--wave-accent),.95),0 0 28px rgba(var(--wave-accent),.5);
+  animation:waveCyberScan 1.5s cubic-bezier(.2,.75,.2,1) both;
 }
-@keyframes waveStartBurst{
-  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.58) scaleY(.86);letter-spacing:.24em}
-  20%{opacity:1;transform:translate(-50%,-50%) scaleX(1.06) scaleY(1.03);letter-spacing:.14em}
-  40%{opacity:1;transform:translate(-50%,-50%) scale(1);letter-spacing:.12em}
-  82%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  100%{opacity:.12;transform:translate(-50%,-50%) scale(1.02)}
+.waveStatusNotice[data-status="CLEARING"]::after,
+.waveStatusNotice[data-status="STARTING"]::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  opacity:.55;
+  background:
+    linear-gradient(90deg,transparent 0 8%,rgba(var(--wave-accent),.2) 8% 8.5%,transparent 8.5% 28%,rgba(var(--wave-accent),.16) 28% 28.4%,transparent 28.4% 72%,rgba(var(--wave-accent),.16) 72% 72.4%,transparent 72.4% 91.5%,rgba(var(--wave-accent),.2) 91.5% 92%,transparent 92%),
+    linear-gradient(0deg,transparent 0 46%,rgba(var(--wave-accent),.12) 46% 54%,transparent 54%);
+  animation:waveCyberData 1.5s linear both;
+}
+
+@keyframes waveCyberStart{
+  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.08);filter:brightness(2.4)}
+  8%{opacity:1;transform:translate(-49.2%,-50%) scaleX(.58);filter:brightness(1.8)}
+  13%{transform:translate(-50.8%,-50%) scaleX(1.04)}
+  18%{transform:translate(-50%,-50%) scaleX(.98)}
+  23%{transform:translate(-49.5%,-50%) scaleX(1.01)}
+  30%,78%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:brightness(1)}
+  82%{transform:translate(-50.7%,-50%) scaleX(1.015);filter:brightness(1.65)}
+  86%{transform:translate(-49.4%,-50%) scaleX(.99)}
+  91%{opacity:.9;transform:translate(-50%,-50%) scaleX(.68)}
+  100%{opacity:0;transform:translate(-50%,-50%) scaleX(.05);filter:brightness(2.2)}
+}
+@keyframes waveCyberClear{
+  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.12);filter:brightness(2.2)}
+  9%{opacity:1;transform:translate(-50.6%,-50%) scaleX(.72);filter:brightness(1.7)}
+  14%{transform:translate(-49.4%,-50%) scaleX(1.03)}
+  20%{transform:translate(-50%,-50%) scaleX(.99)}
+  28%,72%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:brightness(1)}
+  77%{transform:translate(-49.2%,-50%) skewX(-3deg);filter:brightness(1.55)}
+  81%{transform:translate(-50.8%,-50%) skewX(2deg)}
+  86%{transform:translate(-50%,-50%) scaleX(.82);filter:brightness(1.8)}
+  100%{opacity:0;transform:translate(-50%,-50%) scaleX(.04);filter:brightness(2.4)}
+}
+@keyframes waveCyberScan{
+  0%{top:-6px;opacity:0}
+  10%{opacity:1}
+  72%{top:calc(100% + 3px);opacity:.95}
+  100%{top:calc(100% + 3px);opacity:0}
+}
+@keyframes waveCyberData{
+  0%,100%{opacity:0}
+  12%{opacity:.8}
+  18%{opacity:.28}
+  24%,72%{opacity:.55}
+  78%{opacity:.9}
+  82%{opacity:.22}
+  90%{opacity:.5}
 }
