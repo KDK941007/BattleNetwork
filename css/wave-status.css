@@ -1,4 +1,4 @@
-/* v103 Wave transition UI. CLEAR now uses the same smooth exit as START, with a 1s duration. */
+/* v104 Wave transition UI. CLEAR and START use a smooth centered close without horizontal jitter. */
 .waveStatusNotice{
   position:absolute;
   left:50%;
@@ -100,24 +100,20 @@
   13%{transform:translate3d(-50.5%,-50%,0) scaleX(1.035)}
   18%{transform:translate3d(-50%,-50%,0) scaleX(.985)}
   23%{transform:translate3d(-49.7%,-50%,0) scaleX(1.008)}
-  30%,78%{opacity:1;transform:translate3d(-50%,-50%,0) scale(1)}
-  82%{opacity:1;transform:translate3d(-50.35%,-50%,0) scaleX(1.008)}
-  86%{opacity:1;transform:translate3d(-49.75%,-50%,0) scaleX(.997)}
-  90%{opacity:.96;transform:translate3d(-50%,-50%,0) scaleX(1.002)}
-  94%{opacity:.58;transform:translate3d(-50%,-50%,0) scaleX(.988)}
-  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.965)}
+  30%,78%{opacity:1;transform:translate3d(-50%,-50%,0) scaleX(1)}
+  88%{opacity:.82;transform:translate3d(-50%,-50%,0) scaleX(.94)}
+  94%{opacity:.38;transform:translate3d(-50%,-50%,0) scaleX(.72)}
+  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.12)}
 }
 @keyframes waveCyberClear{
   0%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.12)}
   9%{opacity:1;transform:translate3d(-50.4%,-50%,0) scaleX(.72)}
   14%{transform:translate3d(-49.6%,-50%,0) scaleX(1.03)}
   20%{transform:translate3d(-50%,-50%,0) scaleX(.99)}
-  28%,78%{opacity:1;transform:translate3d(-50%,-50%,0) scale(1)}
-  82%{opacity:1;transform:translate3d(-50.35%,-50%,0) scaleX(1.008)}
-  86%{opacity:1;transform:translate3d(-49.75%,-50%,0) scaleX(.997)}
-  90%{opacity:.96;transform:translate3d(-50%,-50%,0) scaleX(1.002)}
-  94%{opacity:.58;transform:translate3d(-50%,-50%,0) scaleX(.988)}
-  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.965)}
+  28%,78%{opacity:1;transform:translate3d(-50%,-50%,0) scaleX(1)}
+  88%{opacity:.82;transform:translate3d(-50%,-50%,0) scaleX(.94)}
+  94%{opacity:.38;transform:translate3d(-50%,-50%,0) scaleX(.72)}
+  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.12)}
 }
 @keyframes waveCyberScan{
   0%{opacity:0;transform:translate3d(0,-58px,0)}
