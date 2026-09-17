@@ -68,6 +68,36 @@
     if(sourceTitle.textContent!=='')sourceTitle.textContent='';
   }
 
+  function resetCustomGaugeDisplay(){
+    const fill=document.getElementById('customFill');
+    const gauge=document.getElementById('customGauge');
+    if(fill)fill.style.width='0%';
+    if(gauge){
+      gauge.classList.remove('ready');
+      gauge.setAttribute('aria-disabled','true');
+    }
+  }
+
+  function observeWaveStatus(){
+    const battle=document.getElementById('battle');
+    if(!battle)return;
+    let notice=battle.querySelector('.waveStatusNotice');
+    let statusObserver=null;
+    const bind=()=>{
+      const next=battle.querySelector('.waveStatusNotice');
+      if(!next||next===notice&&statusObserver)return;
+      statusObserver?.disconnect();
+      notice=next;
+      statusObserver=new MutationObserver(()=>{
+        if(notice.dataset.status==='STARTING')resetCustomGaugeDisplay();
+      });
+      statusObserver.observe(notice,{attributes:true,attributeFilter:['data-status']});
+      if(notice.dataset.status==='STARTING')resetCustomGaugeDisplay();
+    };
+    bind();
+    new MutationObserver(bind).observe(battle,{childList:true});
+  }
+
   function layout(){
     const shellRect=shell.getBoundingClientRect();
     const readout=document.querySelector('.kokoroValueReadout');
@@ -96,6 +126,7 @@
   }
 
   sync();
+  observeWaveStatus();
   requestAnimationFrame(layout);
   new MutationObserver(sync).observe(source,{subtree:true,childList:true,characterData:true});
   window.addEventListener('resize',layout);
