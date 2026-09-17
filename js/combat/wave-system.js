@@ -11,7 +11,7 @@
     movementBehaviorId:'ENEMY1_MOVEMENT',
     clearNoticeMs:1000,
     startNoticeMs:1500,
-    postStartDelayMs:1500,
+    postStartDelayMs:500,
     waveSpawnTiles:Object.freeze({
       1:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
       2:Object.freeze([
