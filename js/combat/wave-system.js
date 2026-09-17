@@ -111,6 +111,7 @@
   }
   function scheduleTransition(ms,fn){const token=++transitionToken;setTimeout(()=>{if(token===transitionToken)fn()},ms)}
   function showBattlefield(){document.getElementById('customModal')?.classList.remove('open');document.getElementById('chipDetailModal')?.classList.remove('open')}
+  function showPreparedCustom(){document.getElementById('customModal')?.classList.add('open')}
   function getDefaults(){const runtime=window.BattleNetworkEnemy1Runtime;if(!runtime)throw new Error('BattleNetworkWave: Enemy 1 runtime is missing.');return runtime.getEnemyDefaults()}
   function boundsOverlap(a,b){return !!a&&!!b&&a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top}
   function spawnBoundsAt(position,defaults){const width=FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height=FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX=FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY=FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles,centerX=position.x+offsetX,centerY=position.y+offsetY;return{left:centerX-width/2,right:centerX+width/2,top:centerY-height/2,bottom:centerY+height/2}}
@@ -168,6 +169,7 @@
   function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
     showBattlefield();resetWaveClearWait();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);
+    getPlayer()?.openNextWaveCustom?.();showBattlefield();
     getEvil()?.onWaveStart?.();restoreFullSynchroCarry();getReward()?.startWave?.(n);
     const enemyIds=prepareWaveBattlefield(n);
     state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds,prepared:true};render();emit();
@@ -176,7 +178,7 @@
       state={...state,status:'START_GAP'};render();emit();
       scheduleTransition(TEST_CONFIG.postStartDelayMs,()=>{
         if(state.status!=='START_GAP'||state.pendingWaveNumber!==n||!state.prepared)return;
-        state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
+        state={...state,status:'WAITING_CUSTOM'};render();emit();showPreparedCustom();
       });
     });
     return getSnapshot()
