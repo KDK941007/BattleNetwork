@@ -153,6 +153,10 @@
     }
     return enemyIds
   }
+  function prepareWaveBattlefield(n){
+    FIELD.resetTerrain?.();
+    return createWaveEnemies(n)
+  }
   function activateWave(n,enemyIds,{initializeSystems=true}={}){
     resetWaveClearWait();
     const ids=Array.isArray(enemyIds)?enemyIds:createWaveEnemies(n);
@@ -163,9 +167,10 @@
   }
   function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
-    showBattlefield();resetWaveClearWait();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();resetMultiDeleteTracking(0);
+    showBattlefield();resetWaveClearWait();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);
     getEvil()?.onWaveStart?.();restoreFullSynchroCarry();getReward()?.startWave?.(n);
-    state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:true};render();emit();
+    const enemyIds=prepareWaveBattlefield(n);
+    state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds,prepared:true};render();emit();
     scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
       if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
       state={...state,status:'START_GAP'};render();emit();
@@ -211,7 +216,7 @@
   function startNextWave(){
     if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();
     const n=state.pendingWaveNumber;
-    if(state.prepared){return activateWave(n,createWaveEnemies(n),{initializeSystems:false})}
+    if(state.prepared){return activateWave(n,state.enemyIds.slice(),{initializeSystems:false})}
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()
   }
   window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});
