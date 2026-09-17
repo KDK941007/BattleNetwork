@@ -174,7 +174,10 @@
     if (changedTile && previous) {
       const previousTile = getTile(previous.row, previous.col);
       if (previousTile?.currentTerrain === TERRAIN.CRACKED) {
-        setTerrain(previousTile.row, previousTile.col, TERRAIN.HOLE);
+        const anotherOccupantRemains = Array.from(occupantTiles.entries()).some(([occupantId, position]) =>
+          occupantId !== key && position.row === previousTile.row && position.col === previousTile.col
+        );
+        if (!anotherOccupantRemains) setTerrain(previousTile.row, previousTile.col, TERRAIN.HOLE);
       }
     }
     occupantTiles.set(key, Object.freeze({ row: nextTile.row, col: nextTile.col }));
