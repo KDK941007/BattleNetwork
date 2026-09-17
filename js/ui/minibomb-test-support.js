@@ -202,7 +202,7 @@
       surface.busy=true;surface.token=token;surface.landingAt=performance.now()+THROW_MS;projectiles.set(token,surface);pendingExplosions.push({token,shape});
       const sx=start.x-SPRITE_HALF,sy=start.y-88,tx=target.x-SPRITE_HALF,ty=target.y-62,dx=tx-sx,dy=ty-sy;
       const arcHeight=Math.min(205,Math.max(132,112+Math.hypot(dx,dy)*.18)),FRAME_COUNT=31,times=Array.from({length:FRAME_COUNT},(_,i)=>i/(FRAME_COUNT-1));
-      const arcFrames=times.map(t=>{const x=sx+dx*t,y=sy+dy*t-4*arcHeight*t*(1-t),scale=.88+.10*(1-Math.abs(t*2-1)),rotation=-8+42*t;return{transform:`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${scale})`,opacity:1,offset:t}});
+      const arcFrames=times.map(t=>{const x=sx+dx*t,y=sy+dy*t-4*arcHeight*t*(1-t),scale=.88+.10*(1-Math.abs(t*2-1)),rotation=-8+1080*t;return{transform:`translate3d(${x}px,${y}px,0) rotate(${rotation}deg) scale(${scale})`,opacity:1,offset:t}});
       const ssx=start.x-SHADOW_W/2,ssy=start.y-SHADOW_H/2+2,stx=target.x-SHADOW_W/2,sty=target.y-SHADOW_H/2+2;
       const shadowFrames=times.map(t=>{const x=ssx+(stx-ssx)*t,y=ssy+(sty-ssy)*t,apex=1-Math.abs(t*2-1),scale=.78-.36*apex,opacity=.46-.30*apex;return{transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity,offset:t}});
       surface.sprite.style.transform=arcFrames[0].transform;surface.sprite.style.opacity='1';surface.shadow.style.transform=shadowFrames[0].transform;surface.shadow.style.opacity=String(shadowFrames[0].opacity);
