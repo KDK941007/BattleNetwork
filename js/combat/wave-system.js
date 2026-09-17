@@ -11,6 +11,7 @@
     movementBehaviorId:'ENEMY1_MOVEMENT',
     clearNoticeMs:1500,
     startNoticeMs:1500,
+    postStartDelayMs:1500,
     waveSpawnTiles:Object.freeze({
       1:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
       2:Object.freeze([
@@ -51,9 +52,24 @@
   settingsList?.prepend(settingsWaveInfo);
   let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[],prepared:false},transitionToken=0;
   let lastActiveCount=0,multiDeleteBatchCount=0,maxMultiDeleteCount=0,multiDeleteResetTimer=null;
-  let carryFullSynchroAcrossWave=false;
+  let carryFullSynchroAcrossWave=false,waveClearPending=false,pendingWaveRewardResult=null,deleteFxObserver=null;
   function clearMultiDeleteResetTimer(){if(multiDeleteResetTimer!==null){clearTimeout(multiDeleteResetTimer);multiDeleteResetTimer=null}}
   function resetMultiDeleteTracking(active=0){clearMultiDeleteResetTimer();lastActiveCount=Math.max(0,Math.trunc(Number(active)||0));multiDeleteBatchCount=0;maxMultiDeleteCount=0}
+  function clearDeleteFxObserver(){if(deleteFxObserver){deleteFxObserver.disconnect();deleteFxObserver=null}}
+  function resetWaveClearWait(){clearDeleteFxObserver();waveClearPending=false;pendingWaveRewardResult=null}
+  function deleteVisualsComplete(){const roots=[...document.querySelectorAll('[data-enemy-delete-fx="1"]')];return roots.length===0||roots.every(root=>root.style.visibility==='hidden')}
+  function waitForDeleteVisuals(fn){
+    if(deleteVisualsComplete()){fn();return}
+    clearDeleteFxObserver();
+    const roots=[...document.querySelectorAll('[data-enemy-delete-fx="1"]')];
+    deleteFxObserver=new MutationObserver(()=>{
+      if(!deleteVisualsComplete())return;
+      clearDeleteFxObserver();
+      fn();
+    });
+    roots.forEach(root=>deleteFxObserver.observe(root,{attributes:true,attributeFilter:['style']}));
+    if(deleteVisualsComplete()){clearDeleteFxObserver();fn()}
+  }
   function noteEnemyCountForMultiDelete(e){
     const active=Math.max(0,Math.trunc(Number(e?.active)||0));
     if(state.status!=='ACTIVE'){lastActiveCount=active;return}
@@ -68,7 +84,7 @@
   }
   function multiDeleteBonus(count){const value=Math.max(0,Math.trunc(Number(count)||0));return value>=3?4:value===2?2:0}
   function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,missionWaveCount:TEST_CONFIG.missionWaveCount,missionComplete:state.status==='MISSION_CLEAR',enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
-  function displayedWaveNumber(){if((state.status==='STARTING'||state.status==='WAITING_CUSTOM')&&Number.isFinite(state.pendingWaveNumber))return state.pendingWaveNumber;if(state.waveNumber>0)return state.waveNumber;return Number.isFinite(state.pendingWaveNumber)?state.pendingWaveNumber:1}
+  function displayedWaveNumber(){if((state.status==='STARTING'||state.status==='START_GAP'||state.status==='WAITING_CUSTOM')&&Number.isFinite(state.pendingWaveNumber))return state.pendingWaveNumber;if(state.waveNumber>0)return state.waveNumber;return Number.isFinite(state.pendingWaveNumber)?state.pendingWaveNumber:1}
   function updateSettingsWave(){const value=document.getElementById('settingsWaveValue');if(value)value.textContent=`${displayedWaveNumber()} / ${TEST_CONFIG.missionWaveCount}`}
   function render(){
     notice.dataset.status=state.status;
@@ -138,6 +154,7 @@
     return enemyIds
   }
   function activateWave(n,enemyIds,{initializeSystems=true}={}){
+    resetWaveClearWait();
     const ids=Array.isArray(enemyIds)?enemyIds:createWaveEnemies(n);
     state={waveNumber:n,pendingWaveNumber:null,status:'ACTIVE',enemyIds:ids,prepared:false};
     resetMultiDeleteTracking(ENEMY.getBattleState().active);
@@ -146,12 +163,16 @@
   }
   function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
-    AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();resetMultiDeleteTracking(0);
+    showBattlefield();resetWaveClearWait();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();FIELD.resetTerrain?.();resetMultiDeleteTracking(0);
     getEvil()?.onWaveStart?.();restoreFullSynchroCarry();getReward()?.startWave?.(n);
     state={...state,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:true};render();emit();
     scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{
       if(state.status!=='STARTING'||state.pendingWaveNumber!==n||!state.prepared)return;
-      state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
+      state={...state,status:'START_GAP'};render();emit();
+      scheduleTransition(TEST_CONFIG.postStartDelayMs,()=>{
+        if(state.status!=='START_GAP'||state.pendingWaveNumber!==n||!state.prepared)return;
+        state={...state,status:'WAITING_CUSTOM'};render();emit();getPlayer()?.openNextWaveCustom?.();
+      });
     });
     return getSnapshot()
   }
@@ -167,15 +188,25 @@
     if(finalWave){state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR',prepared:false};render();return emit()}
     return prepareNextWaveIntro(completedWave+1)
   }
+  function completeWaveClear(){
+    if(state.status!=='ACTIVE'||!waveClearPending)return;
+    const rewardResult=pendingWaveRewardResult;
+    clearDeleteFxObserver();waveClearPending=false;pendingWaveRewardResult=null;
+    const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;
+    state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
+  }
   function onEnemyState(e){
     noteEnemyCountForMultiDelete(e);
     if(state.status!=='ACTIVE'||!e.allDefeated)return;
-    showBattlefield();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();
-    const multiDeleteCount=maxMultiDeleteCount,multiDeleteScore=multiDeleteBonus(multiDeleteCount);
-    const rewardResult=getReward()?.finishWave?.({multiDeleteCount,multiDeleteBonus:multiDeleteScore})||null;
-    carryFullSynchroAcrossWave=carryFullSynchroAcrossWave||isFullSynchroActive();
-    getEvil()?.onWaveEnd?.();restoreFullSynchroCarry();
-    const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
+    if(!waveClearPending){
+      waveClearPending=true;
+      showBattlefield();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();
+      const multiDeleteCount=maxMultiDeleteCount,multiDeleteScore=multiDeleteBonus(multiDeleteCount);
+      pendingWaveRewardResult=getReward()?.finishWave?.({multiDeleteCount,multiDeleteBonus:multiDeleteScore})||null;
+      carryFullSynchroAcrossWave=carryFullSynchroAcrossWave||isFullSynchroActive();
+      getEvil()?.onWaveEnd?.();restoreFullSynchroCarry();
+    }
+    waitForDeleteVisuals(completeWaveClear)
   }
   function startNextWave(){
     if(state.status!=='WAITING_CUSTOM'||!Number.isFinite(state.pendingWaveNumber))return getSnapshot();
@@ -183,5 +214,11 @@
     if(state.prepared){return activateWave(n,createWaveEnemies(n),{initializeSystems:false})}
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()
   }
-  window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);render();
+  window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});
+  AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);showBattlefield();render();
+  enemy1Ready.then(()=>{
+    if(state.waveNumber===0&&state.status==='WAITING_CUSTOM'&&state.pendingWaveNumber===1)prepareNextWaveIntro(1)
+  }).catch(()=>{
+    if(state.waveNumber===0&&state.status==='WAITING_CUSTOM')getPlayer()?.openNextWaveCustom?.()
+  });
 })();
