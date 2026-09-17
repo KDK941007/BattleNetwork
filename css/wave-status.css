@@ -1,4 +1,4 @@
-/* v100 Wave transition UI. CLEAR / START use a cyber-space scan/glitch presentation. */
+/* v101 Wave transition UI. Preserve the cyber scan/glitch look while keeping animation GPU-friendly. */
 .waveStatusNotice{
   position:absolute;
   left:50%;
@@ -44,15 +44,16 @@
   clip-path:polygon(3% 0,97% 0,100% 24%,100% 76%,97% 100%,3% 100%,0 76%,0 24%);
   overflow:hidden;
   isolation:isolate;
-  will-change:transform,opacity,filter;
+  backface-visibility:hidden;
+  will-change:transform,opacity;
 }
 .waveStatusNotice[data-status="CLEARING"]{
   --wave-accent:170,255,134;
-  animation:waveCyberClear 1.5s steps(1,end) both;
+  animation:waveCyberClear 1.5s cubic-bezier(.2,.72,.2,1) both;
 }
 .waveStatusNotice[data-status="STARTING"]{
   --wave-accent:102,232,255;
-  animation:waveCyberStart 1.5s steps(1,end) both;
+  animation:waveCyberStart 1.5s cubic-bezier(.2,.72,.2,1) both;
 }
 
 .waveStatusNotice[data-status="CLEARING"]::before,
@@ -61,11 +62,13 @@
   position:absolute;
   left:-10%;
   right:-10%;
-  top:-5px;
+  top:50%;
   height:3px;
   z-index:-1;
   background:linear-gradient(90deg,transparent,rgba(var(--wave-accent),.25) 12%,rgb(var(--wave-accent)) 50%,rgba(var(--wave-accent),.25) 88%,transparent);
   box-shadow:0 0 12px rgba(var(--wave-accent),.95),0 0 28px rgba(var(--wave-accent),.5);
+  backface-visibility:hidden;
+  will-change:transform,opacity;
   animation:waveCyberScan 1.5s cubic-bezier(.2,.75,.2,1) both;
 }
 .waveStatusNotice[data-status="CLEARING"]::after,
@@ -78,44 +81,45 @@
   background:
     linear-gradient(90deg,transparent 0 8%,rgba(var(--wave-accent),.2) 8% 8.5%,transparent 8.5% 28%,rgba(var(--wave-accent),.16) 28% 28.4%,transparent 28.4% 72%,rgba(var(--wave-accent),.16) 72% 72.4%,transparent 72.4% 91.5%,rgba(var(--wave-accent),.2) 91.5% 92%,transparent 92%),
     linear-gradient(0deg,transparent 0 46%,rgba(var(--wave-accent),.12) 46% 54%,transparent 54%);
+  will-change:opacity;
   animation:waveCyberData 1.5s linear both;
 }
 
 @keyframes waveCyberStart{
-  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.08);filter:brightness(2.4)}
-  8%{opacity:1;transform:translate(-49.2%,-50%) scaleX(.58);filter:brightness(1.8)}
-  13%{transform:translate(-50.8%,-50%) scaleX(1.04)}
-  18%{transform:translate(-50%,-50%) scaleX(.98)}
-  23%{transform:translate(-49.5%,-50%) scaleX(1.01)}
-  30%,78%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:brightness(1)}
-  82%{transform:translate(-50.7%,-50%) scaleX(1.015);filter:brightness(1.65)}
-  86%{transform:translate(-49.4%,-50%) scaleX(.99)}
-  91%{opacity:.9;transform:translate(-50%,-50%) scaleX(.68)}
-  100%{opacity:0;transform:translate(-50%,-50%) scaleX(.05);filter:brightness(2.2)}
+  0%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.08)}
+  8%{opacity:1;transform:translate3d(-49.4%,-50%,0) scaleX(.58)}
+  13%{transform:translate3d(-50.5%,-50%,0) scaleX(1.035)}
+  18%{transform:translate3d(-50%,-50%,0) scaleX(.985)}
+  23%{transform:translate3d(-49.7%,-50%,0) scaleX(1.008)}
+  30%,78%{opacity:1;transform:translate3d(-50%,-50%,0) scale(1)}
+  82%{transform:translate3d(-50.45%,-50%,0) scaleX(1.012)}
+  86%{transform:translate3d(-49.65%,-50%,0) scaleX(.994)}
+  91%{opacity:.9;transform:translate3d(-50%,-50%,0) scaleX(.68)}
+  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.05)}
 }
 @keyframes waveCyberClear{
-  0%{opacity:0;transform:translate(-50%,-50%) scaleX(.12);filter:brightness(2.2)}
-  9%{opacity:1;transform:translate(-50.6%,-50%) scaleX(.72);filter:brightness(1.7)}
-  14%{transform:translate(-49.4%,-50%) scaleX(1.03)}
-  20%{transform:translate(-50%,-50%) scaleX(.99)}
-  28%,72%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:brightness(1)}
-  77%{transform:translate(-49.2%,-50%) skewX(-3deg);filter:brightness(1.55)}
-  81%{transform:translate(-50.8%,-50%) skewX(2deg)}
-  86%{transform:translate(-50%,-50%) scaleX(.82);filter:brightness(1.8)}
-  100%{opacity:0;transform:translate(-50%,-50%) scaleX(.04);filter:brightness(2.4)}
+  0%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.12)}
+  9%{opacity:1;transform:translate3d(-50.4%,-50%,0) scaleX(.72)}
+  14%{transform:translate3d(-49.6%,-50%,0) scaleX(1.03)}
+  20%{transform:translate3d(-50%,-50%,0) scaleX(.99)}
+  28%,72%{opacity:1;transform:translate3d(-50%,-50%,0) scale(1)}
+  77%{transform:translate3d(-49.55%,-50%,0) skewX(-2deg)}
+  81%{transform:translate3d(-50.45%,-50%,0) skewX(1.5deg)}
+  86%{transform:translate3d(-50%,-50%,0) scaleX(.82)}
+  100%{opacity:0;transform:translate3d(-50%,-50%,0) scaleX(.04)}
 }
 @keyframes waveCyberScan{
-  0%{top:-6px;opacity:0}
+  0%{opacity:0;transform:translate3d(0,-58px,0)}
   10%{opacity:1}
-  72%{top:calc(100% + 3px);opacity:.95}
-  100%{top:calc(100% + 3px);opacity:0}
+  72%{opacity:.95;transform:translate3d(0,58px,0)}
+  100%{opacity:0;transform:translate3d(0,58px,0)}
 }
 @keyframes waveCyberData{
   0%,100%{opacity:0}
   12%{opacity:.8}
-  18%{opacity:.28}
+  18%{opacity:.34}
   24%,72%{opacity:.55}
-  78%{opacity:.9}
-  82%{opacity:.22}
+  78%{opacity:.82}
+  84%{opacity:.32}
   90%{opacity:.5}
 }
