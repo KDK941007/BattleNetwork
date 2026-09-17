@@ -113,7 +113,7 @@
     };
     resolveAtDistance(0);
   }
-  function scheduleBomb(attack){const delay=behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28);setTimeout(()=>flashHits(attack.shape,attack.damage,attack),Math.max(0,delay)*1000)}
+  function scheduleBomb(attack){const behaviorDelayMs=Math.max(0,behaviorParam('BOMB_THROW','EXPLOSION_DELAY',.28))*1000,visualThrowMs=attack?.sourceId==='CHIP_0004'?Number(window.BattleNetworkMiniBombEffect?.throwMs):NaN,delayMs=Number.isFinite(visualThrowMs)&&visualThrowMs>=0?visualThrowMs:behaviorDelayMs;setTimeout(()=>flashHits(attack.shape,attack.damage,attack),delayMs)}
   function resolveBehavior(input){if(!input)return;const attack=input.shape?input:{shape:input,damage:null};const shape=attack.shape;if(!shape)return;if(isSpreadGun(attack))trace('SPREAD:attackObserved');if(shape.rangeTypeId==='LINE'){scheduleCannon(attack);return}if(shape.rangeTypeId==='RECT'){flashHits(shape,attack.damage,attack);return}if(shape.rangeTypeId==='CIRCLE')scheduleBomb(attack)}
   function observeAttackRange(){const combatRange=window.BattleNetworkCombatRange;const attack=combatRange?.getLastAttackContext?.()||null;if(attack&&attack!==lastObservedAttack){lastObservedAttack=attack;resolveBehavior(attack)}requestAnimationFrame(observeAttackRange)}
   window.BattleNetworkCombatHitTest=Object.freeze({testRange,flashHits,resolveBehavior,getFirstCannonHit,getVulcanInductionTile,triggerVulcanInduction});requestAnimationFrame(observeAttackRange);
