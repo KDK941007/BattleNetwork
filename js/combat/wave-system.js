@@ -9,7 +9,7 @@
     missionWaveCount:3,
     attackBehaviorId:'ENEMY1_GROUND_SHOCKWAVE',
     movementBehaviorId:'ENEMY1_MOVEMENT',
-    clearNoticeMs:1500,
+    clearNoticeMs:1000,
     startNoticeMs:1500,
     postStartDelayMs:1500,
     waveSpawnTiles:Object.freeze({
