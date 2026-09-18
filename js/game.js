@@ -1,5 +1,5 @@
 (()=>{
-const $=id=>document.getElementById(id),battle=$('battle'),scene=$('scene'),player=$('player'),arrow=$('arrow'),joy=$('joy'),knob=$('knob'),A=$('A'),B=$('B'),X=$('X'),Y=$('Y');
+const $=id=>document.getElementById(id),shell=document.querySelector('.shell'),battle=$('battle'),scene=$('scene'),player=$('player'),arrow=$('arrow'),joy=$('joy'),knob=$('knob'),A=$('A'),B=$('B'),X=$('X'),Y=$('Y');
 const FIELD=window.BattleNetworkField,RANGE=window.BattleNetworkRangeGeometry,RANGE_PREVIEW=window.BattleNetworkRangePreview,BOMB_PREVIEW=window.BattleNetworkBombPreview,B_ATTACK=window.BattleNetworkBAttack,P_SHADOW=window.BattleNetworkProjectileShadow,B_PROJECTILE=window.BattleNetworkBusterProjectile,ENEMY=window.BattleNetworkEnemy,PLAYER_HEALTH=window.BattleNetworkPlayerHealth,PARAMS=window.BattleNetworkParameters;
 if(!FIELD)throw new Error('BattleNetwork: logical field grid is not loaded.');
 if(!RANGE||!RANGE_PREVIEW||!BOMB_PREVIEW)throw new Error('BattleNetwork: combat range system is not loaded.');
@@ -50,7 +50,8 @@ function shouldGuaranteeDarkChip(){const state=window.BattleNetworkPlayerHud?.ge
 function guaranteeDarkChip(){if(!shouldGuaranteeDarkChip())return false;if(s.hand.some(id=>id!==undefined&&isDarkCardId(id)))return false;const occupied=new Set(s.hand.filter(id=>id!==undefined)),candidates=s.draw.filter(id=>!occupied.has(id)&&!s.discard.has(id)&&isDarkCardId(id));if(!candidates.length)return false;let slot=-1;for(let i=5;i<10;i++)if(s.hand[i]===undefined){slot=i;break}if(slot<0)return false;s.hand[slot]=candidates[Math.floor(Math.random()*candidates.length)];return true}
 function resetWave(){FIELD.resetTerrain?.();FIELD.trackOccupant?.('player',s.x,s.y);s.draw=shuffle(cards.map(c=>c.id));s.discard.clear();s.queue=[];s.custom=0;s.customReady=false;s.hand=[];openCustom(true)}
 function nextHand(){const occupied=new Set(s.hand.filter(id=>id!==undefined));const available=s.draw.filter(id=>!occupied.has(id));let next=0;for(let slot=0;slot<5;slot++){if(s.hand[slot]!==undefined)continue;if(next>=available.length)break;s.hand[slot]=available[next++]}guaranteeDarkChip();s.selected=[];renderCustom()}
-function openCustom(initial=false){if(s.defeated)return;s.paused=true;joyReset();clearCharge();$('customModal').classList.add('open');nextHand();updateFooterChips()}
+function syncCustomScreenClass(){shell?.classList.toggle('customScreen',$('customModal').classList.contains('open'))}
+function openCustom(initial=false){if(s.defeated)return;s.paused=true;joyReset();clearCharge();$('customModal').classList.add('open');syncCustomScreenClass();nextHand();updateFooterChips()}
 function validSelection(ids){if(ids.length<=1)return true;let cs=ids.map(card);if(cs.every(c=>c.type===cs[0].type))return true;return new Set(cs.filter(c=>c.code!=='*').map(c=>c.code)).size<=1}
 function canAdd(id){if(s.selected.includes(id))return true;let candidate=card(id);if(ATTACK10.isModifierCard(candidate)&&!ATTACK10.canAddModifier(s.selected,card,CHIP))return false;return validSelection([...s.selected,id])}
 function attrHtml(type){let attr=CHIP[type].attr,src=ATTR_IMAGE[attr]||ATTR_IMAGE.normal,label=ATTR_LABEL[attr]||ATTR_LABEL.normal;return `<img class="attrIcon" src="${src}" alt="${label}" draggable="false">`}
@@ -63,16 +64,30 @@ $('detailClose').onclick=closeChipDetail;$('chipDetailModal').addEventListener('
 function bindChipCard(b,id,ok){
   let timer=null,startX=0,startY=0,longPressed=false;
   const clear=()=>{if(timer){clearTimeout(timer);timer=null}};
+  const start=(x,y)=>{startX=x;startY=y;longPressed=false;clear();timer=setTimeout(()=>{timer=null;longPressed=true;showChipDetail(id)},LONG_PRESS_MS)};
+  const move=(x,y)=>{if(Math.hypot(x-startX,y-startY)>LONG_PRESS_MOVE_TOLERANCE)clear()};
   b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1)return;
+    const touch=e.touches[0];
+    start(touch.clientX,touch.clientY)
+  },{passive:true});
+  b.addEventListener('touchmove',e=>{
+    if(e.touches.length!==1){clear();return}
+    const touch=e.touches[0];
+    move(touch.clientX,touch.clientY)
+  },{passive:true});
+  b.addEventListener('touchend',clear,{passive:true});
+  b.addEventListener('touchcancel',clear,{passive:true});
   b.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')return;
     if(e.pointerType==='mouse'&&e.button!==0)return;
-    startX=e.clientX;startY=e.clientY;longPressed=false;clear();
-    timer=setTimeout(()=>{timer=null;longPressed=true;showChipDetail(id)},LONG_PRESS_MS)
+    start(e.clientX,e.clientY)
   });
-  b.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-startX,e.clientY-startY)>LONG_PRESS_MOVE_TOLERANCE)clear()});
-  b.addEventListener('pointerup',clear);
-  b.addEventListener('pointercancel',clear);
-  b.addEventListener('lostpointercapture',clear);
+  b.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')move(e.clientX,e.clientY)});
+  b.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')clear()});
+  b.addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')clear()});
+  b.addEventListener('lostpointercapture',e=>{if(e.pointerType!=='touch')clear()});
   b.addEventListener('click',e=>{
     if(longPressed){longPressed=false;e.preventDefault();e.stopPropagation();return}
     if(!ok)return;
@@ -83,7 +98,7 @@ function bindChipCard(b,id,ok){
   })
 }
 function renderCustom(){$('folderInfo').textContent=`フォルダ ${s.draw.length}`;$('hand').innerHTML='';for(let slot=0;slot<10;slot++){let id=s.hand[slot];if(id===undefined){let e=document.createElement('div');e.className='chipCard empty';e.innerHTML=`<span class="slotNo">${slot+1}</span><span class="chipName">---</span><span class="chipArt"></span><span class="chipMeta"><span class="chipCode">-</span><span class="chipAttr"></span><span class="chipValue">--</span></span>`;$('hand').appendChild(e);continue}let c=card(id),b=document.createElement('button'),ok=canAdd(id);b.dataset.cardId=String(id);b.className='chipCard'+(s.selected.includes(id)?' sel':'')+(!ok?' blocked':'');b.innerHTML=`<span class="slotNo">${slot+1}</span><span class="chipName">${CHIP[c.type].name}</span><span class="chipArt">${chipArtHtml(c.type)}</span><span class="chipMeta"><span class="chipCode">${c.code}</span><span class="chipAttr">${attrHtml(c.type)}</span><span class="chipValue">--</span></span>`;bindChipCard(b,id,ok);$('hand').appendChild(b)}ATTACK10.decorateCustom($('hand'),s.selected,card,CHIP);updateFooterChips()}
-$('send').onclick=()=>{if(s.selected.length){s.queue.forEach(id=>s.discard.add(id));let ss=new Set(s.selected);s.hand=s.hand.map(id=>{if(id===undefined||!ss.has(id))return id;let p=s.draw.indexOf(id);if(p>=0)s.draw.splice(p,1);return undefined});s.queue=s.selected.slice()}s.selected=[];s.custom=0;s.customReady=false;$('customModal').classList.remove('open');let waveState=window.BattleNetworkWave?.onCustomConfirmed?.();s.paused=waveState?.status==='STARTING';updateHud()};
+$('send').onclick=()=>{if(s.selected.length){s.queue.forEach(id=>s.discard.add(id));let ss=new Set(s.selected);s.hand=s.hand.map(id=>{if(id===undefined||!ss.has(id))return id;let p=s.draw.indexOf(id);if(p>=0)s.draw.splice(p,1);return undefined});s.queue=s.selected.slice()}s.selected=[];s.custom=0;s.customReady=false;$('customModal').classList.remove('open');syncCustomScreenClass();let waveState=window.BattleNetworkWave?.onCustomConfirmed?.();s.paused=waveState?.status==='STARTING';updateHud()};
 function setPreviewMode(mode){if(previewMode===mode)return;previewMode=mode;if(mode==='none'){RANGE_PREVIEW.hide();BOMB_PREVIEW.hide()}else if(mode==='range'){BOMB_PREVIEW.hide()}}
 function renderPreview(){if(s.defeated){setPreviewMode('none');return}if(!s.queue.length){setPreviewMode('none');return}let ch=CHIP[card(s.queue[0]).type];if(ch.type==='recover'){setPreviewMode('none');return}if(ch.type==='bomb'){let shape=buildBombRange(ch);setPreviewMode('bomb');RANGE_PREVIEW.render(shape);BOMB_PREVIEW.render({x:s.x,y:s.y},shape.center);return}let shape=buildChipRange(ch);if(shape&&(shape.rangeTypeId==='LINE'||shape.rangeTypeId==='RECT'||shape.rangeTypeId==='CIRCLE')){setPreviewMode('range');RANGE_PREVIEW.render(shape);return}setPreviewMode('none')}
 function updateCustomGauge(){let pc=Math.min(s.custom,CUSTOM_TIME)/CUSTOM_TIME*100;$('customFill').style.width=pc+'%';$('customGauge').classList.toggle('ready',s.customReady&&!s.defeated);$('customGauge').setAttribute('aria-disabled',s.defeated||!s.customReady?'true':'false')}
@@ -129,11 +144,11 @@ joy.onpointerdown=e=>{if(editMode||s.defeated||s.paused)return;jid=e.pointerId;a
 function requestCustomOpen(e){if($('customModal').classList.contains('open'))return;if(s.defeated||!s.customReady||s.paused||editMode)return;e?.preventDefault?.();e?.stopPropagation?.();openCustom(false)}
 $('customGauge').addEventListener('pointerdown',requestCustomOpen);$('customGauge').addEventListener('click',requestCustomOpen);
 function openSettingsMenu(){if(editMode)return;menuOpen=true;joyReset();clearCharge();s.paused=true;$('settingsModal').classList.add('open')}
-function closeSettingsMenu(resume=true){menuOpen=false;$('settingsModal').classList.remove('open');if(customHiddenForSettings){$('customModal').classList.add('open');customHiddenForSettings=false;s.paused=true;updateFooterChips();return}if(resume&&!editMode&&!$('customModal').classList.contains('open'))s.paused=false}
+function closeSettingsMenu(resume=true){menuOpen=false;$('settingsModal').classList.remove('open');if(customHiddenForSettings){$('customModal').classList.add('open');syncCustomScreenClass();customHiddenForSettings=false;s.paused=true;updateFooterChips();return}if(resume&&!editMode&&!$('customModal').classList.contains('open'))s.paused=false}
 $('gear').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();openSettingsMenu()});$('closeSettings').onclick=()=>closeSettingsMenu(true);$('settingsModal').addEventListener('pointerdown',e=>{if(e.target===$('settingsModal'))closeSettingsMenu(true)});
 function selectTarget(key){if(selectedKey)elements[selectedKey].classList.remove('editTarget');selectedKey=key;elements[key].classList.add('editTarget');$('selectedName').textContent=names[key];$('opacitySlider').value=Math.round(controlSettings[key].opacity*100);$('opacityValue').textContent=$('opacitySlider').value+'%';$('opacityFloat').classList.add('show');updateSelectionLabel()}
 function updateSelectionLabel(){if(!editMode||!selectedKey){$('selectionLabel').classList.remove('show');return}const r=elements[selectedKey].getBoundingClientRect(),b=battle.getBoundingClientRect();$('selectionLabel').textContent=names[selectedKey];$('selectionLabel').style.left=clamp(r.left-b.left,4,b.width-90)+'px';$('selectionLabel').style.top=clamp(r.top-b.top-28,4,b.height-24)+'px';$('selectionLabel').classList.add('show')}
-function startEdit(){const returnToCustom=$('customModal').classList.contains('open');if(returnToCustom)$('customModal').classList.remove('open');menuOpen=false;$('settingsModal').classList.remove('open');customHiddenForSettings=returnToCustom;editMode=true;s.paused=true;battle.classList.add('editMode');$('editShade').hidden=false;$('editTopBar').classList.add('open');selectTarget(selectedKey||'left');joyReset()}
+function startEdit(){const returnToCustom=$('customModal').classList.contains('open');if(returnToCustom){$('customModal').classList.remove('open');syncCustomScreenClass()}menuOpen=false;$('settingsModal').classList.remove('open');customHiddenForSettings=returnToCustom;editMode=true;s.paused=true;battle.classList.add('editMode');$('editShade').hidden=false;$('editTopBar').classList.add('open');selectTarget(selectedKey||'left');joyReset()}
 function endEdit(){editMode=false;battle.classList.remove('editMode');$('editShade').hidden=true;$('editTopBar').classList.remove('open');$('opacityFloat').classList.remove('show');$('selectionLabel').classList.remove('show');if(selectedKey)elements[selectedKey].classList.remove('editTarget');editPointers.clear();gesture=null;globalPinchPointers.clear();globalPinch=null;saveSettings();openSettingsMenu()}
 $('controllerSettingsItem').onclick=startEdit;$('doneSettings').onclick=endEdit;$('resetSettings').onclick=()=>{controlSettings=cloneDefaults();applyControls();if(selectedKey)selectTarget(selectedKey);saveSettings()};$('opacitySlider').addEventListener('input',()=>{if(!selectedKey)return;controlSettings[selectedKey].opacity=Number($('opacitySlider').value)/100;$('opacityValue').textContent=$('opacitySlider').value+'%';applyControls();saveSettings()});
 function pointerDistance(){const arr=[...editPointers.values()];if(arr.length<2)return 0;return Math.hypot(arr[0].x-arr[1].x,arr[0].y-arr[1].y)}
