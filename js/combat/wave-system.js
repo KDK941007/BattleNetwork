@@ -1,7 +1,7 @@
 (()=>{
-  const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle');
+  const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle'),shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/battle-reward-system.js?v=10','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
+  const MODULES=['./js/combat/battle-reward-system.js?v=11','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
@@ -50,9 +50,42 @@
   settingsWaveInfo.style.cssText='min-height:48px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #315d70;border-radius:8px;background:#0b2a38;color:#eafaff;font-weight:900;';
   settingsWaveInfo.innerHTML='<span>WAVE</span><strong id="settingsWaveValue">1 / 3</strong>';
   settingsList?.prepend(settingsWaveInfo);
-  let state={waveNumber:0,pendingWaveNumber:1,status:'WAITING_CUSTOM',enemyIds:[],prepared:false},transitionToken=0;
+
+  const missionAbortButton=document.createElement('button');
+  missionAbortButton.id='missionAbortButton';
+  missionAbortButton.className='settingsItem missionAbortButton';
+  missionAbortButton.type='button';
+  missionAbortButton.innerHTML='ミッション中断<small>現在のミッションを終了</small>';
+  settingsList?.appendChild(missionAbortButton);
+
+  const missionAbortModal=document.createElement('div');
+  missionAbortModal.id='missionAbortModal';
+  missionAbortModal.className='missionAbortModal';
+  missionAbortModal.hidden=true;
+  missionAbortModal.innerHTML='<div class="missionAbortDialog" role="dialog" aria-modal="true" aria-labelledby="missionAbortTitle"><div class="missionAbortEyebrow">SYSTEM CONTROL</div><div class="missionAbortTitle" id="missionAbortTitle">MISSION ABORT</div><div class="missionAbortMessage" id="missionAbortMessage"></div><div class="missionAbortActions"><button type="button" id="missionAbortCancel">キャンセル</button><button type="button" id="missionAbortConfirm">中断する</button></div></div>';
+  shell.appendChild(missionAbortModal);
+
+  const missionSelectOverlay=document.createElement('div');
+  missionSelectOverlay.id='missionSelectOverlay';
+  missionSelectOverlay.className='missionSelectOverlay';
+  missionSelectOverlay.innerHTML='<div class="missionSelectPanel"><div class="missionSelectEyebrow">BATTLE NETWORK // MISSION ACCESS</div><div class="missionSelectTitle">MISSION SELECT</div><div class="missionSelectGrid"><button type="button" class="missionSelectCard" id="missionSelectMission1"><span class="missionSelectNo">MISSION 01</span><strong>ネットバトル演習</strong><span class="missionSelectMeta">3 WAVES</span><span class="missionSelectStart">START &gt;&gt;</span></button></div><div class="missionSelectStatus" id="missionSelectStatus">LOADING MISSION DATA...</div></div>';
+  shell.appendChild(missionSelectOverlay);
+  const missionSelectButton=missionSelectOverlay.querySelector('#missionSelectMission1');
+  const missionSelectStatus=missionSelectOverlay.querySelector('#missionSelectStatus');
+  missionSelectButton.disabled=true;
+
+  const missionClearOverlay=document.createElement('div');
+  missionClearOverlay.id='missionClearOverlay';
+  missionClearOverlay.className='missionClearOverlay';
+  missionClearOverlay.hidden=true;
+  missionClearOverlay.setAttribute('aria-live','polite');
+  missionClearOverlay.innerHTML='<div class="missionClearPanel"><div class="missionClearEyebrow">NETWORK OPERATION COMPLETE</div><div class="missionClearTitle">MISSION CLEAR</div><div class="missionClearRule"><span></span><b>BATTLE REWARD</b><span></span></div><div class="missionClearRewardList" id="missionClearRewardList"></div><div class="missionClearStatus" id="missionClearStatus"></div><button type="button" class="missionClearReturn" id="missionClearReturn">ミッション選択へ</button></div>';
+  shell.appendChild(missionClearOverlay);
+
+  let state={waveNumber:0,pendingWaveNumber:null,status:'MISSION_SELECT',enemyIds:[],prepared:false},transitionToken=0;
   let lastActiveCount=0,multiDeleteBatchCount=0,maxMultiDeleteCount=0,multiDeleteResetTimer=null;
   let carryFullSynchroAcrossWave=false,waveClearPending=false,pendingWaveRewardResult=null,deleteFxObserver=null;
+  let missionRewardResults=[],missionClearLocked=false,missionModulesReady=false;
   function clearMultiDeleteResetTimer(){if(multiDeleteResetTimer!==null){clearTimeout(multiDeleteResetTimer);multiDeleteResetTimer=null}}
   function resetMultiDeleteTracking(active=0){clearMultiDeleteResetTimer();lastActiveCount=Math.max(0,Math.trunc(Number(active)||0));multiDeleteBatchCount=0;maxMultiDeleteCount=0}
   function clearDeleteFxObserver(){if(deleteFxObserver){deleteFxObserver.disconnect();deleteFxObserver=null}}
@@ -83,16 +116,23 @@
     lastActiveCount=active;
   }
   function multiDeleteBonus(count){const value=Math.max(0,Math.trunc(Number(count)||0));return value>=3?4:value===2?2:0}
-  function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,missionWaveCount:TEST_CONFIG.missionWaveCount,missionComplete:state.status==='MISSION_CLEAR',enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
+  function getSnapshot(){const e=ENEMY.getBattleState();return Object.freeze({waveNumber:state.waveNumber,pendingWaveNumber:state.pendingWaveNumber,status:state.status,missionWaveCount:TEST_CONFIG.missionWaveCount,missionComplete:state.status==='MISSION_CLEAR',pendingRewardCount:missionRewardResults.filter(result=>result?.reward).length+(pendingWaveRewardResult?.reward?1:0),enemyIds:Object.freeze(state.enemyIds.slice()),total:e.total,active:e.active,defeated:e.defeated,allDefeated:e.allDefeated})}
   function displayedWaveNumber(){if((state.status==='STARTING'||state.status==='START_GAP'||state.status==='WAITING_CUSTOM')&&Number.isFinite(state.pendingWaveNumber))return state.pendingWaveNumber;if(state.waveNumber>0)return state.waveNumber;return Number.isFinite(state.pendingWaveNumber)?state.pendingWaveNumber:1}
-  function updateSettingsWave(){const value=document.getElementById('settingsWaveValue');if(value)value.textContent=`${displayedWaveNumber()} / ${TEST_CONFIG.missionWaveCount}`}
+  function updateSettingsWave(){
+    const value=document.getElementById('settingsWaveValue');
+    if(value)value.textContent=`${displayedWaveNumber()} / ${TEST_CONFIG.missionWaveCount}`;
+    const unavailable=state.status==='MISSION_SELECT'||state.status==='MISSION_CLEAR'||missionClearLocked;
+    missionAbortButton.hidden=state.status==='MISSION_SELECT';
+    missionAbortButton.disabled=unavailable;
+  }
   function render(){
     notice.dataset.status=state.status;
     notice.hidden=false;
+    missionSelectOverlay.hidden=state.status!=='MISSION_SELECT';
+    missionClearOverlay.hidden=state.status!=='MISSION_CLEAR';
     updateSettingsWave();
-    if(state.status==='MISSION_CLEAR'){notice.textContent='MISSION CLEAR';return}
+    if(state.status==='MISSION_CLEAR'||state.status==='MISSION_SELECT'){notice.textContent='';notice.hidden=true;return}
     if(state.status==='CLEARING'){notice.textContent='WAVE CLEAR';return}
-    if(state.status==='REWARD'){notice.textContent='GET DATA';return}
     if(state.status==='STARTING'){notice.textContent=`WAVE ${state.pendingWaveNumber} START`;return}
     notice.textContent='';notice.hidden=true;
   }
@@ -101,6 +141,109 @@
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function getEvil(){return window.BattleNetworkEvil||null}
   function getReward(){return window.BattleNetworkBattleReward||null}
+  function pendingMissionRewardCount(){return missionRewardResults.filter(result=>result?.reward).length+(pendingWaveRewardResult?.reward?1:0)}
+  function setMissionSelectStatus(message){if(missionSelectStatus)missionSelectStatus.textContent=message||''}
+  function closeSettingsIfOpen(){
+    const settings=document.getElementById('settingsModal');
+    if(settings?.classList.contains('open'))document.getElementById('closeSettings')?.click();
+  }
+  function renderMissionClear(summary){
+    const list=document.getElementById('missionClearRewardList');
+    const status=document.getElementById('missionClearStatus');
+    if(list){
+      list.replaceChildren();
+      const rows=Array.isArray(summary?.displayRewards)?summary.displayRewards:[];
+      if(!rows.length){
+        const empty=document.createElement('div');
+        empty.className='missionClearRewardEmpty';
+        empty.textContent='ITEM DATA : NONE';
+        list.appendChild(empty);
+      }else{
+        rows.forEach(entry=>{
+          const row=document.createElement('div');
+          row.className='missionClearRewardRow';
+          const waveTag=document.createElement('span');
+          waveTag.className='missionClearRewardWave';
+          waveTag.textContent=`WAVE ${String(entry.waveNumber||0).padStart(2,'0')}`;
+          const icon=document.createElement('span');
+          icon.className='missionClearRewardIcon';
+          if(entry.imageSrc){
+            const image=document.createElement('img');
+            image.src=entry.imageSrc;
+            image.alt=entry.imageAlt||'';
+            image.draggable=false;
+            icon.appendChild(image);
+          }
+          const name=document.createElement('strong');
+          name.className='missionClearRewardName';
+          name.textContent=entry.name||'---';
+          const code=document.createElement('span');
+          code.className='missionClearRewardCode';
+          code.textContent=entry.code||'';
+          row.append(waveTag,icon,name,code);
+          list.appendChild(row);
+        });
+      }
+    }
+    if(status)status.textContent=(summary?.failureCount||0)>0?'一部のバトル報酬を保存できませんでした':'';
+  }
+  function closeMissionAbortDialog(){missionAbortModal.hidden=true}
+  function openMissionAbortDialog(){
+    if(state.status==='MISSION_SELECT'||state.status==='MISSION_CLEAR'||missionClearLocked)return;
+    const message=document.getElementById('missionAbortMessage');
+    const hasRewards=pendingMissionRewardCount()>0;
+    if(message)message.textContent=hasRewards?'ミッションを中断しますか？\n未受取のバトル報酬があります。中断すると、これらの報酬は手に入りません。':'ミッションを中断しますか？';
+    missionAbortModal.hidden=false;
+    document.getElementById('missionAbortCancel')?.focus({preventScroll:true});
+  }
+  function returnToMissionSelect(){
+    transitionToken++;
+    resetWaveClearWait();
+    closeMissionAbortDialog();
+    closeSettingsIfOpen();
+    showBattlefield();
+    AI.pause('WAVE_TRANSITION');
+    getPlayer()?.pauseForWaveTransition?.();
+    AI.clearAssignments();
+    ENEMY.clearAll();
+    FIELD.resetTerrain?.();
+    resetMultiDeleteTracking(0);
+    carryFullSynchroAcrossWave=false;
+    missionRewardResults=[];
+    missionClearLocked=false;
+    state={waveNumber:0,pendingWaveNumber:null,status:'MISSION_SELECT',enemyIds:[],prepared:false};
+    setMissionSelectStatus(missionModulesReady?'MISSION 01 READY':'LOADING MISSION DATA...');
+    render();
+    return emit()
+  }
+  function abortMission(){returnToMissionSelect()}
+  async function startMission1(){
+    if(state.status!=='MISSION_SELECT'||!missionModulesReady)return getSnapshot();
+    missionSelectButton.disabled=true;
+    setMissionSelectStatus('CONNECTING...');
+    missionRewardResults=[];
+    missionClearLocked=false;
+    carryFullSynchroAcrossWave=false;
+    state={waveNumber:0,pendingWaveNumber:1,status:'STARTING',enemyIds:[],prepared:false};
+    render();emit();
+    try{
+      await enemy1Ready;
+      return prepareNextWaveIntro(1)
+    }catch(error){
+      console.error('BattleNetworkWave: mission start failed.',error);
+      state={waveNumber:0,pendingWaveNumber:null,status:'MISSION_SELECT',enemyIds:[],prepared:false};
+      missionSelectButton.disabled=false;
+      setMissionSelectStatus('MISSION DATA LOAD FAILED');
+      render();
+      return emit()
+    }
+  }
+  missionAbortButton.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openMissionAbortDialog()});
+  document.getElementById('missionAbortCancel')?.addEventListener('click',closeMissionAbortDialog);
+  document.getElementById('missionAbortConfirm')?.addEventListener('click',abortMission);
+  missionAbortModal.addEventListener('pointerdown',event=>{if(event.target===missionAbortModal)closeMissionAbortDialog()});
+  missionSelectButton.addEventListener('click',()=>{void startMission1()});
+  document.getElementById('missionClearReturn')?.addEventListener('click',returnToMissionSelect);
   function isFullSynchroActive(){return window.BattleNetworkFullSynchro?.isActive?.()===true}
   function restoreFullSynchroCarry(){
     if(!carryFullSynchroAcrossWave||getEvil()?.isActive?.()===true)return false;
@@ -183,24 +326,38 @@
     });
     return getSnapshot()
   }
-  async function openWaveReward(rewardResult){
+  async function completeMissionClear(){
     if(state.status!=='CLEARING')return getSnapshot();
-    const completedWave=state.waveNumber;
-    const finalWave=completedWave>=TEST_CONFIG.missionWaveCount;
-    if(!finalWave&&isFullSynchroActive())carryFullSynchroAcrossWave=true;
-    showBattlefield();
-    state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'REWARD'};render();emit();
-    await getReward()?.show?.(rewardResult,{isFinal:finalWave});
-    if(state.status!=='REWARD'||state.waveNumber!==completedWave)return getSnapshot();
-    if(finalWave){state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR',prepared:false};render();return emit()}
-    return prepareNextWaveIntro(completedWave+1)
+    missionClearLocked=true;
+    updateSettingsWave();
+    const completedRewards=missionRewardResults.slice();
+    let summary=Object.freeze({ok:false,appliedCount:0,failureCount:completedRewards.filter(result=>result?.reward).length,displayRewards:Object.freeze([])});
+    try{
+      summary=await getReward()?.commitMission?.(completedRewards)||summary;
+    }catch(error){
+      console.error('BattleNetworkWave: failed to commit mission rewards.',error);
+    }
+    if(state.status!=='CLEARING')return getSnapshot();
+    missionRewardResults=[];
+    state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR',prepared:false};
+    renderMissionClear(summary);
+    render();
+    return emit()
   }
   function completeWaveClear(){
     if(state.status!=='ACTIVE'||!waveClearPending)return;
     const rewardResult=pendingWaveRewardResult;
+    const completedWave=state.waveNumber;
     clearDeleteFxObserver();waveClearPending=false;pendingWaveRewardResult=null;
-    const finalWave=state.waveNumber>=TEST_CONFIG.missionWaveCount;
-    state={...state,pendingWaveNumber:finalWave?null:state.waveNumber+1,status:'CLEARING',prepared:false};render();emit();scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveReward(rewardResult)})
+    if(rewardResult)missionRewardResults.push(rewardResult);
+    const finalWave=completedWave>=TEST_CONFIG.missionWaveCount;
+    if(finalWave)missionClearLocked=true;
+    state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'CLEARING',prepared:false};
+    render();emit();
+    scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{
+      if(finalWave){void completeMissionClear();return}
+      prepareNextWaveIntro(completedWave+1)
+    })
   }
   function onEnemyState(e){
     noteEnemyCountForMultiDelete(e);
@@ -221,11 +378,15 @@
     if(state.prepared){return activateWave(n,state.enemyIds.slice(),{initializeSystems:false})}
     AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);state={waveNumber:state.waveNumber,pendingWaveNumber:n,status:'STARTING',enemyIds:[],prepared:false};render();emit();scheduleTransition(TEST_CONFIG.startNoticeMs,()=>{if(state.status!=='STARTING'||state.pendingWaveNumber!==n)return;enemy1Ready.then(()=>spawnWave(n)).catch(()=>{state={...state,status:'WAITING_CUSTOM'};render();emit()})});return getSnapshot()
   }
-  window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave});
-  AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);showBattlefield();render();
+  window.BattleNetworkWave=Object.freeze({TEST_CONFIG,getSnapshot,subscribe,startTestWave:startNextWave,startNextWave,onCustomConfirmed:startNextWave,returnToMissionSelect,startMission1});
+  AI.pause('WAVE_TRANSITION');ENEMY.subscribe(onEnemyState);showBattlefield();getPlayer()?.pauseForWaveTransition?.();render();
   enemy1Ready.then(()=>{
-    if(state.waveNumber===0&&state.status==='WAITING_CUSTOM'&&state.pendingWaveNumber===1)prepareNextWaveIntro(1)
+    missionModulesReady=true;
+    missionSelectButton.disabled=state.status!=='MISSION_SELECT';
+    if(state.status==='MISSION_SELECT')setMissionSelectStatus('MISSION 01 READY')
   }).catch(()=>{
-    if(state.waveNumber===0&&state.status==='WAITING_CUSTOM')getPlayer()?.openNextWaveCustom?.()
+    missionModulesReady=false;
+    missionSelectButton.disabled=true;
+    setMissionSelectStatus('MISSION DATA LOAD FAILED')
   });
 })();
