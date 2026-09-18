@@ -347,7 +347,7 @@
     }catch(error){
       console.error('BattleNetworkWave: failed to commit mission rewards.',error);
     }
-    if(state.status!=='CLEARING')return getSnapshot();
+    if(state.status!=='CLEARING'&&state.status!=='REWARD')return getSnapshot();
     missionRewardResults=[];
     state={...state,pendingWaveNumber:null,status:'MISSION_CLEAR',prepared:false};
     renderMissionClear(summary);
