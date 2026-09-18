@@ -260,6 +260,39 @@
     return null;
   }
 
+  async function commitMission(results){
+    const missionResults=Array.isArray(results)?results.filter(result=>result?.reward):[];
+    const displayRewards=[];
+    let appliedCount=0;
+    let failureCount=0;
+    for(const result of missionResults){
+      const applied=await applyReward(result);
+      if(applied?.ok!==true){
+        failureCount++;
+        continue;
+      }
+      appliedCount++;
+      const reward=result.reward;
+      if(reward.type==='HP')continue;
+      const parts=rewardDisplayParts(reward);
+      const image=rewardImageInfo(reward);
+      displayRewards.push(Object.freeze({
+        waveNumber:Math.max(0,Math.trunc(Number(result.waveNumber)||0)),
+        type:reward.type,
+        name:parts.name,
+        code:parts.code,
+        imageSrc:image?.src||'',
+        imageAlt:image?.alt||''
+      }));
+    }
+    return Object.freeze({
+      ok:failureCount===0,
+      appliedCount,
+      failureCount,
+      displayRewards:Object.freeze(displayRewards)
+    });
+  }
+
   function setRewardTextVisible(modal,visible){
     const opacity=visible?'1':'0';
     const name=modal.querySelector('#battleRewardGetName');
@@ -615,6 +648,7 @@
     finishWave,
     show,
     applyReward,
+    commitMission,
     getTrackingSnapshot,
     multiDeletePoints
   });
