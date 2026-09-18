@@ -212,6 +212,7 @@
     missionRewardResults=[];
     missionClearLocked=false;
     state={waveNumber:0,pendingWaveNumber:null,status:'MISSION_SELECT',enemyIds:[],prepared:false};
+    missionSelectButton.disabled=!missionModulesReady;
     setMissionSelectStatus(missionModulesReady?'MISSION 01 READY':'LOADING MISSION DATA...');
     render();
     return emit()
