@@ -377,10 +377,13 @@ v104の `PROTOTYPE_OSCILLATE_MOVEMENT`、v105の `PROTOTYPE_TARGET_AREA`、従�
     - ChatGPTの外部連携候補として、2D画像からglTFモデルを生成できる`to3D`が利用可能であることを確認済み。
     - 使用する場合も下地生成専用とし、生成結果をそのまま正式モデルにはしない。
     - ネクシア三面図との差分をBlenderで修正し、三面図をSource of Truthとする。
-  - 現在のChatGPT実行環境ではBlender CLI / `bpy`は利用できないことを確認済み。
-    - そのため`.blend`の直接編集・レンダリングはBlenderを実行可能な環境が必要。
+  - ChatGPT側の実行環境ではBlender CLI / `bpy`は利用できないことを確認済み。
+    - そのため`.blend`の直接編集・レンダリングはBlenderを実行可能な別環境が必要。
     - GitHub側のゲームコードへ未検証3D処理を先行追加しない。
-  - Phase 2開始前に、Blender実行環境を確保するか、`to3D`等で初期`.glb`を生成してBlenderへ取り込む経路を確定する。
+  - 2026-09-18、ユーザーのWindows 11環境へBlender CLI / `bpy`をインストール済みとの申告あり。
+    - Blenderの具体バージョンとCLI / `bpy`の実行確認は未実施。
+    - 以降、必要なBlender Pythonスクリプトはリポジトリ側で管理し、ユーザーPCのBlender CLIで実行する経路を基本候補とする。
+  - Phase 2開始前に、ユーザーPC上でBlender CLI / `bpy`の実行確認を行う。
 
 #### Phase 2: ネクシア3Dモデル
 
