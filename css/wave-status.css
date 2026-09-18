@@ -377,6 +377,10 @@
 .missionAbortModal{z-index:220;background:rgba(0,6,14,.86)}
 .missionAbortDialog{
   width:min(470px,84vw);
+  max-height:calc(100% - 8px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
   padding:15px 18px 16px;
   border:2px solid #ff7f89;
   background:linear-gradient(180deg,#24131b,#100c15);
@@ -386,6 +390,14 @@
 .missionAbortEyebrow{color:#ff9da4;font-size:9px;font-weight:900;letter-spacing:.2em;text-align:center}
 .missionAbortTitle{margin:3px 0 11px;color:#fff1f2;font-family:Orbitron,var(--bn-ui-font),system-ui,sans-serif;font-size:24px;font-weight:1000;letter-spacing:.08em;text-align:center;text-shadow:0 0 10px rgba(255,111,126,.55)}
 .missionAbortMessage{min-height:50px;padding:10px 12px;border:1px solid rgba(255,130,141,.35);background:rgba(60,18,28,.4);color:#ffeef0;font-size:12px;font-weight:800;line-height:1.55;white-space:pre-line}
+.missionAbortRewardHead{margin:10px 0 5px;color:#8feeff;font-family:Orbitron,var(--bn-ui-font),system-ui,sans-serif;font-size:9px;font-weight:900;letter-spacing:.14em}
+.missionAbortRewardList{display:grid;gap:4px;max-height:138px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.missionAbortRewardList .missionClearRewardRow{min-height:42px;grid-template-columns:60px 38px minmax(0,1fr) 30px;padding:3px 7px}
+.missionAbortRewardList .missionClearRewardIcon{width:34px;height:34px}
+.missionAbortRewardList .missionClearRewardName{font-size:12px}
+.missionAbortRewardList .missionClearRewardCode{font-size:13px}
+.missionAbortRewardList .missionClearRewardEmpty{min-height:44px;font-size:9px}
+.missionAbortRewardNote{margin-top:4px;color:#9bb8c2;font-size:8px;font-weight:700;text-align:right}
 .missionAbortActions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
 .missionAbortActions button{min-height:38px;border-radius:7px;font-weight:900}
 .missionAbortActions #missionAbortCancel{border:1px solid #477d8d;background:#123340;color:#e8fbff}
@@ -413,6 +425,13 @@
   .missionAbortDialog{padding:11px 14px}
   .missionAbortTitle{margin-bottom:7px;font-size:20px}
   .missionAbortMessage{min-height:42px;padding:7px 9px;font-size:10px}
+  .missionAbortRewardHead{margin-top:6px;font-size:8px}
+  .missionAbortRewardList{max-height:86px}
+  .missionAbortRewardList .missionClearRewardRow{min-height:34px;grid-template-columns:54px 30px minmax(0,1fr) 26px;padding:2px 6px}
+  .missionAbortRewardList .missionClearRewardIcon{width:28px;height:28px}
+  .missionAbortRewardList .missionClearRewardName{font-size:10px}
+  .missionAbortRewardList .missionClearRewardCode{font-size:11px}
+  .missionAbortRewardNote{font-size:7px}
   .missionAbortActions{margin-top:7px}
   .missionAbortActions button{min-height:34px}
 }

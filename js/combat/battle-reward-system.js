@@ -260,6 +260,30 @@
     return null;
   }
 
+  function missionDisplayReward(result){
+    const reward=result?.reward;
+    if(!reward||reward.type==='HP')return null;
+    const parts=rewardDisplayParts(reward);
+    const image=rewardImageInfo(reward);
+    return Object.freeze({
+      waveNumber:Math.max(0,Math.trunc(Number(result.waveNumber)||0)),
+      type:reward.type,
+      name:parts.name,
+      code:parts.code,
+      imageSrc:image?.src||'',
+      imageAlt:image?.alt||''
+    });
+  }
+
+  function summarizeMission(results){
+    const missionResults=Array.isArray(results)?results.filter(result=>result?.reward):[];
+    const displayRewards=missionResults.map(missionDisplayReward).filter(Boolean);
+    return Object.freeze({
+      rewardCount:missionResults.length,
+      displayRewards:Object.freeze(displayRewards)
+    });
+  }
+
   async function commitMission(results){
     const missionResults=Array.isArray(results)?results.filter(result=>result?.reward):[];
     const displayRewards=[];
@@ -272,18 +296,8 @@
         continue;
       }
       appliedCount++;
-      const reward=result.reward;
-      if(reward.type==='HP')continue;
-      const parts=rewardDisplayParts(reward);
-      const image=rewardImageInfo(reward);
-      displayRewards.push(Object.freeze({
-        waveNumber:Math.max(0,Math.trunc(Number(result.waveNumber)||0)),
-        type:reward.type,
-        name:parts.name,
-        code:parts.code,
-        imageSrc:image?.src||'',
-        imageAlt:image?.alt||''
-      }));
+      const displayReward=missionDisplayReward(result);
+      if(displayReward)displayRewards.push(displayReward);
     }
     return Object.freeze({
       ok:failureCount===0,
@@ -648,6 +662,7 @@
     finishWave,
     show,
     applyReward,
+    summarizeMission,
     commitMission,
     getTrackingSnapshot,
     multiDeletePoints

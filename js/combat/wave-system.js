@@ -1,7 +1,7 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle'),shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/battle-reward-system.js?v=11','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
+  const MODULES=['./js/combat/battle-reward-system.js?v=12','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
@@ -62,7 +62,7 @@
   missionAbortModal.id='missionAbortModal';
   missionAbortModal.className='missionAbortModal';
   missionAbortModal.hidden=true;
-  missionAbortModal.innerHTML='<div class="missionAbortDialog" role="dialog" aria-modal="true" aria-labelledby="missionAbortTitle"><div class="missionAbortEyebrow">SYSTEM CONTROL</div><div class="missionAbortTitle" id="missionAbortTitle">MISSION ABORT</div><div class="missionAbortMessage" id="missionAbortMessage"></div><div class="missionAbortActions"><button type="button" id="missionAbortCancel">キャンセル</button><button type="button" id="missionAbortConfirm">中断する</button></div></div>';
+  missionAbortModal.innerHTML='<div class="missionAbortDialog" role="dialog" aria-modal="true" aria-labelledby="missionAbortTitle"><div class="missionAbortEyebrow">SYSTEM CONTROL</div><div class="missionAbortTitle" id="missionAbortTitle">MISSION ABORT</div><div class="missionAbortMessage" id="missionAbortMessage"></div><div class="missionAbortRewardHead">CURRENT BATTLE REWARD</div><div class="missionAbortRewardList" id="missionAbortRewardList"></div><div class="missionAbortRewardNote">※HP回復は一覧表示対象外</div><div class="missionAbortActions"><button type="button" id="missionAbortCancel">キャンセル</button><button type="button" id="missionAbortConfirm">中断する</button></div></div>';
   shell.appendChild(missionAbortModal);
 
   const missionSelectOverlay=document.createElement('div');
@@ -141,58 +141,67 @@
   function getPlayer(){return window.BattleNetworkPlayer||null}
   function getEvil(){return window.BattleNetworkEvil||null}
   function getReward(){return window.BattleNetworkBattleReward||null}
-  function pendingMissionRewardCount(){return missionRewardResults.filter(result=>result?.reward).length+(pendingWaveRewardResult?.reward?1:0)}
+  function currentMissionRewardResults(){
+    const results=missionRewardResults.slice();
+    if(pendingWaveRewardResult?.reward&&!results.includes(pendingWaveRewardResult))results.push(pendingWaveRewardResult);
+    return results
+  }
+  function pendingMissionRewardCount(){return currentMissionRewardResults().filter(result=>result?.reward).length}
   function setMissionSelectStatus(message){if(missionSelectStatus)missionSelectStatus.textContent=message||''}
   function closeSettingsIfOpen(){
     const settings=document.getElementById('settingsModal');
     if(settings?.classList.contains('open'))document.getElementById('closeSettings')?.click();
   }
-  function renderMissionClear(summary){
-    const list=document.getElementById('missionClearRewardList');
-    const status=document.getElementById('missionClearStatus');
-    if(list){
-      list.replaceChildren();
-      const rows=Array.isArray(summary?.displayRewards)?summary.displayRewards:[];
-      if(!rows.length){
-        const empty=document.createElement('div');
-        empty.className='missionClearRewardEmpty';
-        empty.textContent='ITEM DATA : NONE';
-        list.appendChild(empty);
-      }else{
-        rows.forEach(entry=>{
-          const row=document.createElement('div');
-          row.className='missionClearRewardRow';
-          const waveTag=document.createElement('span');
-          waveTag.className='missionClearRewardWave';
-          waveTag.textContent=`WAVE ${String(entry.waveNumber||0).padStart(2,'0')}`;
-          const icon=document.createElement('span');
-          icon.className='missionClearRewardIcon';
-          if(entry.imageSrc){
-            const image=document.createElement('img');
-            image.src=entry.imageSrc;
-            image.alt=entry.imageAlt||'';
-            image.draggable=false;
-            icon.appendChild(image);
-          }
-          const name=document.createElement('strong');
-          name.className='missionClearRewardName';
-          name.textContent=entry.name||'---';
-          const code=document.createElement('span');
-          code.className='missionClearRewardCode';
-          code.textContent=entry.code||'';
-          row.append(waveTag,icon,name,code);
-          list.appendChild(row);
-        });
-      }
+  function renderRewardRows(list,rows,emptyText='ITEM DATA : NONE'){
+    if(!list)return;
+    list.replaceChildren();
+    const rewards=Array.isArray(rows)?rows:[];
+    if(!rewards.length){
+      const empty=document.createElement('div');
+      empty.className='missionClearRewardEmpty';
+      empty.textContent=emptyText;
+      list.appendChild(empty);
+      return
     }
+    rewards.forEach(entry=>{
+      const row=document.createElement('div');
+      row.className='missionClearRewardRow';
+      const waveTag=document.createElement('span');
+      waveTag.className='missionClearRewardWave';
+      waveTag.textContent=`WAVE ${String(entry.waveNumber||0).padStart(2,'0')}`;
+      const icon=document.createElement('span');
+      icon.className='missionClearRewardIcon';
+      if(entry.imageSrc){
+        const image=document.createElement('img');
+        image.src=entry.imageSrc;
+        image.alt=entry.imageAlt||'';
+        image.draggable=false;
+        icon.appendChild(image);
+      }
+      const name=document.createElement('strong');
+      name.className='missionClearRewardName';
+      name.textContent=entry.name||'---';
+      const code=document.createElement('span');
+      code.className='missionClearRewardCode';
+      code.textContent=entry.code||'';
+      row.append(waveTag,icon,name,code);
+      list.appendChild(row);
+    });
+  }
+  function renderMissionClear(summary){
+    renderRewardRows(document.getElementById('missionClearRewardList'),summary?.displayRewards);
+    const status=document.getElementById('missionClearStatus');
     if(status)status.textContent=(summary?.failureCount||0)>0?'一部のバトル報酬を保存できませんでした':'';
   }
   function closeMissionAbortDialog(){missionAbortModal.hidden=true}
   function openMissionAbortDialog(){
     if(state.status==='MISSION_SELECT'||state.status==='MISSION_CLEAR'||missionClearLocked)return;
+    const currentRewards=currentMissionRewardResults();
+    const summary=getReward()?.summarizeMission?.(currentRewards)||Object.freeze({rewardCount:pendingMissionRewardCount(),displayRewards:Object.freeze([])});
+    const hasRewards=(summary.rewardCount||0)>0;
     const message=document.getElementById('missionAbortMessage');
-    const hasRewards=pendingMissionRewardCount()>0;
-    if(message)message.textContent=hasRewards?'ミッションを中断しますか？\n未受取のバトル報酬があります。中断すると、これらの報酬は手に入りません。':'ミッションを中断しますか？';
+    if(message)message.textContent=hasRewards?'ミッションを中断しますか？\n現在のバトル報酬は、中断すると手に入りません。':'ミッションを中断しますか？\n現在、未受取のバトル報酬はありません。';
+    renderRewardRows(document.getElementById('missionAbortRewardList'),summary.displayRewards,'ITEM DATA : NONE');
     missionAbortModal.hidden=false;
     document.getElementById('missionAbortCancel')?.focus({preventScroll:true});
   }
