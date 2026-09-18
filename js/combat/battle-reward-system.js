@@ -577,9 +577,9 @@
     return modal;
   }
 
-  async function show(result,{isFinal=false}={}){
+  async function show(result,{isFinal=false,apply=true}={}){
     if(!result)return false;
-    const applied=await applyReward(result);
+    const applied=apply?await applyReward(result):Object.freeze({ok:true,preview:true});
     const modal=ensureRewardModal();
     const panel=modal.querySelector('.battleRewardPanel');
     const rankRow=modal.querySelector('#battleRewardRankRow');

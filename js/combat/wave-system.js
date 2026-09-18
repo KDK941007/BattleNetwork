@@ -1,7 +1,7 @@
 (()=>{
   const FIELD=window.BattleNetworkField,ENEMY=window.BattleNetworkEnemy,AI=window.BattleNetworkEnemyAI,battle=document.getElementById('battle'),shell=battle?.closest('.shell')||document.body;
   if(!FIELD||!ENEMY||!AI||!battle)throw new Error('BattleNetworkWave: required dependency is missing.');
-  const MODULES=['./js/combat/battle-reward-system.js?v=12','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
+  const MODULES=['./js/combat/battle-reward-system.js?v=13','./js/combat/enemy-navigation.js?v=7','./js/combat/combat-defaults.js?v=143','./js/combat/enemy1-runtime.js?v=148','./js/combat/enemy1-movement.js?v=148','./js/combat/enemy1-shockwave.js?v=147','./js/ui/enemy1-pattern-test-ui.js?v=159','./js/debug/hitbox-debug-ui.js?v=4'];
   function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(`BattleNetworkWave: failed to load ${src}`));document.head.appendChild(s)})}
   const enemy1Ready=MODULES.reduce((p,src)=>p.then(()=>loadScript(src)),Promise.resolve()).catch(error=>{console.error(error);throw error});
   const TEST_CONFIG=Object.freeze({
@@ -337,7 +337,7 @@
     return getSnapshot()
   }
   async function completeMissionClear(){
-    if(state.status!=='CLEARING')return getSnapshot();
+    if(state.status!=='CLEARING'&&state.status!=='REWARD')return getSnapshot();
     missionClearLocked=true;
     updateSettingsWave();
     const completedRewards=missionRewardResults.slice();
@@ -354,6 +354,15 @@
     render();
     return emit()
   }
+  async function openWaveRewardPreview(rewardResult,completedWave,finalWave){
+    if(state.status!=='CLEARING'||state.waveNumber!==completedWave)return getSnapshot();
+    state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'REWARD',prepared:false};
+    render();emit();
+    await getReward()?.show?.(rewardResult,{isFinal:finalWave,apply:false});
+    if(state.status!=='REWARD'||state.waveNumber!==completedWave)return getSnapshot();
+    if(finalWave)return completeMissionClear();
+    return prepareNextWaveIntro(completedWave+1)
+  }
   function completeWaveClear(){
     if(state.status!=='ACTIVE'||!waveClearPending)return;
     const rewardResult=pendingWaveRewardResult;
@@ -364,10 +373,7 @@
     if(finalWave)missionClearLocked=true;
     state={...state,pendingWaveNumber:finalWave?null:completedWave+1,status:'CLEARING',prepared:false};
     render();emit();
-    scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{
-      if(finalWave){void completeMissionClear();return}
-      prepareNextWaveIntro(completedWave+1)
-    })
+    scheduleTransition(TEST_CONFIG.clearNoticeMs,()=>{void openWaveRewardPreview(rewardResult,completedWave,finalWave)})
   }
   function onEnemyState(e){
     noteEnemyCountForMultiDelete(e);

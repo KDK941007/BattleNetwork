@@ -9,7 +9,7 @@ if(!B_PROJECTILE)throw new Error('BattleNetwork: buster projectile layer is not 
 if(!ENEMY)throw new Error('BattleNetwork: enemy foundation is not loaded.');
 if(!PLAYER_HEALTH)throw new Error('BattleNetwork: player health is not loaded.');
 if(!PARAMS)throw new Error('BattleNetwork: parameter system is not loaded.');
-const WORLD=FIELD.WORLD_SIZE,PX=.72,PY=.36,SW=WORLD*PX*2,SH=WORLD*PY*2,DEAD=.12,FOLLOW=.14,CAMERA_ZOOM=.62,CUSTOM_TIME=10,LONG_PRESS_MS=520,HIT_STUN_MS=300;
+const WORLD=FIELD.WORLD_SIZE,PX=.72,PY=.36,SW=WORLD*PX*2,SH=WORLD*PY*2,DEAD=.12,FOLLOW=.14,CAMERA_ZOOM=.62,CUSTOM_TIME=10,LONG_PRESS_MS=450,LONG_PRESS_MOVE_TOLERANCE=28,HIT_STUN_MS=300;
 const PLAYER_VISUAL=Object.freeze({width:108,height:136});
 const PLAYER_HITBOX=Object.freeze({width:FIELD.TILE_SIZE*1.32,height:FIELD.TILE_SIZE*1.32,offsetX:0,offsetY:0});
 const {CHIP,ATTR_IMAGE,ATTR_LABEL}=window.BattleNetworkMaster.createGameCompatibilityData();
@@ -60,7 +60,28 @@ function updateFooterChips(){$('chipNow').textContent='チップ';$('queue').inn
 function showChipDetail(id){let c=card(id),ch=CHIP[c.type],attr=ATTR_LABEL[ch.attr]||ATTR_LABEL.normal;$('detailName').textContent=ch.name;$('detailArt').innerHTML=chipArtHtml(c.type);$('detailAttrIcon').innerHTML=attrHtml(c.type);$('detailAttr').textContent=attr;$('detailDesc').textContent=ch.detail;$('detailPower').textContent=ch.type==='recover'?`回復量：${ch.heal}`:`攻撃力：${ch.power}`;$('detailRangeText').textContent=ch.rangeText;$('detailRange').className='rangeViz '+ch.viz;$('chipDetailModal').classList.add('open');$('chipDetailModal').querySelector('.chipDetail').scrollTop=0}
 function closeChipDetail(){$('chipDetailModal').classList.remove('open')}
 $('detailClose').onclick=closeChipDetail;$('chipDetailModal').addEventListener('pointerdown',e=>{if(e.target===$('chipDetailModal'))closeChipDetail()});
-function bindChipCard(b,id,ok){let timer=null,startX=0,startY=0,longPressed=false;const clear=()=>{if(timer){clearTimeout(timer);timer=null}};b.addEventListener('pointerdown',e=>{startX=e.clientX;startY=e.clientY;longPressed=false;clear();timer=setTimeout(()=>{timer=null;longPressed=true;showChipDetail(id)},LONG_PRESS_MS)});b.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-startX,e.clientY-startY)>12)clear()});b.addEventListener('pointerup',clear);b.addEventListener('pointercancel',clear);b.addEventListener('lostpointercapture',clear);b.addEventListener('click',e=>{if(longPressed){longPressed=false;e.preventDefault();e.stopPropagation();return}if(!ok)return;let i=s.selected.indexOf(id);if(i>=0){s.selected.splice(i,1);while(i<s.selected.length&&ATTACK10.isModifierCard(card(s.selected[i])))s.selected.splice(i,1)}else s.selected.push(id);renderCustom()})}
+function bindChipCard(b,id,ok){
+  let timer=null,startX=0,startY=0,longPressed=false;
+  const clear=()=>{if(timer){clearTimeout(timer);timer=null}};
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    startX=e.clientX;startY=e.clientY;longPressed=false;clear();
+    timer=setTimeout(()=>{timer=null;longPressed=true;showChipDetail(id)},LONG_PRESS_MS)
+  });
+  b.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-startX,e.clientY-startY)>LONG_PRESS_MOVE_TOLERANCE)clear()});
+  b.addEventListener('pointerup',clear);
+  b.addEventListener('pointercancel',clear);
+  b.addEventListener('lostpointercapture',clear);
+  b.addEventListener('click',e=>{
+    if(longPressed){longPressed=false;e.preventDefault();e.stopPropagation();return}
+    if(!ok)return;
+    let i=s.selected.indexOf(id);
+    if(i>=0){s.selected.splice(i,1);while(i<s.selected.length&&ATTACK10.isModifierCard(card(s.selected[i])))s.selected.splice(i,1)}
+    else s.selected.push(id);
+    renderCustom()
+  })
+}
 function renderCustom(){$('folderInfo').textContent=`フォルダ ${s.draw.length}`;$('hand').innerHTML='';for(let slot=0;slot<10;slot++){let id=s.hand[slot];if(id===undefined){let e=document.createElement('div');e.className='chipCard empty';e.innerHTML=`<span class="slotNo">${slot+1}</span><span class="chipName">---</span><span class="chipArt"></span><span class="chipMeta"><span class="chipCode">-</span><span class="chipAttr"></span><span class="chipValue">--</span></span>`;$('hand').appendChild(e);continue}let c=card(id),b=document.createElement('button'),ok=canAdd(id);b.dataset.cardId=String(id);b.className='chipCard'+(s.selected.includes(id)?' sel':'')+(!ok?' blocked':'');b.innerHTML=`<span class="slotNo">${slot+1}</span><span class="chipName">${CHIP[c.type].name}</span><span class="chipArt">${chipArtHtml(c.type)}</span><span class="chipMeta"><span class="chipCode">${c.code}</span><span class="chipAttr">${attrHtml(c.type)}</span><span class="chipValue">--</span></span>`;bindChipCard(b,id,ok);$('hand').appendChild(b)}ATTACK10.decorateCustom($('hand'),s.selected,card,CHIP);updateFooterChips()}
 $('send').onclick=()=>{if(s.selected.length){s.queue.forEach(id=>s.discard.add(id));let ss=new Set(s.selected);s.hand=s.hand.map(id=>{if(id===undefined||!ss.has(id))return id;let p=s.draw.indexOf(id);if(p>=0)s.draw.splice(p,1);return undefined});s.queue=s.selected.slice()}s.selected=[];s.custom=0;s.customReady=false;$('customModal').classList.remove('open');let waveState=window.BattleNetworkWave?.onCustomConfirmed?.();s.paused=waveState?.status==='STARTING';updateHud()};
 function setPreviewMode(mode){if(previewMode===mode)return;previewMode=mode;if(mode==='none'){RANGE_PREVIEW.hide();BOMB_PREVIEW.hide()}else if(mode==='range'){BOMB_PREVIEW.hide()}}
