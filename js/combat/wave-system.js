@@ -12,6 +12,8 @@
     clearNoticeMs:1000,
     startNoticeMs:1500,
     postStartDelayMs:500,
+    defaultPlayerStartPosition:Object.freeze({x:FIELD.WORLD_SIZE/2,y:FIELD.WORLD_SIZE/2}),
+    wavePlayerStartPositions:Object.freeze({}),
     waveSpawnTiles:Object.freeze({
       1:Object.freeze([Object.freeze({rowOffset:0,colOffset:4})]),
       2:Object.freeze([
@@ -286,6 +288,8 @@
   function spawnBaseEnemy(tile,{staticDummy=false,maxHp=null}={}){const defaults=getDefaults(),p=staticDummy?FIELD.tileToWorldCenter(Math.floor(FIELD.GRID_ROWS/2)+tile.rowOffset,Math.floor(FIELD.GRID_COLS/2)+tile.colOffset):resolveSpawnPosition(tile,defaults);if(!p)throw new Error('BattleNetworkWave: spawn tile outside field.');const hp=Number.isFinite(maxHp)&&maxHp>0?maxHp:defaults.maxHp;return ENEMY.spawn({x:p.x,y:p.y,health:{maxHp:hp},visual:{width:defaults.visualWidthPx,height:defaults.visualHeightPx,offsetX:defaults.visualOffsetXPx,offsetY:defaults.visualOffsetYPx},hitBox:{width:FIELD.TILE_SIZE*defaults.hitBoxWidthTiles,height:FIELD.TILE_SIZE*defaults.hitBoxHeightTiles,offsetX:FIELD.TILE_SIZE*defaults.hitBoxOffsetXTiles,offsetY:FIELD.TILE_SIZE*defaults.hitBoxOffsetYTiles},collision:{allowPlayerOverlap:defaults.allowPlayerOverlap,allowEnemyOverlap:staticDummy?true:defaults.allowEnemyOverlap}})}
   function spawnEnemy(tile,{maxHp=null}={}){const id=spawnBaseEnemy(tile,{maxHp});const m=AI.assignBehavior(id,TEST_CONFIG.movementBehaviorId);if(!m.ok)throw new Error(`BattleNetworkWave: movement assign failed: ${m.reason}`);const a=AI.assignBehavior(id,TEST_CONFIG.attackBehaviorId);if(!a.ok)throw new Error(`BattleNetworkWave: attack assign failed: ${a.reason}`);return id}
   function getWaveSpawnTiles(n){return TEST_CONFIG.waveSpawnTiles[n]||TEST_CONFIG.waveSpawnTiles[1]}
+  function getWavePlayerStartPosition(n){return TEST_CONFIG.wavePlayerStartPositions[n]||TEST_CONFIG.defaultPlayerStartPosition}
+  function resetPlayerStartPosition(n){const player=getPlayer(),position=getWavePlayerStartPosition(n);if(!player?.setWaveStartPosition?.(position.x,position.y))throw new Error(`BattleNetworkWave: player start position is unavailable for wave ${n}.`);return position}
   function getTestTarget(){return window.BattleNetworkFolder?.getTestTarget?.()||null}
   function isSpreadGunTest(){try{return window.BattleNetworkFolder?.toLegacyCards?.()?.[0]?.type==='SPREADGUN'}catch{return false}}
   function isVulcanTest(){return getTestTarget()?.enabled===true&&getTestTarget()?.type==='VULCAN1'}
@@ -309,6 +313,7 @@
   }
   function prepareWaveBattlefield(n){
     FIELD.resetTerrain?.();
+    resetPlayerStartPosition(n);
     return createWaveEnemies(n)
   }
   function activateWave(n,enemyIds,{initializeSystems=true}={}){
@@ -319,7 +324,7 @@
     if(initializeSystems){getEvil()?.onWaveStart?.();getReward()?.startWave?.(n)}
     window.BattleNetworkEnemy1Runtime?.resetWaveActions?.(ids,performance.now());render();const v=emit();getPlayer()?.resumeAfterWaveTransition?.();AI.resume('WAVE_TRANSITION');return v
   }
-  function spawnWave(n){return activateWave(n,createWaveEnemies(n),{initializeSystems:true})}
+  function spawnWave(n){return activateWave(n,prepareWaveBattlefield(n),{initializeSystems:true})}
   function prepareNextWaveIntro(n){
     showBattlefield();resetWaveClearWait();AI.pause('WAVE_TRANSITION');getPlayer()?.pauseForWaveTransition?.();AI.clearAssignments();ENEMY.clearAll();resetMultiDeleteTracking(0);
     getPlayer()?.openNextWaveCustom?.();showBattlefield();
