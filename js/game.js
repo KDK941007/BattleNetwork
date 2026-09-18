@@ -58,7 +58,24 @@ function attrHtml(type){let attr=CHIP[type].attr,src=ATTR_IMAGE[attr]||ATTR_IMAG
 function chipArtHtml(type){let src=CHIP[type].image;return src?`<img src="${src}" alt="${CHIP[type].name}" draggable="false">`:''}
 function footerIds(){return $('customModal').classList.contains('open')&&s.selected.length?s.selected:s.queue}
 function updateFooterChips(){$('chipNow').textContent='チップ';$('queue').innerHTML='';let ids=footerIds();if(!ids.length){let d=document.createElement('span');d.className='q empty';d.textContent='--';$('queue').appendChild(d);return}ATTACK10.getDisplayEntries(ids,card,CHIP).forEach(entry=>{let d=document.createElement('span');d.className='q';d.textContent=entry.label;$('queue').appendChild(d)})}
-function showChipDetail(id){let c=card(id),ch=CHIP[c.type],attr=ATTR_LABEL[ch.attr]||ATTR_LABEL.normal;$('detailName').textContent=ch.name;$('detailArt').innerHTML=chipArtHtml(c.type);$('detailAttrIcon').innerHTML=attrHtml(c.type);$('detailAttr').textContent=attr;$('detailDesc').textContent=ch.detail;$('detailPower').textContent=ch.type==='recover'?`回復量：${ch.heal}`:`攻撃力：${ch.power}`;$('detailRangeText').textContent=ch.rangeText;$('detailRange').className='rangeViz '+ch.viz;$('chipDetailModal').classList.add('open');$('chipDetailModal').querySelector('.chipDetail').scrollTop=0}
+function showChipDetail(id){
+  const c=card(id),ch=CHIP[c.type];
+  if(window.BattleNetworkChipDetail?.openByChipId?.(ch.chipId)===true)return true;
+  const attr=ATTR_LABEL[ch.attr]||ATTR_LABEL.normal;
+  const detailName=$('detailName'),detailArt=$('detailArt'),detailAttrIcon=$('detailAttrIcon'),detailAttr=$('detailAttr'),detailDesc=$('detailDesc'),detailPower=$('detailPower'),detailRangeText=$('detailRangeText'),detailRange=$('detailRange'),modal=$('chipDetailModal');
+  if(!modal)return false;
+  if(detailName)detailName.textContent=ch.name;
+  if(detailArt)detailArt.innerHTML=chipArtHtml(c.type);
+  if(detailAttrIcon)detailAttrIcon.innerHTML=attrHtml(c.type);
+  if(detailAttr)detailAttr.textContent=attr;
+  if(detailDesc)detailDesc.textContent=ch.detail;
+  if(detailPower)detailPower.textContent=ch.type==='recover'?`回復量：${ch.heal}`:`攻撃力：${ch.power}`;
+  if(detailRangeText)detailRangeText.textContent=ch.rangeText;
+  if(detailRange)detailRange.className='rangeViz '+ch.viz;
+  modal.classList.add('open');
+  modal.querySelector('.chipDetail')?.scrollTo({top:0,left:0,behavior:'auto'});
+  return true
+}
 function closeChipDetail(){$('chipDetailModal').classList.remove('open')}
 $('detailClose').onclick=closeChipDetail;$('chipDetailModal').addEventListener('pointerdown',e=>{if(e.target===$('chipDetailModal'))closeChipDetail()});
 function bindChipCard(b,id,ok){
