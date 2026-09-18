@@ -380,10 +380,11 @@ v104の `PROTOTYPE_OSCILLATE_MOVEMENT`、v105の `PROTOTYPE_TARGET_AREA`、従�
   - ChatGPT側の実行環境ではBlender CLI / `bpy`は利用できないことを確認済み。
     - そのため`.blend`の直接編集・レンダリングはBlenderを実行可能な別環境が必要。
     - GitHub側のゲームコードへ未検証3D処理を先行追加しない。
-  - 2026-09-18、ユーザーのWindows 11環境へBlender CLI / `bpy`をインストール済みとの申告あり。
-    - Blenderの具体バージョンとCLI / `bpy`の実行確認は未実施。
-    - 以降、必要なBlender Pythonスクリプトはリポジトリ側で管理し、ユーザーPCのBlender CLIで実行する経路を基本候補とする。
-  - Phase 2開始前に、ユーザーPC上でBlender CLI / `bpy`の実行確認を行う。
+  - 2026-09-18、ChatGPT上で`to3D`連携を追加済み。
+    - これはChatGPT内の外部3D変換連携であり、ユーザーPCへBlender CLI / `bpy`をインストールしたことを意味しない。
+    - `to3D`はネクシア三面図から初期3Dモデルを生成する補助手段として利用する。
+  - Blender CLI / `bpy`を使用する工程へ進む場合は、ユーザーPC側へBlenderを別途インストールして実行環境を用意する必要がある。
+  - Phase 2の初期モデル生成は、まずChatGPT上の`to3D`で進める。
 
 #### Phase 2: ネクシア3Dモデル
 
