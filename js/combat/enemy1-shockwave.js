@@ -3,6 +3,13 @@
   if(!AI||!FIELD||!ENEMY||!PLAYER||!PLAYER_DAMAGE||!LAYER||!RUNTIME)throw new Error('BattleNetworkEnemy1Shockwave: required dependency is missing.');
   const BEHAVIOR_ID='ENEMY1_GROUND_SHOCKWAVE',DAMAGE=RUNTIME.getAttackDefaults().damage;
   const TEST_STATUS_MS=Number(PLAYER.HIT_STUN_MS)||300;
+  // enemy-attack-layer renders this projectile as 28x14px with a 2px border
+  // under the same .72/.36 isometric projection. Convert that visible footprint
+  // back to world-space so a ground shockwave stops before any visible part crosses a hole.
+  const PROJECTILE_GROUND_RADIUS_WORLD=Math.max(
+    (14+2)/(Math.SQRT2*.72),
+    (7+2)/(Math.SQRT2*.36)
+  );
   const style=document.createElement('style');
   style.dataset.testOnly='enemy1-telegraph-glow';
   style.textContent=`
@@ -11,36 +18,45 @@
   `;
   document.head.appendChild(style);
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
+  function rayRectEntryDistance(origin,direction,limit,bounds,padding=0){
+    const EPS=1e-9;
+    let enter=0,exit=limit;
+    const axes=[
+      [origin.x,direction.x,bounds.left-padding,bounds.right+padding],
+      [origin.y,direction.y,bounds.top-padding,bounds.bottom+padding]
+    ];
+    for(const [o,d,min,max] of axes){
+      if(Math.abs(d)<=EPS){
+        if(o<min||o>max)return Infinity;
+        continue;
+      }
+      let a=(min-o)/d,b=(max-o)/d;
+      if(a>b){const t=a;a=b;b=t}
+      enter=Math.max(enter,a);
+      exit=Math.min(exit,b);
+      if(enter>exit)return Infinity;
+    }
+    if(exit<0||enter>limit)return Infinity;
+    return Math.max(0,enter)
+  }
   function distanceToFirstHole(origin,direction,maxTravel){
     const limit=Math.max(0,Number(maxTravel)||0);
     if(limit<=0)return Infinity;
-    const start=FIELD.worldToTile(origin.x,origin.y);
-    const startTile=FIELD.getTile(start.row,start.col);
-    if(startTile?.currentTerrain===FIELD.TERRAIN.HOLE)return 0;
-    let row=start.row,col=start.col;
-    const dx=direction.x,dy=direction.y,size=FIELD.TILE_SIZE;
-    const stepX=dx>0?1:dx<0?-1:0,stepY=dy>0?1:dy<0?-1:0;
-    let tMaxX=Infinity,tMaxY=Infinity,tDeltaX=Infinity,tDeltaY=Infinity;
-    if(stepX!==0){
-      const boundaryX=(stepX>0?col+1:col)*size;
-      tMaxX=(boundaryX-origin.x)/dx;
-      tDeltaX=size/Math.abs(dx)
-    }
-    if(stepY!==0){
-      const boundaryY=(stepY>0?row+1:row)*size;
-      tMaxY=(boundaryY-origin.y)/dy;
-      tDeltaY=size/Math.abs(dy)
-    }
-    while(true){
-      let distance;
-      if(tMaxX<tMaxY){distance=tMaxX;col+=stepX;tMaxX+=tDeltaX}
-      else if(tMaxY<tMaxX){distance=tMaxY;row+=stepY;tMaxY+=tDeltaY}
-      else{distance=tMaxX;col+=stepX;row+=stepY;tMaxX+=tDeltaX;tMaxY+=tDeltaY}
-      if(!Number.isFinite(distance)||distance>limit)return Infinity;
+    const radius=PROJECTILE_GROUND_RADIUS_WORLD,size=FIELD.TILE_SIZE;
+    const endX=origin.x+direction.x*limit,endY=origin.y+direction.y*limit;
+    const minCol=Math.max(0,Math.floor((Math.min(origin.x,endX)-radius)/size));
+    const maxCol=Math.min(FIELD.GRID_COLS-1,Math.floor((Math.max(origin.x,endX)+radius)/size));
+    const minRow=Math.max(0,Math.floor((Math.min(origin.y,endY)-radius)/size));
+    const maxRow=Math.min(FIELD.GRID_ROWS-1,Math.floor((Math.max(origin.y,endY)+radius)/size));
+    let nearest=Infinity;
+    for(let row=minRow;row<=maxRow;row++)for(let col=minCol;col<=maxCol;col++){
       const tile=FIELD.getTile(row,col);
-      if(!tile)return Infinity;
-      if(tile.currentTerrain===FIELD.TERRAIN.HOLE)return Math.max(0,distance)
+      if(tile?.currentTerrain!==FIELD.TERRAIN.HOLE)continue;
+      const bounds=FIELD.tileToWorldBounds(row,col);
+      const distance=rayRectEntryDistance(origin,direction,Math.min(limit,nearest),bounds,radius);
+      if(distance<nearest)nearest=distance;
     }
+    return nearest
   }
   function findEnemyElement(enemyId){const enemies=ENEMY.getEnemies(),index=enemies.findIndex(enemy=>enemy.id===enemyId);return index>=0?document.querySelectorAll('.enemyPrototype')[index]||null:null}
   function createController({enemyId}){
