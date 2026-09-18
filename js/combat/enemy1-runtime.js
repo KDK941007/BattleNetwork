@@ -5,12 +5,15 @@
   const attackLocks=new Set();
   const perception=new Map();
   const nextAttackAt=new Map();
+  const actionChoices=new Map();
   const debugListeners=new Set();
   const CHASE_POLICY=Object.freeze({ALWAYS_WHILE_AWARE:'ALWAYS_WHILE_AWARE',OVERLAP_COOLDOWN_CHASE:'OVERLAP_COOLDOWN_CHASE'});
   const CHASE_DISTANCE_MODE=Object.freeze({APPROACH:'APPROACH',KEEP_BAND:'KEEP_BAND'});
   const NAVIGATION_POLICY=NAV?.POLICY||Object.freeze({PATHFIND_ON_BLOCK:'PATHFIND_ON_BLOCK',DIRECT:'DIRECT'});
   const ENEMY1_DEFAULTS=Object.freeze({maxHp:40,hitBoxWidthTiles:1.32,hitBoxHeightTiles:1.32,hitBoxOffsetXTiles:0,hitBoxOffsetYTiles:0,visualWidthPx:116,visualHeightPx:140,visualOffsetXPx:0,visualOffsetYPx:-29,allowPlayerOverlap:false,allowEnemyOverlap:false});
   const ATTACK_DEFAULTS=Object.freeze({projectileSpeed:520,damage:10,attackStartRangeTiles:8,projectileMaxRangeTiles:8});
+  const ACTION=Object.freeze({ATTACK:'ATTACK',MOVE:'MOVE'});
+  const ACTION_SELECTION=Object.freeze({attackChance:.5,moveMinMs:650,moveMaxMs:1300,initialStaggerMaxMs:1500});
   const ENEMY1_OVERRIDES=Object.freeze({perceptionStartTiles:5,perceptionReleaseTiles:8,chaseRangeTiles:8});
   const useOrDefault=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
   const enemyConfig=Object.freeze({
@@ -46,6 +49,33 @@
   function setNextAttackAt(enemyId,value){nextAttackAt.set(enemyId,Number(value)||0)}
   function getNextAttackAt(enemyId){return nextAttackAt.get(enemyId)||0}
   function isAttackReady(enemyId,now=performance.now()){return now>=getNextAttackAt(enemyId)}
-  function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId);nextAttackAt.delete(enemyId)}
-  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,NAVIGATION_POLICY,ENEMY1_DEFAULTS,ATTACK_DEFAULTS,ENEMY1_OVERRIDES,patterns,getPattern,cyclePattern,getEnemyDefaults,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,clearEnemy});
+  function chooseNextAction(enemyId,now=performance.now()){
+    const current=actionChoices.get(enemyId);
+    if(current){
+      if(current.action===ACTION.ATTACK||now<current.expiresAt)return current.action;
+      actionChoices.delete(enemyId);
+    }
+    const action=Math.random()<ACTION_SELECTION.attackChance?ACTION.ATTACK:ACTION.MOVE;
+    const expiresAt=action===ACTION.MOVE?now+ACTION_SELECTION.moveMinMs+Math.random()*(ACTION_SELECTION.moveMaxMs-ACTION_SELECTION.moveMinMs):Infinity;
+    actionChoices.set(enemyId,Object.freeze({action,expiresAt}));
+    return action
+  }
+  function clearActionChoice(enemyId,expectedAction=null){
+    const current=actionChoices.get(enemyId);
+    if(!current)return false;
+    if(expectedAction&&current.action!==expectedAction)return false;
+    actionChoices.delete(enemyId);
+    return true
+  }
+  function resetWaveActions(enemyIds,now=performance.now()){
+    const ids=Array.isArray(enemyIds)?enemyIds:[];
+    for(const enemyId of ids){
+      actionChoices.delete(enemyId);
+      attackLocks.delete(enemyId);
+      setNextAttackAt(enemyId,now+Math.random()*ACTION_SELECTION.initialStaggerMaxMs);
+    }
+    return Object.freeze(ids.map(enemyId=>Object.freeze({enemyId,nextAttackAt:getNextAttackAt(enemyId)})))
+  }
+  function clearEnemy(enemyId){attackLocks.delete(enemyId);perception.delete(enemyId);nextAttackAt.delete(enemyId);actionChoices.delete(enemyId)}
+  window.BattleNetworkEnemy1Runtime=Object.freeze({CHASE_POLICY,CHASE_DISTANCE_MODE,NAVIGATION_POLICY,ENEMY1_DEFAULTS,ATTACK_DEFAULTS,ACTION,ACTION_SELECTION,ENEMY1_OVERRIDES,patterns,getPattern,cyclePattern,getEnemyDefaults,getEnemyConfig,getAttackDefaults,getDebugState,setDebugEnabled,setDebugOption,subscribeDebug,isAttackLocked,setAttackLocked,getPerception,setPerception,setNextAttackAt,getNextAttackAt,isAttackReady,chooseNextAction,clearActionChoice,resetWaveActions,clearEnemy});
 })();

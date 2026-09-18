@@ -3,8 +3,6 @@
   if(!AI||!FIELD||!ENEMY||!PLAYER||!PLAYER_DAMAGE||!LAYER||!RUNTIME)throw new Error('BattleNetworkEnemy1Shockwave: required dependency is missing.');
   const BEHAVIOR_ID='ENEMY1_GROUND_SHOCKWAVE',DAMAGE=RUNTIME.getAttackDefaults().damage;
   const TEST_STATUS_MS=Number(PLAYER.HIT_STUN_MS)||300;
-  const INITIAL_ATTACK_STAGGER_STEP_MS=75;
-  const INITIAL_ATTACK_STAGGER_WINDOW_MS=1500;
   const style=document.createElement('style');
   style.dataset.testOnly='enemy1-telegraph-glow';
   style.textContent=`
@@ -13,12 +11,39 @@
   `;
   document.head.appendChild(style);
   function unit(dx,dy){const l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}}
-  function initialAttackDelay(enemyId){const id=Math.abs(Math.trunc(Number(enemyId)||0));return(id*INITIAL_ATTACK_STAGGER_STEP_MS)%INITIAL_ATTACK_STAGGER_WINDOW_MS}
+  function distanceToFirstHole(origin,direction,maxTravel){
+    const limit=Math.max(0,Number(maxTravel)||0);
+    if(limit<=0)return 0;
+    const start=FIELD.worldToTile(origin.x,origin.y);
+    let row=start.row,col=start.col;
+    const dx=direction.x,dy=direction.y,size=FIELD.TILE_SIZE;
+    const stepX=dx>0?1:dx<0?-1:0,stepY=dy>0?1:dy<0?-1:0;
+    let tMaxX=Infinity,tMaxY=Infinity,tDeltaX=Infinity,tDeltaY=Infinity;
+    if(stepX!==0){
+      const boundaryX=(stepX>0?col+1:col)*size;
+      tMaxX=(boundaryX-origin.x)/dx;
+      tDeltaX=size/Math.abs(dx)
+    }
+    if(stepY!==0){
+      const boundaryY=(stepY>0?row+1:row)*size;
+      tMaxY=(boundaryY-origin.y)/dy;
+      tDeltaY=size/Math.abs(dy)
+    }
+    while(true){
+      let distance;
+      if(tMaxX<tMaxY){distance=tMaxX;col+=stepX;tMaxX+=tDeltaX}
+      else if(tMaxY<tMaxX){distance=tMaxY;row+=stepY;tMaxY+=tDeltaY}
+      else{distance=tMaxX;col+=stepX;row+=stepY;tMaxX+=tDeltaX;tMaxY+=tDeltaY}
+      if(!Number.isFinite(distance)||distance>limit)return limit;
+      const tile=FIELD.getTile(row,col);
+      if(!tile)return limit;
+      if(tile.currentTerrain===FIELD.TERRAIN.HOLE)return Math.max(0,distance)
+    }
+  }
   function findEnemyElement(enemyId){const enemies=ENEMY.getEnemies(),index=enemies.findIndex(enemy=>enemy.id===enemyId);return index>=0?document.querySelectorAll('.enemyPrototype')[index]||null:null}
   function createController({enemyId}){
     const telegraphEl=LAYER.createTelegraph(),projectileEl=LAYER.createProjectile(),enemyEl=findEnemyElement(enemyId);
     let phase='IDLE',direction=null,projectile=null,fireAt=0,fullSyncAt=0,recoveryUntil=0,lastGlowMode='NONE',statusHitCount=0,telegraphX=null,telegraphY=null;
-    RUNTIME.setNextAttackAt(enemyId,performance.now()+initialAttackDelay(enemyId));
     function nextStatusMode(){return 'FLINCH'}
     function testStatusInput(){return{hitStunMs:TEST_STATUS_MS,paralysisMs:0}}
     function setGlow(mode){
@@ -34,19 +59,20 @@
     function hide(){LAYER.hideTelegraph(telegraphEl);LAYER.hideProjectile(projectileEl);telegraphX=null;telegraphY=null;setGlow('NONE')}
     function cfg(){return RUNTIME.getPattern()}
     function inRange(enemy,player){return Math.hypot(player.x-enemy.x,player.y-enemy.y)<=FIELD.toWorldDistance(cfg().attackStartRangeTiles)}
-    function canStart(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated||phase!=='IDLE'||!RUNTIME.isAttackReady(enemyId,now))return false;return inRange(enemy,PLAYER.getPosition())}
+    function canStart(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated||phase!=='IDLE'||!RUNTIME.isAttackReady(enemyId,now)||!inRange(enemy,PLAYER.getPosition()))return false;return RUNTIME.chooseNextAction(enemyId,now)===RUNTIME.ACTION.ATTACK}
     function updateTelegraphPosition(enemy){
       if(!enemy||!direction)return;
       if(telegraphX===enemy.x&&telegraphY===enemy.y)return;
-      const end={x:enemy.x+direction.x*FIELD.toWorldDistance(cfg().projectileMaxRangeTiles),y:enemy.y+direction.y*FIELD.toWorldDistance(cfg().projectileMaxRangeTiles)};
-      LAYER.showTelegraph(telegraphEl,{x:enemy.x,y:enemy.y},end);
+      const origin={x:enemy.x,y:enemy.y},maxTravel=distanceToFirstHole(origin,direction,FIELD.toWorldDistance(cfg().projectileMaxRangeTiles));
+      const end={x:origin.x+direction.x*maxTravel,y:origin.y+direction.y*maxTravel};
+      LAYER.showTelegraph(telegraphEl,origin,end);
       telegraphX=enemy.x;telegraphY=enemy.y;
     }
-    function start(now){if(!canStart(now))return false;const enemy=ENEMY.getEnemy(enemyId),player=PLAYER.getPosition(),c=cfg();direction=unit(player.x-enemy.x,player.y-enemy.y);phase='TELEGRAPH';fireAt=now+c.telegraphMs;fullSyncAt=Math.max(now,fireAt-c.fullSyncWindowMs);RUNTIME.setAttackLocked(enemyId,true);updateTelegraphPosition(enemy);setGlow('TELEGRAPH');return true}
-    function fire(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy){cancel(now);return}LAYER.hideTelegraph(telegraphEl);telegraphX=null;telegraphY=null;setGlow('NONE');projectile={x:enemy.x,y:enemy.y,travel:0,maxTravel:FIELD.toWorldDistance(cfg().projectileMaxRangeTiles)};phase='PROJECTILE';LAYER.showProjectile(projectileEl,projectile.x,projectile.y)}
+    function start(now){if(!canStart(now))return false;const enemy=ENEMY.getEnemy(enemyId),player=PLAYER.getPosition(),c=cfg();RUNTIME.clearActionChoice(enemyId,RUNTIME.ACTION.ATTACK);direction=unit(player.x-enemy.x,player.y-enemy.y);phase='TELEGRAPH';fireAt=now+c.telegraphMs;fullSyncAt=Math.max(now,fireAt-c.fullSyncWindowMs);RUNTIME.setAttackLocked(enemyId,true);updateTelegraphPosition(enemy);setGlow('TELEGRAPH');return true}
+    function fire(now){const enemy=ENEMY.getEnemy(enemyId);if(!enemy){cancel(now);return}LAYER.hideTelegraph(telegraphEl);telegraphX=null;telegraphY=null;setGlow('NONE');const origin={x:enemy.x,y:enemy.y},maxTravel=distanceToFirstHole(origin,direction,FIELD.toWorldDistance(cfg().projectileMaxRangeTiles));projectile={x:origin.x,y:origin.y,travel:0,maxTravel};phase='PROJECTILE';LAYER.showProjectile(projectileEl,projectile.x,projectile.y)}
     function beginRecovery(now){LAYER.hideProjectile(projectileEl);projectile=null;phase='RECOVERY';recoveryUntil=now+cfg().recoveryMs}
     function finishRecovery(now){phase='IDLE';direction=null;RUNTIME.setAttackLocked(enemyId,false);RUNTIME.setNextAttackAt(enemyId,now+cfg().cooldownMs)}
-    function update(now,dt){if(phase==='TELEGRAPH'){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated){cancel(now);return}updateTelegraphPosition(enemy);setGlow(now>=fullSyncAt?'FULL_SYNC':'TELEGRAPH');if(now>=fireAt)fire(now);return}if(phase==='PROJECTILE'){const step=cfg().projectileSpeed*dt;projectile.x+=direction.x*step;projectile.y+=direction.y*step;projectile.travel+=step;LAYER.updateProjectile(projectileEl,projectile.x,projectile.y);const mode=nextStatusMode(),status=testStatusInput(),hit=PLAYER_DAMAGE.resolvePointHit({x:projectile.x,y:projectile.y,damage:DAMAGE,sourceType:'ENEMY',sourceId:enemyId,attackId:BEHAVIOR_ID,...status});if(hit.hit){statusHitCount++;window.dispatchEvent(new CustomEvent('battlenetwork:angerstatustest',{detail:Object.freeze({mode,durationMs:TEST_STATUS_MS,enemyId})}))}const out=projectile.x<0||projectile.x>FIELD.WORLD_SIZE||projectile.y<0||projectile.y>FIELD.WORLD_SIZE;if(hit.hit||out||projectile.travel>=projectile.maxTravel)beginRecovery(now);return}if(phase==='RECOVERY'&&now>=recoveryUntil)finishRecovery(now)}
+    function update(now,dt){if(phase==='TELEGRAPH'){const enemy=ENEMY.getEnemy(enemyId);if(!enemy||enemy.isDefeated){cancel(now);return}updateTelegraphPosition(enemy);setGlow(now>=fullSyncAt?'FULL_SYNC':'TELEGRAPH');if(now>=fireAt)fire(now);return}if(phase==='PROJECTILE'){const remaining=Math.max(0,projectile.maxTravel-projectile.travel),step=Math.min(cfg().projectileSpeed*dt,remaining);projectile.x+=direction.x*step;projectile.y+=direction.y*step;projectile.travel+=step;LAYER.updateProjectile(projectileEl,projectile.x,projectile.y);const reachedBlock=projectile.travel>=projectile.maxTravel-1e-6;if(reachedBlock){beginRecovery(now);return}const mode=nextStatusMode(),status=testStatusInput(),hit=PLAYER_DAMAGE.resolvePointHit({x:projectile.x,y:projectile.y,damage:DAMAGE,sourceType:'ENEMY',sourceId:enemyId,attackId:BEHAVIOR_ID,...status});if(hit.hit){statusHitCount++;window.dispatchEvent(new CustomEvent('battlenetwork:angerstatustest',{detail:Object.freeze({mode,durationMs:TEST_STATUS_MS,enemyId})}))}const out=projectile.x<0||projectile.x>FIELD.WORLD_SIZE||projectile.y<0||projectile.y>FIELD.WORLD_SIZE;if(hit.hit||out)beginRecovery(now);return}if(phase==='RECOVERY'&&now>=recoveryUntil)finishRecovery(now)}
     function cancel(now=performance.now()){const wasBusy=phase!=='IDLE';hide();phase='IDLE';direction=null;projectile=null;RUNTIME.setAttackLocked(enemyId,false);if(wasBusy)RUNTIME.setNextAttackAt(enemyId,now+cfg().cooldownMs)}
     function destroy(){cancel();LAYER.destroy(telegraphEl);LAYER.destroy(projectileEl)}
     function isBusy(){return phase!=='IDLE'}
@@ -54,5 +80,5 @@
     return Object.freeze({canStart,start,update,cancel,destroy,isBusy,getSnapshot});
   }
   AI.registerBehavior(BEHAVIOR_ID,createController,{channel:'ATTACK'});
-  window.BattleNetworkEnemy1Shockwave=Object.freeze({BEHAVIOR_ID,DAMAGE,TEST_STATUS_MS,INITIAL_ATTACK_STAGGER_STEP_MS,INITIAL_ATTACK_STAGGER_WINDOW_MS});
+  window.BattleNetworkEnemy1Shockwave=Object.freeze({BEHAVIOR_ID,DAMAGE,TEST_STATUS_MS});
 })();
