@@ -231,22 +231,13 @@ def make_transform(basis_x, basis_y, basis_z, location):
 
 
 def add_reference_image(collection, name, filepath, matrix_world):
-    # Blender 5.x does not allow IMAGE datablocks to be passed directly to
-    # bpy.data.objects.new(). Use the dedicated image-empty operator instead.
-    bpy.ops.object.empty_image_add(
-        filepath=filepath,
-        check_existing=False,
-        align="WORLD",
-        location=(0.0, 0.0, 0.0),
-        rotation=(0.0, 0.0, 0.0),
-        background=False,
-    )
+    # Use Blender's Data API so this also works in --background mode, where
+    # bpy.ops.object.empty_image_add() has no VIEW_3D context and its poll fails.
+    image = bpy.data.images.load(filepath, check_existing=False)
 
-    obj = bpy.context.object
-    if obj is None or obj.type != "EMPTY" or obj.empty_display_type != "IMAGE":
-        raise RuntimeError(f"Failed to create image empty for: {filepath}")
-
-    obj.name = name
+    obj = bpy.data.objects.new(name, None)
+    obj.empty_display_type = "IMAGE"
+    obj.data = image
     obj.empty_display_size = 2.0
     obj.empty_image_offset = (-0.5, 0.0)
     obj.empty_image_depth = "BACK"
@@ -255,11 +246,8 @@ def add_reference_image(collection, name, filepath, matrix_world):
     obj.color = (1.0, 1.0, 1.0, 0.42)
     obj.matrix_world = matrix_world
 
-    # empty_image_add links to the active collection. Move the object into the
-    # dedicated REFERENCE collection so reruns stay deterministic.
-    for owner_collection in list(obj.users_collection):
-        owner_collection.objects.unlink(obj)
     collection.objects.link(obj)
+    bpy.context.view_layer.update()
 
     return obj
 
