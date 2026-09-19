@@ -90,7 +90,16 @@ def save_project(output_path, force):
         )
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=output_path)
+
+    # Do not create .blend1/.blend2 backups during automated setup saves.
+    # Preserve the user's normal Blender preference outside this script.
+    previous_save_version = bpy.context.preferences.filepaths.save_version
+    try:
+        bpy.context.preferences.filepaths.save_version = 0
+        bpy.ops.wm.save_as_mainfile(filepath=output_path)
+    finally:
+        bpy.context.preferences.filepaths.save_version = previous_save_version
+
     return output_path
 
 
