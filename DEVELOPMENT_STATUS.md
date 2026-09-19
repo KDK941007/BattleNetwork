@@ -401,19 +401,17 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
   - 確認結果: `5.2.2 LTS`。
   - 完了条件: GUI / CLI / bpy の3点が利用可能。
 
-- [ ] 2-1. ネクシア用Blenderプロジェクトを作成する。
+- [x] 2-1. ネクシア用Blenderプロジェクトを作成する。
   - セットアップスクリプト: `tools/blender/setup_nexia_project.py`。
-  - リポジトリルートから以下を実行する。
-    - `blender --background --python tools/blender/setup_nexia_project.py`
+  - Blender 5.2.2 LTSで実行済み。
+  - 実行結果 `NEXIA_PROJECT_SETUP_OK` を確認済み。
   - 生成先: `assets/character/3d/nexia/nexia_model.blend`。
-  - 新規`.blend`を作成する。
   - 単位: Metric / meters / scale 1.0。
   - 座標系: `+Z=上 / +X=キャラクター右 / -Y=キャラクター正面`。
   - 原点ルール: 足元中央をworld originに置く。
-  - キャラクターの絶対身長は現時点では未確定とし、推測値を設定しない。
-  - 作業用コレクションを `REFERENCE / BODY / ARMOR / RIG / RENDER` に分ける。
-  - 既存出力を誤って上書きしないよう、同名`.blend`が存在する場合は停止する。意図的に作り直す場合のみ `-- --force` を付ける。
-  - 実行成功時に `NEXIA_PROJECT_SETUP_OK` が表示されることを確認する。
+  - キャラクターの絶対身長は現時点では未確定とし、推測値を設定していない。
+  - 作業用コレクション: `REFERENCE / BODY / ARMOR / RIG / RENDER`。
+  - 同名`.blend`が存在する場合は停止し、意図的に作り直す場合のみ `-- --force` を使用する。
   - 完了条件: 以後のモデリングを同一座標系で進められる空プロジェクトが保存済み。
 
 - [ ] 2-2. 三面図をBlenderへリファレンス配置する。
