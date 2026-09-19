@@ -406,7 +406,13 @@ def main():
     scene["nexia_blockout_status"] = "ROUGH_PROPORTION_CHECK"
 
     bpy.context.view_layer.update()
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+
+    previous_save_version = bpy.context.preferences.filepaths.save_version
+    try:
+        bpy.context.preferences.filepaths.save_version = 0
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    finally:
+        bpy.context.preferences.filepaths.save_version = previous_save_version
 
     blockout_names = sorted(
         obj.name for obj in bpy.data.objects if obj.name.startswith("BLOCKOUT_")
