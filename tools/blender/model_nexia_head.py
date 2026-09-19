@@ -133,13 +133,68 @@ def create_ellipsoid(collection, name, center, radii, material):
     return obj
 
 
-def create_rounded_box(collection, name, center, half_extents, material, bevel):
+def create_rounded_box(
+    collection,
+    name,
+    center,
+    half_extents,
+    material,
+    bevel,
+    rotation_euler=None,
+):
     mesh = create_cube_mesh(name + "_MESH")
     obj = bpy.data.objects.new(name, mesh)
     collection.objects.link(obj)
 
     obj.location = center
     obj.scale = half_extents
+    if rotation_euler is not None:
+        obj.rotation_euler = rotation_euler
+    assign_material(obj, material)
+
+    modifier = obj.modifiers.new("RoundedEdges", "BEVEL")
+    modifier.width = bevel
+    modifier.segments = 4
+    return obj
+
+
+def create_trapezoid_prism(
+    collection,
+    name,
+    center,
+    top_half_width,
+    bottom_half_width,
+    half_height,
+    half_depth,
+    material,
+    bevel,
+):
+    vertices = [
+        (-bottom_half_width, -half_depth, -half_height),
+        (bottom_half_width, -half_depth, -half_height),
+        (bottom_half_width, half_depth, -half_height),
+        (-bottom_half_width, half_depth, -half_height),
+        (-top_half_width, -half_depth, half_height),
+        (top_half_width, -half_depth, half_height),
+        (top_half_width, half_depth, half_height),
+        (-top_half_width, half_depth, half_height),
+    ]
+    faces = [
+        (0, 1, 2, 3),
+        (4, 7, 6, 5),
+        (0, 4, 5, 1),
+        (1, 5, 6, 2),
+        (2, 6, 7, 3),
+        (4, 0, 3, 7),
+    ]
+
+    mesh = bpy.data.meshes.new(name + "_MESH")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    obj.location = center
     assign_material(obj, material)
 
     modifier = obj.modifiers.new("RoundedEdges", "BEVEL")
@@ -229,75 +284,144 @@ def build_head(body_collection, armor_collection, blockout_head):
         roughness=0.55,
     )
 
+    # Project-specific convention: -Y is character front.
+    # Shift the cap slightly backward and flatten the front-to-back radius so it
+    # reads as a helmet rather than a perfect ball.
+    shell_center = (
+        center.x,
+        center.y + depth * 0.035,
+        center.z + height * 0.005,
+    )
     shell = create_ellipsoid(
         armor_collection,
         "HEAD_HELMET_SHELL",
-        center,
-        (width * 0.515, depth * 0.515, height * 0.505),
+        shell_center,
+        (width * 0.505, depth * 0.465, height * 0.505),
         blue,
     )
 
-    # Project-specific convention: -Y is character front.
-    front_y = center.y - depth * 0.49
+    front_y = shell_center[1] - depth * 0.455
+    back_y = shell_center[1] + depth * 0.455
 
-    create_ellipsoid(
+    # Eye/skin opening: a tapered plate rather than a horizontal oval.
+    create_trapezoid_prism(
         body_collection,
         "HEAD_FACE_EXPOSED",
-        (center.x, front_y - depth * 0.015, center.z + height * 0.015),
-        (width * 0.315, depth * 0.035, height * 0.135),
-        skin,
+        (center.x, front_y - depth * 0.018, center.z + height * 0.020),
+        top_half_width=width * 0.315,
+        bottom_half_width=width * 0.255,
+        half_height=height * 0.105,
+        half_depth=depth * 0.030,
+        material=skin,
+        bevel=min(width, height) * 0.018,
     )
 
-    create_rounded_box(
+    # Lower face mask: wider at the eyes and narrower toward the chin.
+    create_trapezoid_prism(
         armor_collection,
         "HEAD_FACE_MASK",
-        (center.x, front_y - depth * 0.035, center.z - height * 0.145),
-        (width * 0.305, depth * 0.055, height * 0.125),
-        dark_blue,
-        bevel=min(width, height) * 0.035,
-    )
-
-    create_rounded_box(
-        armor_collection,
-        "HEAD_FOREHEAD_TOP",
-        (center.x, front_y - depth * 0.025, center.z + height * 0.315),
-        (width * 0.115, depth * 0.045, height * 0.105),
-        cyan,
+        (center.x, front_y - depth * 0.040, center.z - height * 0.155),
+        top_half_width=width * 0.300,
+        bottom_half_width=width * 0.215,
+        half_height=height * 0.130,
+        half_depth=depth * 0.045,
+        material=dark_blue,
         bevel=min(width, height) * 0.025,
     )
 
-    create_rounded_box(
+    # Blue brow guards frame the exposed eye region and break the spherical cap.
+    brow_y = front_y - depth * 0.050
+    brow_z = center.z + height * 0.125
+    for side, sign in (("R", 1.0), ("L", -1.0)):
+        create_rounded_box(
+            armor_collection,
+            f"HEAD_BROW_{side}",
+            (
+                center.x + sign * width * 0.155,
+                brow_y,
+                brow_z,
+            ),
+            (width * 0.145, depth * 0.032, height * 0.032),
+            blue,
+            bevel=min(width, height) * 0.014,
+            rotation_euler=(0.0, math.radians(-sign * 11.0), 0.0),
+        )
+
+    # Central cyan forehead plates sit close to the cap surface.
+    create_trapezoid_prism(
         armor_collection,
-        "HEAD_FOREHEAD_LOWER",
-        (center.x, front_y - depth * 0.035, center.z + height * 0.105),
-        (width * 0.125, depth * 0.050, height * 0.125),
-        cyan,
-        bevel=min(width, height) * 0.030,
+        "HEAD_FOREHEAD_TOP",
+        (center.x, front_y - depth * 0.020, center.z + height * 0.315),
+        top_half_width=width * 0.095,
+        bottom_half_width=width * 0.082,
+        half_height=height * 0.095,
+        half_depth=depth * 0.028,
+        material=cyan,
+        bevel=min(width, height) * 0.018,
     )
 
+    create_trapezoid_prism(
+        armor_collection,
+        "HEAD_FOREHEAD_LOWER",
+        (center.x, front_y - depth * 0.028, center.z + height * 0.105),
+        top_half_width=width * 0.118,
+        bottom_half_width=width * 0.100,
+        half_height=height * 0.110,
+        half_depth=depth * 0.032,
+        material=cyan,
+        bevel=min(width, height) * 0.020,
+    )
+
+    # Rear center plates visible in the approved back reference.
+    create_trapezoid_prism(
+        armor_collection,
+        "HEAD_REAR_CENTER_TOP",
+        (center.x, back_y + depth * 0.020, center.z + height * 0.285),
+        top_half_width=width * 0.090,
+        bottom_half_width=width * 0.080,
+        half_height=height * 0.090,
+        half_depth=depth * 0.026,
+        material=cyan,
+        bevel=min(width, height) * 0.016,
+    )
+
+    create_trapezoid_prism(
+        armor_collection,
+        "HEAD_REAR_CENTER_LOWER",
+        (center.x, back_y + depth * 0.026, center.z + height * 0.095),
+        top_half_width=width * 0.105,
+        bottom_half_width=width * 0.095,
+        half_height=height * 0.105,
+        half_depth=depth * 0.030,
+        material=cyan,
+        bevel=min(width, height) * 0.018,
+    )
+
+    # Cyan side lines wrap from front across the crown to the back. Keep their
+    # highest point below the cap top so the curve ends do not look like horns.
     stripe_x = width * 0.205
-    stripe_radius = min(width, height) * 0.028
+    stripe_radius = min(width, height) * 0.018
 
     for side, sign in (("R", 1.0), ("L", -1.0)):
         x = center.x + sign * stripe_x
         points = [
-            (x, center.y - depth * 0.43, center.z + height * 0.10),
+            (x, center.y - depth * 0.405, center.z + height * 0.070),
             (
-                x + sign * width * 0.025,
-                center.y - depth * 0.28,
-                center.z + height * 0.32,
+                x + sign * width * 0.018,
+                center.y - depth * 0.265,
+                center.z + height * 0.300,
             ),
             (
-                x + sign * width * 0.015,
+                x + sign * width * 0.010,
                 center.y,
-                center.z + height * 0.49,
+                center.z + height * 0.435,
             ),
             (
-                x + sign * width * 0.025,
-                center.y + depth * 0.28,
-                center.z + height * 0.31,
+                x + sign * width * 0.018,
+                center.y + depth * 0.265,
+                center.z + height * 0.295,
             ),
-            (x, center.y + depth * 0.43, center.z + height * 0.08),
+            (x, center.y + depth * 0.405, center.z + height * 0.060),
         ]
 
         create_stripe_curve(
@@ -308,10 +432,11 @@ def build_head(body_collection, armor_collection, blockout_head):
             cyan,
         )
 
-    ear_z = center.z - height * 0.015
-    ear_x = width * 0.56
-    outer_radius = height * 0.17
-    outer_depth = width * 0.075
+    # Larger ears, moved inward so they overlap the helmet instead of floating.
+    ear_z = center.z - height * 0.005
+    ear_x = width * 0.495
+    outer_radius = height * 0.195
+    outer_depth = width * 0.105
 
     for side, sign in (("R", 1.0), ("L", -1.0)):
         ear_center = (center.x + sign * ear_x, center.y, ear_z)
@@ -329,12 +454,12 @@ def build_head(body_collection, armor_collection, blockout_head):
             armor_collection,
             f"HEAD_EAR_MID_{side}",
             (
-                ear_center[0] + sign * outer_depth * 0.08,
+                ear_center[0] + sign * outer_depth * 0.05,
                 ear_center[1],
                 ear_center[2],
             ),
-            outer_radius * 0.76,
-            outer_depth * 1.04,
+            outer_radius * 0.78,
+            outer_depth * 1.03,
             cyan,
             axis="X",
         )
@@ -342,12 +467,12 @@ def build_head(body_collection, armor_collection, blockout_head):
             armor_collection,
             f"HEAD_EAR_CORE_{side}",
             (
-                ear_center[0] + sign * outer_depth * 0.13,
+                ear_center[0] + sign * outer_depth * 0.09,
                 ear_center[1],
                 ear_center[2],
             ),
-            outer_radius * 0.46,
-            outer_depth * 1.08,
+            outer_radius * 0.48,
+            outer_depth * 1.06,
             blue,
             axis="X",
         )
@@ -362,7 +487,6 @@ def build_head(body_collection, armor_collection, blockout_head):
         "center": tuple(center),
         "shell": shell.name,
     }
-
 
 def main():
     args = parse_args()
