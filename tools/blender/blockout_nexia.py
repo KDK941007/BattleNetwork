@@ -197,6 +197,72 @@ def require_references():
         )
 
 
+def get_front_reference_fit():
+    ref = bpy.data.objects.get("REF_FRONT")
+    if ref is None:
+        raise RuntimeError("REF_FRONT is missing.")
+
+    image = getattr(ref, "data", None)
+    if image is None or not hasattr(image, "size"):
+        raise RuntimeError("REF_FRONT does not contain image data.")
+
+    image_width, image_height = image.size
+    if image_width <= 0 or image_height <= 0:
+        raise RuntimeError(
+            f"REF_FRONT image has invalid dimensions: {image_width}x{image_height}"
+        )
+
+    # setup_nexia_references.py places the image with its lower edge at the
+    # object origin (empty_image_offset Y = 0) and its local Y axis mapped to
+    # world +Z. empty_display_size therefore defines the full displayed image
+    # height in that local axis; include any object transform scale as well.
+    vertical_axis_world = ref.matrix_world.to_3x3() @ Vector((0.0, 1.0, 0.0))
+    frame_height_world = ref.empty_display_size * vertical_axis_world.length
+    frame_bottom_world = ref.matrix_world.translation.z
+
+    visible_bottom_world = frame_bottom_world + frame_height_world * (
+        (image_height - REFERENCE_BOTTOM_Y) / image_height
+    )
+    visible_top_world = frame_bottom_world + frame_height_world * (
+        (image_height - REFERENCE_TOP_Y) / image_height
+    )
+    visible_height_world = visible_top_world - visible_bottom_world
+
+    if visible_height_world <= 0.0:
+        raise RuntimeError(
+            "Calculated REF_FRONT visible height is not positive: "
+            f"{visible_height_world}"
+        )
+
+    return {
+        "frame_height_world": frame_height_world,
+        "frame_bottom_world": frame_bottom_world,
+        "visible_bottom_world": visible_bottom_world,
+        "visible_top_world": visible_top_world,
+        "visible_height_world": visible_height_world,
+        "image_width": image_width,
+        "image_height": image_height,
+    }
+
+
+def fit_blockout_to_reference(reference_fit):
+    scale_factor = reference_fit["visible_height_world"] / NORMALIZED_HEIGHT
+    z_offset = reference_fit["visible_bottom_world"]
+
+    for obj in bpy.data.objects:
+        if not obj.name.startswith("BLOCKOUT_"):
+            continue
+
+        obj.location = (
+            obj.location.x * scale_factor,
+            obj.location.y * scale_factor,
+            obj.location.z * scale_factor + z_offset,
+        )
+        obj.scale = tuple(component * scale_factor for component in obj.scale)
+
+    return scale_factor, z_offset
+
+
 def build_blockout(collection, material):
     # Central volumes.
     create_ellipsoid(
@@ -319,15 +385,23 @@ def main():
     bpy.ops.wm.open_mainfile(filepath=blend_path)
     require_references()
 
+    reference_fit = get_front_reference_fit()
+
     clear_previous_blockout()
     collection = ensure_body_collection()
     material = create_blockout_material()
     build_blockout(collection, material)
+    scale_factor, z_offset = fit_blockout_to_reference(reference_fit)
 
     scene = bpy.context.scene
     scene["nexia_blockout_normalized_height"] = NORMALIZED_HEIGHT
     scene["nexia_blockout_reference_top_y"] = REFERENCE_TOP_Y
     scene["nexia_blockout_reference_bottom_y"] = REFERENCE_BOTTOM_Y
+    scene["nexia_blockout_reference_frame_height_world"] = reference_fit["frame_height_world"]
+    scene["nexia_blockout_reference_visible_height_world"] = reference_fit["visible_height_world"]
+    scene["nexia_blockout_reference_visible_bottom_world"] = reference_fit["visible_bottom_world"]
+    scene["nexia_blockout_fit_scale"] = scale_factor
+    scene["nexia_blockout_fit_z_offset"] = z_offset
     scene["nexia_blockout_absolute_height"] = "UNSPECIFIED"
     scene["nexia_blockout_status"] = "ROUGH_PROPORTION_CHECK"
 
@@ -340,6 +414,11 @@ def main():
 
     print("NEXIA_BLOCKOUT_SETUP_OK")
     print(f"Normalized visible height: {NORMALIZED_HEIGHT}")
+    print(f"Reference frame height (world): {reference_fit['frame_height_world']:.6f}")
+    print(f"Reference visible height (world): {reference_fit['visible_height_world']:.6f}")
+    print(f"Reference visible bottom Z: {reference_fit['visible_bottom_world']:.6f}")
+    print(f"Applied blockout scale: {scale_factor:.6f}")
+    print(f"Applied blockout Z offset: {z_offset:.6f}")
     print("Absolute character height: UNSPECIFIED")
     print(f"Blockout object count: {len(blockout_names)}")
     print("Objects:")
