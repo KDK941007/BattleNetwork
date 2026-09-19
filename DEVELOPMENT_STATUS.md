@@ -429,7 +429,12 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
   - 画像の縦横比を変更しない。
   - リポジトリルートから以下を実行する。
     - `blender --background --python tools/blender/setup_nexia_references.py`
-  - 実行成功時に `NEXIA_REFERENCE_SETUP_OK` が表示されることを確認する。
+  - 2026-09-19、Blender 5.2.2 LTSで実行成功。
+    - `NEXIA_REFERENCE_SETUP_OK` を確認済み。
+    - Source size: `1195x896`。
+    - Detected boxes: `[(68, 0, 425, 895), (437, 0, 794, 895), (786, 0, 1143, 895)]`。
+    - `REF_FRONT / REF_BACK / REF_RIGHT` 作成済み。
+    - `assets/character/3d/nexia/nexia_model.blend` 保存済み。
   - 実行後、Blender GUIで正面 / 背面 / 右側面を確認し、頭頂・足裏・肩・肘・手首・股・膝・足首の高さが三面図として整合しているか目視確認する。
   - 完了条件: 正面 / 背面 / 側面を切り替えても主要関節位置が一致していることをユーザーが確認する。
 
