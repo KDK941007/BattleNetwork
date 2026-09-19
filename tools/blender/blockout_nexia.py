@@ -283,28 +283,31 @@ def build_blockout(collection, material):
         0.045,
     )
 
+    # Keep the torso as the underlying body, not the outer armor silhouette.
+    # Slight overlap between these volumes avoids the stacked-sphere look while
+    # preserving the approved front/side reference proportions.
     create_ellipsoid(
         collection,
         material,
         "BLOCKOUT_CHEST",
-        (0.0, 0.0, z_from_source_y(276.0)),
-        (0.103, 0.078, 0.085),
+        (0.0, 0.0, z_from_source_y(278.0)),
+        (0.096, 0.068, 0.090),
     )
 
     create_ellipsoid(
         collection,
         material,
         "BLOCKOUT_ABDOMEN",
-        (0.0, 0.0, z_from_source_y(380.0)),
-        (0.078, 0.060, 0.095),
+        (0.0, 0.0, z_from_source_y(378.0)),
+        (0.069, 0.052, 0.103),
     )
 
     create_ellipsoid(
         collection,
         material,
         "BLOCKOUT_PELVIS",
-        (0.0, 0.0, z_from_source_y(465.0)),
-        (0.085, 0.063, 0.060),
+        (0.0, 0.0, z_from_source_y(464.0)),
+        (0.078, 0.058, 0.066),
     )
 
     # Arms. Parameters are derived from the approved front/side silhouettes;
@@ -329,8 +332,8 @@ def build_blockout(collection, material):
         "BLOCKOUT_FOREARM",
         elbow_r,
         wrist_r,
-        0.041,
-        0.055,
+        0.030,
+        0.036,
     )
 
     create_symmetric_ellipsoid_pair(
@@ -362,16 +365,16 @@ def build_blockout(collection, material):
         "BLOCKOUT_LOWER_LEG",
         knee_r,
         ankle_r,
-        0.063,
-        0.073,
+        0.041,
+        0.047,
     )
 
     create_symmetric_ellipsoid_pair(
         collection,
         material,
         "BLOCKOUT_FOOT",
-        (0.091, -0.043, z_from_source_y(807.0)),
-        (0.067, 0.118, 0.057),
+        (0.091, -0.032, z_from_source_y(807.0)),
+        (0.052, 0.080, 0.046),
     )
 
 
