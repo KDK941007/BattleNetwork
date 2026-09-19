@@ -393,11 +393,12 @@ v104の `PROTOTYPE_OSCILLATE_MOVEMENT`、v105の `PROTOTYPE_TARGET_AREA`、従�
 以降はネクシア三面図をSource of Truthとし、Blender上で基本形状を手作業で構築する。
 Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わるまで次へ進まない。
 
-- [ ] 2-0. Blender作業環境を準備する。
-  - Blender LTSをWindows 11へインストールする。
-  - Blender GUIを起動できることを確認する。
-  - `blender --version` でCLIが利用できることを確認する。
-  - Blender内Pythonで `import bpy` が成功することを確認する。
+- [x] 2-0. Blender作業環境を準備する。
+  - Blender 5.2.2 LTSをWindows 11へインストール済み。
+  - Blender GUI起動済み。
+  - `blender --version` でCLI利用確認済み。
+  - `blender --background --python-expr "import bpy; print(bpy.app.version_string)"` で `bpy` 利用確認済み。
+  - 確認結果: `5.2.2 LTS`。
   - 完了条件: GUI / CLI / bpy の3点が利用可能。
 
 - [ ] 2-1. ネクシア用Blenderプロジェクトを作成する。
