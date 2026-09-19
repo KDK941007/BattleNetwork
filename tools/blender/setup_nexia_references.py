@@ -315,7 +315,12 @@ def main():
     scene["nexia_reference_alignment"] = "common_crop_height_and_bottom_origin"
     scene["nexia_reference_absolute_height"] = "UNSPECIFIED"
 
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    previous_save_version = bpy.context.preferences.filepaths.save_version
+    try:
+        bpy.context.preferences.filepaths.save_version = 0
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+    finally:
+        bpy.context.preferences.filepaths.save_version = previous_save_version
 
     print("NEXIA_REFERENCE_SETUP_OK")
     print(f"Source: {source_path}")
