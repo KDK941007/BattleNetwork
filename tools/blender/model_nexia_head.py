@@ -5,9 +5,63 @@ import sys
 
 import bmesh
 import bpy
+from mathutils import Vector
 
 
 HEAD_OBJECT_PREFIX = "HEAD_"
+
+REFERENCE_TOP_Y = 18.0
+REFERENCE_BOTTOM_Y = 850.0
+REFERENCE_HEIGHT_PX = REFERENCE_BOTTOM_Y - REFERENCE_TOP_Y
+
+# Must stay aligned with tools/blender/blockout_nexia.py.
+HEAD_CENTER_SOURCE_Y = 108.0
+HEAD_TOP_SOURCE_Y = 18.0
+HEAD_BOTTOM_SOURCE_Y = 198.0
+HEAD_RADIUS_X_NORMALIZED = 0.117
+HEAD_RADIUS_Y_NORMALIZED = 0.113
+
+
+def z_from_source_y(y):
+    return (REFERENCE_BOTTOM_Y - float(y)) / REFERENCE_HEIGHT_PX
+
+
+def get_head_reference_geometry(scene):
+    scale_factor = scene.get("nexia_blockout_fit_scale")
+    z_offset = scene.get("nexia_blockout_fit_z_offset")
+
+    if scale_factor is None or z_offset is None:
+        raise RuntimeError(
+            "Blockout fit metadata is missing. Run tools/blender/blockout_nexia.py first."
+        )
+
+    scale_factor = float(scale_factor)
+    z_offset = float(z_offset)
+    if scale_factor <= 0.0:
+        raise RuntimeError(f"Invalid blockout fit scale: {scale_factor}")
+
+    normalized_height = (
+        z_from_source_y(HEAD_TOP_SOURCE_Y)
+        - z_from_source_y(HEAD_BOTTOM_SOURCE_Y)
+    )
+    normalized_width = HEAD_RADIUS_X_NORMALIZED * 2.0
+    normalized_depth = HEAD_RADIUS_Y_NORMALIZED * 2.0
+    normalized_center_z = z_from_source_y(HEAD_CENTER_SOURCE_Y)
+
+    return {
+        "center": Vector(
+            (
+                0.0,
+                0.0,
+                normalized_center_z * scale_factor + z_offset,
+            )
+        ),
+        "width": normalized_width * scale_factor,
+        "depth": normalized_depth * scale_factor,
+        "height": normalized_height * scale_factor,
+        "scale_factor": scale_factor,
+        "z_offset": z_offset,
+    }
 
 
 def parse_args():
@@ -242,16 +296,17 @@ def create_stripe_curve(collection, name, points, bevel_depth, material):
     return obj
 
 
-def build_head(body_collection, armor_collection, blockout_head):
-    dims = blockout_head.dimensions.copy()
-    center = blockout_head.matrix_world.translation.copy()
-
-    width = dims.x
-    depth = dims.y
-    height = dims.z
+def build_head(body_collection, armor_collection, blockout_head, head_geometry):
+    center = head_geometry["center"]
+    width = head_geometry["width"]
+    depth = head_geometry["depth"]
+    height = head_geometry["height"]
 
     if min(width, depth, height) <= 0.0:
-        raise RuntimeError(f"BLOCKOUT_HEAD has invalid dimensions: {tuple(dims)}")
+        raise RuntimeError(
+            "Calculated head dimensions are invalid: "
+            f"{(width, depth, height)}"
+        )
 
     blue = ensure_material(
         "NEXIA_HELMET_BLUE",
@@ -500,15 +555,25 @@ def main():
     blockout_head = require_object("BLOCKOUT_HEAD")
     body_collection, armor_collection = require_collections()
 
-    clear_previous_head_objects()
-    head_info = build_head(body_collection, armor_collection, blockout_head)
-
     scene = bpy.context.scene
+    head_geometry = get_head_reference_geometry(scene)
+
+    clear_previous_head_objects()
+    head_info = build_head(
+        body_collection,
+        armor_collection,
+        blockout_head,
+        head_geometry,
+    )
+
     scene["nexia_head_status"] = "ROUGH_HEAD_HELMET_CHECK"
     scene["nexia_head_source"] = "approved front/back/right references"
     scene["nexia_head_blockout_width"] = head_info["width"]
     scene["nexia_head_blockout_depth"] = head_info["depth"]
     scene["nexia_head_blockout_height"] = head_info["height"]
+    scene["nexia_head_size_source"] = "normalized_reference_geometry"
+    scene["nexia_head_fit_scale"] = head_geometry["scale_factor"]
+    scene["nexia_head_fit_z_offset"] = head_geometry["z_offset"]
 
     bpy.context.view_layer.update()
 
@@ -525,7 +590,7 @@ def main():
 
     print("NEXIA_HEAD_SETUP_OK")
     print(
-        "Head blockout dimensions: "
+        "Calculated head dimensions: "
         + str(
             tuple(
                 round(value, 6)
@@ -537,6 +602,11 @@ def main():
             )
         )
     )
+    print(
+        "Head center: "
+        + str(tuple(round(value, 6) for value in head_info["center"]))
+    )
+    print(f"Blockout fit scale source: {head_geometry['scale_factor']:.6f}")
     print(f"Head object count: {len(head_names)}")
     print("Objects:")
     for name in head_names:
