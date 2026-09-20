@@ -483,13 +483,16 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
 - AI生成結果が不採用でも、既存の手作業 `nexia_model.blend` とスクリプト群は削除せずフォールバックとして残す。
 - 2026-09-20、従来 `right.png / REF_RIGHT` としていた側面図は実際にはキャラクターの左側面であることを確認。`left.png / REF_LEFT` へ修正し、旧 `right.png` は再生成時に削除する。
 
-- [ ] 2-A-1. Hunyuan3D-2mvへ3方向画像を入力する。
+- [x] 2-A-1. Hunyuan3D-2mvへ3方向画像を入力する。
   - Front: `assets/character/3d/nexia/reference/front.png`
   - Back: `assets/character/3d/nexia/reference/back.png`
   - Left: `assets/character/3d/nexia/reference/left.png`
   - Right: 未指定。
-  - `Gen Shape` を実行する。
-  - 完了条件: 3方向画像から1体の3D Shapeが生成される。
+  - `Gen Shape` を実行済み。
+  - 2026-09-21、Hunyuan3D-2mvのGenerated Mesh画面で1体の3D Shape生成を確認。
+    - 全身比率、ヘルメット、胸部、前腕装甲、脚装甲、足の主要シルエットを概ね取得できている。
+    - 現時点では「修正ベースとして有望」。正式採用判定はGLBをBlenderへ取り込んで三面図比較後に行う。
+  - 完了条件: 3方向画像から1体の3D Shapeが生成される。達成済み。
 
 - [ ] 2-A-2. 生成ShapeをGLBで保存する。
   - 保存先予定: `assets/character/3d/nexia/ai/hunyuan3d-2mv.glb`。
