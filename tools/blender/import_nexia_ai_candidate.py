@@ -243,7 +243,7 @@ def main():
 
     require_reference("REF_FRONT")
     require_reference("REF_BACK")
-    require_reference("REF_LEFT")
+    require_reference("REF_RIGHT")
     reference_fit = get_front_reference_fit()
 
     clear_previous_candidate()
