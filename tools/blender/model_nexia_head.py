@@ -187,6 +187,128 @@ def create_ellipsoid(collection, name, center, radii, material):
     return obj
 
 
+def create_helmet_shell(
+    collection,
+    name,
+    center,
+    width,
+    depth,
+    height,
+    material,
+    segments=64,
+):
+    # Cross-section controlled shell. Each ring defines:
+    # (z ratio, X half-width ratio, front-depth ratio, back-depth ratio, Y shift ratio)
+    # Front is -Y. The lower front is intentionally tighter than the back so the
+    # silhouette reads as a helmet with a face opening rather than a sphere.
+    ring_specs = (
+        (-0.46, 0.30, 0.23, 0.31, 0.025),
+        (-0.34, 0.43, 0.29, 0.40, 0.030),
+        (-0.16, 0.50, 0.35, 0.46, 0.035),
+        (0.06, 0.515, 0.40, 0.475, 0.035),
+        (0.26, 0.485, 0.385, 0.445, 0.025),
+        (0.40, 0.395, 0.325, 0.360, 0.010),
+        (0.47, 0.245, 0.205, 0.225, 0.000),
+    )
+
+    vertices = []
+    faces = []
+
+    bottom_index = 0
+    vertices.append(
+        (
+            center[0],
+            center[1] + depth * 0.020,
+            center[2] - height * 0.485,
+        )
+    )
+
+    ring_starts = []
+    for z_ratio, x_ratio, front_ratio, back_ratio, y_shift_ratio in ring_specs:
+        ring_starts.append(len(vertices))
+        for segment in range(segments):
+            angle = math.tau * segment / segments
+            cos_a = math.cos(angle)
+            sin_a = math.sin(angle)
+
+            x = center[0] + width * x_ratio * cos_a
+            if sin_a < 0.0:
+                y_radius = depth * front_ratio
+            else:
+                y_radius = depth * back_ratio
+
+            y = (
+                center[1]
+                + depth * y_shift_ratio
+                + y_radius * sin_a
+            )
+            z = center[2] + height * z_ratio
+            vertices.append((x, y, z))
+
+    top_index = len(vertices)
+    vertices.append(
+        (
+            center[0],
+            center[1],
+            center[2] + height * 0.495,
+        )
+    )
+
+    first_ring = ring_starts[0]
+    for segment in range(segments):
+        next_segment = (segment + 1) % segments
+        faces.append(
+            (
+                bottom_index,
+                first_ring + next_segment,
+                first_ring + segment,
+            )
+        )
+
+    for ring_index in range(len(ring_starts) - 1):
+        lower = ring_starts[ring_index]
+        upper = ring_starts[ring_index + 1]
+
+        for segment in range(segments):
+            next_segment = (segment + 1) % segments
+            faces.append(
+                (
+                    lower + segment,
+                    lower + next_segment,
+                    upper + next_segment,
+                    upper + segment,
+                )
+            )
+
+    last_ring = ring_starts[-1]
+    for segment in range(segments):
+        next_segment = (segment + 1) % segments
+        faces.append(
+            (
+                last_ring + segment,
+                last_ring + next_segment,
+                top_index,
+            )
+        )
+
+    mesh = bpy.data.meshes.new(name + "_MESH")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    assign_material(obj, material)
+
+    subdivision = obj.modifiers.new("HelmetSurface", "SUBSURF")
+    subdivision.levels = 1
+    subdivision.render_levels = 1
+
+    return obj
+
+
 def create_rounded_box(
     collection,
     name,
@@ -340,23 +462,25 @@ def build_head(body_collection, armor_collection, blockout_head, head_geometry):
     )
 
     # Project-specific convention: -Y is character front.
-    # Shift the cap slightly backward and flatten the front-to-back radius so it
-    # reads as a helmet rather than a perfect ball.
+    # Use a dedicated cross-section mesh instead of a sphere so the front,
+    # crown and rear silhouettes can be controlled independently.
     shell_center = (
         center.x,
-        center.y + depth * 0.035,
-        center.z + height * 0.005,
+        center.y,
+        center.z,
     )
-    shell = create_ellipsoid(
+    shell = create_helmet_shell(
         armor_collection,
         "HEAD_HELMET_SHELL",
         shell_center,
-        (width * 0.505, depth * 0.465, height * 0.505),
+        width,
+        depth,
+        height,
         blue,
     )
 
-    front_y = shell_center[1] - depth * 0.455
-    back_y = shell_center[1] + depth * 0.455
+    front_y = center.y - depth * 0.405
+    back_y = center.y + depth * 0.455
 
     # Eye/skin opening: a tapered plate rather than a horizontal oval.
     create_trapezoid_prism(
@@ -566,7 +690,7 @@ def main():
         head_geometry,
     )
 
-    scene["nexia_head_status"] = "ROUGH_HEAD_HELMET_CHECK"
+    scene["nexia_head_status"] = "FORMAL_HELMET_SHELL_CHECK"
     scene["nexia_head_source"] = "approved front/back/right references"
     scene["nexia_head_blockout_width"] = head_info["width"]
     scene["nexia_head_blockout_depth"] = head_info["depth"]
