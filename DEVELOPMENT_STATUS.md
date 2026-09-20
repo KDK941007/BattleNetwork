@@ -542,7 +542,16 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
 ### Phase 2-C: AI生成モデル補正ルート（正式採用）
 
 方針:
-Hunyuan3D-2mv生成モデルをベースに、三面図との差が大きい箇所だけBlenderで補正する。
+2026-09-21、Tripo無料枠の単一正面画像生成でHunyuanより高い正面再現度を確認したため、Hunyuan補正へ進む前にTripo H3.1 Multi-view APIを月額契約なしで1回検証する。
+検証スクリプト: `tools/tripo/test_nexia_multiview.py`。
+- APIキーは `TRIPO_API_KEY` 環境変数からのみ読み込み、リポジトリへ保存しない。
+- デフォルトはDry Runで、入力画像・API残高・想定クレジットだけ確認する。
+- `--execute` を付けた場合のみ、front / left / back の3画像をアップロードしMulti-view生成を実行する。
+- デフォルトはTexture OFF / H3.1 standard geometryで20 credits想定。
+- `--with-texture` 指定時はstandard PBR texture付きで30 credits想定。
+- 成功時の保存先: `assets/character/3d/nexia/ai/tripo-multiview.glb`。
+- Tripo Multi-view結果がHunyuanより修正量を明確に減らせる場合は、正式修正元をTripoへ切り替える。
+- それ以外はHunyuan3D-2mv生成モデルをベースに、三面図との差が大きい箇所だけBlenderで補正する。
 全身をゼロから作り直さず、既に一致している大枠のシルエットは維持する。
 補正は一度に複数部位へ広げず、部位ごとに三面図確認してから次へ進む。
 
