@@ -494,15 +494,22 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
     - 現時点では「修正ベースとして有望」。正式採用判定はGLBをBlenderへ取り込んで三面図比較後に行う。
   - 完了条件: 3方向画像から1体の3D Shapeが生成される。達成済み。
 
-- [ ] 2-A-2. 生成ShapeをGLBで保存する。
-  - 保存先予定: `assets/character/3d/nexia/ai/hunyuan3d-2mv.glb`。
-  - リポジトリへ追加する前に、生成結果を目視確認する。
-  - 完了条件: Blenderへ取り込めるGLBを取得済み。
+- [x] 2-A-2. 生成ShapeをGLBで保存する。
+  - Hunyuan3D-2mvのExport Transformで `Unknown format for load: ply` が発生したため、Generated Meshが参照している `white_mesh.glb` を直接取得。
+  - 2026-09-21、取得したGLBを確認し、glTF 2.0 / 1メッシュの有効な3Dモデルであることを確認。
+  - リポジトリ内で使用する正式配置名: `assets/character/3d/nexia/ai/hunyuan3d-2mv.glb`。
+  - 完了条件: Blenderへ取り込めるGLBを取得済み。達成済み。
 
 - [ ] 2-A-3. AI生成モデルをBlenderへ別オブジェクトとして取り込む。
+  - 自動取り込みスクリプト: `tools/blender/import_nexia_ai_candidate.py`。
   - 既存の手作業モデルを上書きしない。
-  - AI候補用コレクションを分離する。
+  - AI候補は `AI_CANDIDATE` コレクションへ分離する。
   - 既存 `REFERENCE` の正面 / 背面 / 左側面と同じ座標系へ合わせる。
+  - `REF_FRONT` の可視キャラクター高へAIモデル全高を自動フィットし、足元とX/Y中心を基準へ合わせる。
+  - Blender glTF importer後にZが最長軸でない場合は、軸方向を推測せず停止する。
+  - 初回比較ではYawを0度のまま取り込み、前後反転が必要かは三面図比較後に判断する。
+  - デフォルト入力: `assets/character/3d/nexia/ai/hunyuan3d-2mv.glb`。
+  - 実行: `blender --background --python tools/blender/import_nexia_ai_candidate.py`
   - 完了条件: 三面図とAIモデルを同じBlenderファイル内で比較可能。
 
 - [ ] 2-A-4. 三面図との一致度を評価する。
