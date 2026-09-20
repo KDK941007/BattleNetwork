@@ -691,7 +691,7 @@ def main():
     )
 
     scene["nexia_head_status"] = "FORMAL_HELMET_SHELL_CHECK"
-    scene["nexia_head_source"] = "approved front/back/left references"
+    scene["nexia_head_source"] = "approved front/back/right references"
     scene["nexia_head_blockout_width"] = head_info["width"]
     scene["nexia_head_blockout_depth"] = head_info["depth"]
     scene["nexia_head_blockout_height"] = head_info["height"]
