@@ -188,7 +188,7 @@ def create_symmetric_ellipsoid_pair(
 def require_references():
     missing = [
         name
-        for name in ("REF_FRONT", "REF_BACK", "REF_RIGHT")
+        for name in ("REF_FRONT", "REF_BACK", "REF_LEFT")
         if bpy.data.objects.get(name) is None
     ]
     if missing:
