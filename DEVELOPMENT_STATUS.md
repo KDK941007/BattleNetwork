@@ -550,6 +550,9 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
 - デフォルトはTexture OFF / H3.1 standard geometryで20 credits想定。
 - `--with-texture` 指定時はstandard PBR texture付きで30 credits想定。
 - 成功時の保存先: `assets/character/3d/nexia/ai/tripo-multiview.glb`。
+- 2026-09-21、Tripo H3.1 Multi-view APIを front / left / back の3画像、Texture OFFで実行し成功。20 credits消費し `tripo-multiview.glb` の取得まで完了。
+- Hunyuan版を保持したまま比較するため、`tools/blender/import_nexia_tripo_candidate.py` を追加。Tripoは `AI_TRIPO_CANDIDATE` / `AI_TRIPO_ROOT` として別管理し、既存 `AI_CANDIDATE` は削除・上書きしない。
+- 次の確認はTripo GLBをBlenderへ取り込み、正面 / 左側面 / 背面で元三面図およびHunyuan版と比較する。ユーザー確認前に正式修正元は切り替えない。
 - Tripo Multi-view結果がHunyuanより修正量を明確に減らせる場合は、正式修正元をTripoへ切り替える。
 - それ以外はHunyuan3D-2mv生成モデルをベースに、三面図との差が大きい箇所だけBlenderで補正する。
 全身をゼロから作り直さず、既に一致している大枠のシルエットは維持する。
