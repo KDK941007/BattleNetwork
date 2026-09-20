@@ -303,10 +303,10 @@ def main():
         location=(0.0, -0.05, 0.0),
     )
     left_matrix = make_transform(
-        basis_x=(0.0, 1.0, 0.0),
+        basis_x=(0.0, -1.0, 0.0),
         basis_y=(0.0, 0.0, 1.0),
-        basis_z=(1.0, 0.0, 0.0),
-        location=(-0.05, 0.0, 0.0),
+        basis_z=(-1.0, 0.0, 0.0),
+        location=(0.05, 0.0, 0.0),
     )
 
     add_reference_image(reference_collection, "REF_FRONT", output_paths[0], front_matrix)
