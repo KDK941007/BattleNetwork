@@ -14,7 +14,7 @@ MODEL = "v3.1-20260211"
 
 DEFAULT_FRONT = Path("assets/character/3d/nexia/reference/front.png")
 DEFAULT_BACK = Path("assets/character/3d/nexia/reference/back.png")
-DEFAULT_LEFT = Path("assets/character/3d/nexia/reference/left.png")
+DEFAULT_RIGHT = Path("assets/character/3d/nexia/reference/right.png")
 DEFAULT_OUTPUT = Path("assets/character/3d/nexia/ai/tripo-multiview.glb")
 
 
@@ -27,7 +27,7 @@ def parse_args():
     )
     parser.add_argument("--front", type=Path, default=DEFAULT_FRONT)
     parser.add_argument("--back", type=Path, default=DEFAULT_BACK)
-    parser.add_argument("--left", type=Path, default=DEFAULT_LEFT)
+    parser.add_argument("--right", type=Path, default=DEFAULT_RIGHT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
         "--with-texture",
@@ -177,7 +177,7 @@ def create_multiview_task(tokens, with_texture):
     body_data = {
         "inputs": [
             {"front": tokens["front"]},
-            {"left": tokens["left"]},
+            {"right": tokens["right"]},
             {"back": tokens["back"]},
         ],
         "model": MODEL,
@@ -254,7 +254,7 @@ def main():
     inputs = {
         "front": args.front.resolve(),
         "back": args.back.resolve(),
-        "left": args.left.resolve(),
+        "right": args.right.resolve(),
     }
     ensure_inputs(inputs)
 
@@ -266,9 +266,9 @@ def main():
 
     print("TRIPO_NEXIA_PREFLIGHT_OK")
     print(f"Model: {MODEL}")
-    print("Views: front / left / back")
+    print("Views: front / right / back")
     print(f"Front: {inputs['front']}")
-    print(f"Left: {inputs['left']}")
+    print(f"Right: {inputs['right']}")
     print(f"Back: {inputs['back']}")
     print(f"Texture: {'standard PBR' if args.with_texture else 'OFF'}")
     print(f"Expected base generation cost: {expected_credits} credits")
@@ -291,7 +291,7 @@ def main():
     print("")
     print("Uploading 3 reference images...")
     tokens = {}
-    for view in ("front", "left", "back"):
+    for view in ("front", "right", "back"):
         print(f"Uploading {view}...")
         tokens[view] = upload_file(inputs[view])
 
