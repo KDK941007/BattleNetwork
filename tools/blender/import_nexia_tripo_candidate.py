@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import sys
+from array import array
 
 import bpy
 from mathutils import Vector
@@ -11,8 +12,6 @@ TRIPO_COLLECTION_NAME = "AI_TRIPO_CANDIDATE"
 TRIPO_ROOT_NAME = "AI_TRIPO_ROOT"
 TRIPO_MARKER = "nexia_tripo_candidate"
 
-REFERENCE_TOP_Y = 18.0
-REFERENCE_BOTTOM_Y = 850.0
 
 
 def parse_args():
@@ -67,6 +66,56 @@ def require_reference(name):
     return obj
 
 
+def foreground(r, g, b, a):
+    if a < 0.10:
+        return False
+
+    avg = (r + g + b) / 3.0
+    saturation = max(r, g, b) - min(r, g, b)
+
+    # Keep the same foreground rule as setup_nexia_references.py.
+    return avg < 0.84 or saturation > 0.11
+
+
+def detect_subject_vertical_bounds(image):
+    width, height = image.size
+    if width <= 0 or height <= 0:
+        raise RuntimeError(
+            f"Reference image has invalid dimensions: {width}x{height}"
+        )
+
+    pixels = array("f", [0.0]) * (width * height * 4)
+    image.pixels.foreach_get(pixels)
+
+    min_active_pixels = max(2, int(width * 0.01))
+    active_rows = []
+
+    for y in range(height):
+        active_count = 0
+        row_start = y * width * 4
+
+        for x in range(width):
+            idx = row_start + x * 4
+            if foreground(
+                pixels[idx],
+                pixels[idx + 1],
+                pixels[idx + 2],
+                pixels[idx + 3],
+            ):
+                active_count += 1
+
+        if active_count >= min_active_pixels:
+            active_rows.append(y)
+
+    if not active_rows:
+        raise RuntimeError(
+            "Could not detect the Nexia foreground in REF_FRONT. "
+            "Stop instead of falling back to obsolete fixed pixel bounds."
+        )
+
+    return min(active_rows), max(active_rows)
+
+
 def get_front_reference_fit():
     ref = require_reference("REF_FRONT")
     image = getattr(ref, "data", None)
@@ -80,15 +129,19 @@ def get_front_reference_fit():
             f"REF_FRONT image has invalid dimensions: {image_width}x{image_height}"
         )
 
+    subject_bottom_y, subject_top_y = detect_subject_vertical_bounds(image)
+
     vertical_axis_world = ref.matrix_world.to_3x3() @ Vector((0.0, 1.0, 0.0))
     frame_height_world = ref.empty_display_size * vertical_axis_world.length
     frame_bottom_world = ref.matrix_world.translation.z
 
+    # Blender image rows are bottom-origin. Derive the visible character
+    # bounds from the current REF_FRONT instead of legacy fixed pixel values.
     visible_bottom_world = frame_bottom_world + frame_height_world * (
-        (image_height - REFERENCE_BOTTOM_Y) / image_height
+        subject_bottom_y / image_height
     )
     visible_top_world = frame_bottom_world + frame_height_world * (
-        (image_height - REFERENCE_TOP_Y) / image_height
+        (subject_top_y + 1) / image_height
     )
     visible_height_world = visible_top_world - visible_bottom_world
 
@@ -99,11 +152,14 @@ def get_front_reference_fit():
         )
 
     return {
+        "image_width": image_width,
+        "image_height": image_height,
+        "subject_bottom_y": subject_bottom_y,
+        "subject_top_y": subject_top_y,
         "visible_bottom_world": visible_bottom_world,
         "visible_top_world": visible_top_world,
         "visible_height_world": visible_height_world,
     }
-
 
 def clear_previous_tripo_candidate():
     collection = bpy.data.collections.get(TRIPO_COLLECTION_NAME)
