@@ -531,41 +531,43 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
   - 2026-09-21、ユーザー確認により `修正ベースとして採用` で確定。
   - 完了条件: 「そのまま採用 / 修正ベースとして採用 / 不採用」のいずれかをユーザー確認で確定する。達成済み。
 
-- [ ] 2-A-5. 採用ルートを再確定する。
+- [x] 2-A-5. 採用ルートを再確定する。
   - そのまま採用: AIモデルを正式ベースとしてトポロジー・マテリアル・リグ工程へ進む。
   - 修正ベースとして採用: AIモデルの必要箇所だけBlenderで修正する。
   - 不採用: 下記の手作業2-4以降へ戻る。
-  - 2026-09-21に一度Hunyuan3D-2mvを `修正ベースとして採用` としたが、その後、側面図を左側面として扱っていたことが誤りと判明したため、この採用判定は保留へ戻す。
+  - 2026-10-07、最新版三面図を再確認し、側面図は `left.png / REF_LEFT` として扱うのが正しいことを確認。従来のright判定は訂正する。
+  - 2026-10-07、Tripo H3.1 Multi-viewを `front / left / back` で再生成し、Texture OFFで20 credits消費。生成・GLB取得に成功。
+  - Blender取り込み時はTripo生成物の初期向きに対してYaw -90度を適用すると、BlenderのFront / Left / Backと整合することを確認。
+  - 最新三面図の解像度変更に追従できるよう、Tripo / Hunyuan取り込み時の旧固定ピクセル境界を廃止し、REF_FRONTからキャラクター上下端を自動検出して全高・足元を合わせる方式へ修正。
+  - 再比較では、旧Tripoで見られた側面の向き逆・背面への正面造形混入が大幅に改善し、全高・足元・大枠シルエットも修正ベースとして利用可能な水準を確認。
+  - 2026-10-07、ユーザー確認によりTripo H3.1 Multi-view生成モデルを正式な `修正ベース` として採用。
   - Hunyuan版は比較・フォールバック用途として保持する。
-  - 正しい `right.png / REF_RIGHT` を使用したTripo Multi-view再生成・三面図比較後に正式ベースを再確定する。
-  - 完了条件: 正しい側面入力で比較したうえで、以後の3D制作ルートが1つに確定している。
+  - 完了条件: 正しい側面入力で比較したうえで、以後の3D制作ルートが1つに確定している。達成済み。
 
-### Phase 2-C: AI生成モデル補正ルート（側面修正後の再評価中）
+### Phase 2-C: Tripo正式採用モデル補正ルート
 
 方針:
-2026-09-21、Tripo無料枠の単一正面画像生成でHunyuanより高い正面再現度を確認したため、Hunyuan補正へ進む前にTripo H3.1 Multi-view APIを月額契約なしで1回検証する。
-検証スクリプト: `tools/tripo/test_nexia_multiview.py`。
-- 2026-09-21、側面図が右側面であることを確認。初回のTripo Multi-viewは `left` スロットへ誤って渡していたため、20 creditsで取得した初回GLBは最終比較対象から外し、正しい `right` スロットで1回再生成する。
+2026-10-07、最新版三面図を `front / left / back` としてTripo H3.1 Multi-viewへ入力し直した結果を、正式な修正ベースとして採用する。
+検証・再生成スクリプト: `tools/tripo/test_nexia_multiview.py`。
 - APIキーは `TRIPO_API_KEY` 環境変数からのみ読み込み、リポジトリへ保存しない。
 - デフォルトはDry Runで、入力画像・API残高・想定クレジットだけ確認する。
-- `--execute` を付けた場合のみ、front / right / back の3画像をアップロードしMulti-view生成を実行する。
+- `--execute` を付けた場合のみ、front / left / back の3画像をアップロードしMulti-view生成を実行する。
 - デフォルトはTexture OFF / H3.1 standard geometryで20 credits想定。
-- `--with-texture` 指定時はstandard PBR texture付きで30 credits想定。
 - 成功時の保存先: `assets/character/3d/nexia/ai/tripo-multiview.glb`。
-- 2026-09-21、Tripo H3.1 Multi-view APIを front / right / back の3画像、Texture OFFで実行し成功。20 credits消費し `tripo-multiview.glb` の取得まで完了。
-- Hunyuan版を保持したまま比較するため、`tools/blender/import_nexia_tripo_candidate.py` を追加。Tripoは `AI_TRIPO_CANDIDATE` / `AI_TRIPO_ROOT` として別管理し、既存 `AI_CANDIDATE` は削除・上書きしない。
-- 次の確認はTripo GLBをBlenderへ取り込み、正面 / 右側面 / 背面で元三面図およびHunyuan版と比較する。ユーザー確認前に正式修正元は切り替えない。
-- Tripo Multi-view結果がHunyuanより修正量を明確に減らせる場合は、正式修正元をTripoへ切り替える。
-- それ以外はHunyuan3D-2mv生成モデルをベースに、三面図との差が大きい箇所だけBlenderで補正する。
-全身をゼロから作り直さず、既に一致している大枠のシルエットは維持する。
-補正は一度に複数部位へ広げず、部位ごとに三面図確認してから次へ進む。
+- Tripoは `AI_TRIPO_CANDIDATE` / `AI_TRIPO_ROOT` として元生成物を保持する。
+- 補正作業では元Tripoを直接破壊せず、`tools/blender/prepare_nexia_tripo_correction.py` で `TRIPO_CORRECTION` 作業コピーを作成して編集する。
+- Hunyuan版 `AI_CANDIDATE` は削除せず比較・フォールバック用途として保持する。
+- 全身をゼロから作り直さず、既に一致している大枠のシルエットは維持する。
+- 補正は一度に複数部位へ広げず、部位ごとに三面図確認してから次へ進む。
 
-- [ ] 2-C-1. 頭部・顔・マスクを補正する。
+- [ ] 2-C-1. 頭部・顔・マスクを補正する。（2026-10-07 着手）
+  - まず `tools/blender/prepare_nexia_tripo_correction.py` で元Tripoを保持したまま `TRIPO_CORRECTION` 作業コピーを作成する。
+  - この工程では頭部以外の胴体・腕・脚形状を変更しない。
   - ヘルメット外形の大枠は維持する。
   - 顔露出部の形状を三面図へ合わせる。
   - 濃青マスクの輪郭・高さ・幅を三面図へ合わせる。
   - 耳部は大枠を維持し、必要な場合のみ位置・厚みを調整する。
-  - 完了条件: 正面 / 右側面 / 背面で頭部シルエットと顔・マスク位置が三面図と概ね一致する。
+  - 完了条件: 正面 / 左側面 / 背面で頭部シルエットと顔・マスク位置が三面図と概ね一致する。
 
 - [ ] 2-C-2. 胸部・胴体を補正する。
   - AI独自の胸中央立体を整理し、三面図の胸装甲構成へ寄せる。
