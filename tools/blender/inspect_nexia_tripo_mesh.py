@@ -121,7 +121,7 @@ def main():
             f"{COLLECTION_NAME} missing. Prepare the correction workspace first."
         )
 
-    for name in ("REF_FRONT", "REF_LEFT", "REF_BACK"):
+    for name in ("REF_FRONT", "REF_RIGHT", "REF_BACK"):
         reference = bpy.data.objects.get(name)
         if reference is None:
             raise RuntimeError(f"Missing reference: {name}")
