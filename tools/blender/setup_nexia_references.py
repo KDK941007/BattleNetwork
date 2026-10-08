@@ -9,7 +9,7 @@ from mathutils import Matrix
 
 
 REFERENCE_OBJECTS = ("REF_FRONT", "REF_BACK", "REF_LEFT", "REF_RIGHT")
-REFERENCE_FILES = ("front.png", "back.png", "left.png")
+REFERENCE_FILES = ("front.png", "back.png", "right.png")
 
 
 def parse_args():
@@ -17,7 +17,7 @@ def parse_args():
     user_args = argv[argv.index("--") + 1 :] if "--" in argv else []
 
     parser = argparse.ArgumentParser(
-        description="Create front/back/left Nexia reference images and place them in Blender."
+        description="Create front/back/right Nexia reference images and place them in Blender."
     )
     parser.add_argument(
         "--blend",
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
         "--source",
         default=os.path.join("assets", "character", "ネクシア.png"),
-        help="Source turnaround sheet. Expected order: front / back / left-side.",
+        help="Source turnaround sheet. Expected order: front / back / right-side.",
     )
     parser.add_argument(
         "--reference-dir",
@@ -107,7 +107,7 @@ def detect_three_horizontal_subjects(image):
     if len(scored) < 3:
         raise RuntimeError(
             "Expected three horizontal character views, but fewer than three were detected. "
-            "Use the turnaround sheet with front / back / left-side arranged left-to-right."
+            "Use the turnaround sheet with front / back / right-side arranged left-to-right."
         )
 
     selected = sorted(scored, reverse=True)[:3]
@@ -280,9 +280,9 @@ def main():
             save_crop(source_pixels, source_width, box, output_path)
         )
 
-    stale_right_path = os.path.join(reference_dir, "right.png")
-    if os.path.isfile(stale_right_path):
-        os.remove(stale_right_path)
+    stale_left_path = os.path.join(reference_dir, "left.png")
+    if os.path.isfile(stale_left_path):
+        os.remove(stale_left_path)
 
     reference_collection = ensure_reference_collection()
     clear_previous_reference_objects(reference_collection)
@@ -302,20 +302,20 @@ def main():
         basis_z=(0.0, 1.0, 0.0),
         location=(0.0, -0.05, 0.0),
     )
-    left_matrix = make_transform(
-        basis_x=(0.0, -1.0, 0.0),
+    right_matrix = make_transform(
+        basis_x=(0.0, 1.0, 0.0),
         basis_y=(0.0, 0.0, 1.0),
-        basis_z=(-1.0, 0.0, 0.0),
-        location=(0.05, 0.0, 0.0),
+        basis_z=(1.0, 0.0, 0.0),
+        location=(-0.05, 0.0, 0.0),
     )
 
     add_reference_image(reference_collection, "REF_FRONT", output_paths[0], front_matrix)
     add_reference_image(reference_collection, "REF_BACK", output_paths[1], back_matrix)
-    add_reference_image(reference_collection, "REF_LEFT", output_paths[2], left_matrix)
+    add_reference_image(reference_collection, "REF_RIGHT", output_paths[2], right_matrix)
 
     scene = bpy.context.scene
     scene["nexia_reference_source"] = bpy.path.relpath(source_path)
-    scene["nexia_reference_order"] = "front/back/left-side"
+    scene["nexia_reference_order"] = "front/back/right-side"
     scene["nexia_reference_alignment"] = "common_crop_height_and_bottom_origin"
     scene["nexia_reference_absolute_height"] = "UNSPECIFIED"
 
@@ -331,7 +331,7 @@ def main():
     print(f"Source size: {source_width}x{source_height}")
     print(f"Detected boxes: {boxes}")
     print(f"Reference directory: {reference_dir}")
-    print("Objects: REF_FRONT / REF_BACK / REF_LEFT")
+    print("Objects: REF_FRONT / REF_BACK / REF_RIGHT")
     print(f"Saved: {blend_path}")
 
 
