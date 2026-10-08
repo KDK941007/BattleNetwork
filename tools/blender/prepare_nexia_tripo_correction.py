@@ -157,7 +157,7 @@ def main():
 
     require_reference("REF_FRONT")
     require_reference("REF_BACK")
-    require_reference("REF_LEFT")
+    require_reference("REF_RIGHT")
     source = require_collection(SOURCE_COLLECTION)
 
     existing = bpy.data.collections.get(WORK_COLLECTION)
@@ -191,7 +191,7 @@ def main():
     print(f"Source preserved: {SOURCE_COLLECTION}")
     print(f"Working collection: {WORK_COLLECTION}")
     print(f"Active mesh: {active_mesh.name}")
-    print("References: REF_FRONT / REF_BACK / REF_LEFT")
+    print("References: REF_FRONT / REF_BACK / REF_RIGHT")
     print("Next step: correct head / face / mask only; do not edit other body regions yet.")
     print(f"Saved: {blend_path}")
 
