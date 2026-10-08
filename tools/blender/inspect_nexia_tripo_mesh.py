@@ -92,6 +92,15 @@ def inspect_mesh(obj):
     if len(ranked) > 12:
         print(f"  remaining_parts={len(ranked) - 12}")
 
+    # Read-only inventory; region membership does not confirm body-part identity.
+    upper_cutoff = max_world[2] - (max_world[2] - min_world[2]) * 0.30
+    print(f"  UPPER_COMPONENTS (z_max >= {upper_cutoff:.5f}):")
+    for n, indices in enumerate(ranked, start=1):
+        coords = [obj.matrix_world @ mesh.vertices[i].co for i in indices]
+        lo = tuple(min(v[axis] for v in coords) for axis in range(3))
+        hi = tuple(max(v[axis] for v in coords) for axis in range(3))
+        if hi[2] >= upper_cutoff:
+            print(f"  upper_part_{n}: vertices={len(indices)}, min={fmt(lo)}, max={fmt(hi)}")
     total_height = max_world[2] - min_world[2]
     if total_height > 0:
         for top_fraction in (0.20, 0.30):
