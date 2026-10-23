@@ -174,6 +174,15 @@ def main():
     empty_eye = obj.vertex_groups.get(EYE_UNCONFIRMED)
     if scope is None or empty_eye is None:
         raise RuntimeError("The existing head/eye groups are missing.")
+    # The earlier accidental Assign must NOT be present in the reopened input.
+    if any(
+        any(link.group == empty_eye.index for link in vertex.groups)
+        for vertex in obj.data.vertices
+    ):
+        raise RuntimeError(
+            "Unconfirmed eye target group already contains vertices. "
+            "Reopen the original unchanged selection workspace instead."
+        )
     if obj.vertex_groups.get("NEXIA_EYE_PREVIEW_SCREEN_LEFT"):
         raise RuntimeError("An earlier preview group already exists in source.")
     if obj.vertex_groups.get("NEXIA_EYE_PREVIEW_SCREEN_RIGHT"):
