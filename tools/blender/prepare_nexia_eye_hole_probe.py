@@ -118,9 +118,11 @@ def make_probe(obj, ranks):
         for number, (idx, required_rank, sign) in enumerate(settings):
             if part_rank != required_rank:
                 continue
-            if (vertex.co.x * sign) < -0.005:
-                # The source is symmetric in X; this sanity test reduces
-                # mis-selection near the centerline, not a precise eye shape.
+            world_x = (obj.matrix_world @ vertex.co).x
+            if (world_x * sign) < -0.005:
+                # Compare in WORLD coordinates; the imported mesh may have a
+                # non-identity yaw transform in the correction collection.
+                # This is not a precise eye boundary.
                 continue
             if any(link.group == idx for link in vertex.groups):
                 indices.append(vertex.index)
