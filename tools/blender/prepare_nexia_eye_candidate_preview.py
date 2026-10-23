@@ -21,9 +21,11 @@ HEAD_SCOPE = "NEXIA_HEAD_SCOPE_CANDIDATES"
 EYE_UNCONFIRMED = "NEXIA_EYE_TARGET_UNCONFIRMED"
 GUIDE_COLLECTION = "NEXIA_EYE_PREVIEW_GUIDES"
 # Front is -Y in the BattleNetwork coordinate convention.
-# Broad, provisional areas only; do not use them as a deformation mask.
-SCREEN_LEFT = (-0.190, -0.015, 1.585, 1.755)
-SCREEN_RIGHT = (0.015, 0.190, 1.585, 1.755)
+# Revised provisional rectangles from the front-reference screenshot.
+# Compared with v1, exclude most of the ear unit and lower mask. These are
+# NOT exact eye outlines and must not be used directly for vertex deformation.
+SCREEN_LEFT = (-0.133, -0.019, 1.647, 1.746)
+SCREEN_RIGHT = (0.012, 0.129, 1.647, 1.746)
 MAX_FRONT_Y = -0.040
 GUIDE_Y = -0.290
 
@@ -43,7 +45,7 @@ def parse_args():
         "--output",
         default=os.path.join(
             "assets", "character", "3d", "nexia",
-            "nexia_eye_candidate_preview.blend"
+            "nexia_eye_candidate_preview_v2.blend"
         ),
     )
     parser.add_argument(
@@ -250,7 +252,7 @@ def main():
     print(f"Preview saved: {output}")
     print(f"Provisional screen-left vertices: {counts['screen-left']}")
     print(f"Provisional screen-right vertices: {counts['screen-right']}")
-    print("Red/cyan frames show ROUGH eye regions, not validated edits.")
+    print("Red/cyan frames are refined but UNCONFIRMED eye areas, not validated edits.")
     print("No mesh positions, edges, faces, or eye-target group were modified.")
 
 
