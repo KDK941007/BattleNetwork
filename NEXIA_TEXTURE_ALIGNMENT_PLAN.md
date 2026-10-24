@@ -26,13 +26,16 @@ Working branch: `fix/nexia-reference-fit-20261007`
 
 - [x] User explicitly approved using the horizontally mirrored RIGHT illustration as LEFT; **do not** create an independently imagined left illustration.
 - [x] Add `tools/blender/prepare_nexia_mirrored_left_workspace.py` that produces `reference/left.png` and `nexia_four_view_workspace.blend` from the existing RIGHT image and protected model source.
-- [ ] Execute the script in Blender 5.2.2, verify `NEXIA_MIRRORED_LEFT_WORKSPACE_OK` and open the separate workspace.
-- [ ] Use `REF_FRONT`, `REF_RIGHT`, `REF_BACK`, `REF_LEFT` as **four explicit** Blender reference objects with the same subject scale and ground plane.
-- [ ] Keep `nexia_model.blend`, existing trial models, and `right.png` unchanged. The new script refuses to overwrite `left.png` or the four-view workspace.
+- [x] Four-view workspace generated and opened by user; four screenshot views received on 2026-10-24. Console success marker was not supplied, so validation is visual rather than log-based.
+- [x] FRONT / RIGHT / BACK / LEFT appear side-by-side with their corresponding model views in user screenshots. Some model outlines still differ from illustrations; that is not a missing reference issue.
+- [x] Workspace script designed not to overwrite original model, RIGHT PNG, LEFT PNG, or an existing workspace; no evidence of an original-file modification in supplied screenshots.
 
 Exit: FOUR reference objects exist, LEFT is the confirmed exact horizontal mirror of RIGHT, and the original reference/model files remain intact. Asymmetric details are out of scope unless later requested.
 
 ### B-2. Solve position alignment (critical path)
+
+- [x] Add a reproducible *first-pass* per-direction head silhouette calibration (upper-head band measurements only); it does not count as precise landmark correspondence.
+- [ ] After the user inspects the head pilot, determine whether individual eye/ear/visor correspondences require manual UV anchors or head mesh work.
 
 - [ ] Identify correspondences between illustration and model **for each body part**. Start with HEAD/FACE, then TORSO, ARM-L/R, LEG-L/R, FEET-L/R.
 - [ ] Record 2D anchors per image and matching 3D points. For HEAD, include top center, ear centers, visor ends, mask tip, eyes; for TORSO, chest emblem and armor edges; for arms/legs, joints and major armor ridges.
@@ -44,7 +47,7 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 
 ### B-3. Head-only pilot (strictly bounded)
 
-- [ ] Produce ONE head-only material alignment output on a protected model copy.
+- [x] Add `tools/blender/create_nexia_head_alignment_trial.py`: head-height-limited material, automatic silhouette-band registration with per-view horizontal scale/shift, and separate output `nexia_head_alignment_trial.blend`. Script is implemented; Blender 5.2.2 execution and visual quality are NOT yet verified.
 - [ ] Review four orthographic views (plus one perspective view), first with references behind then with references hidden.
 - [ ] Permit at most ONE targeted correction cycle for this head pilot. If the result still has large feature offsets or obvious projected facial features on wrong surfaces, **stop this procedural approach** and explicitly choose manual UV/retopology or purpose-built head remodelling. Do not repeat screenshot/debug loops.
 - [ ] Do not claim success unless eyes, mask boundary, forehead and ear details visually align in both front and side, without obvious projections across unintended faces.
@@ -70,7 +73,7 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 
 ## User workload and next task
 
-**Next action is B-1: run the single mirrored LEFT workspace preparation command.** After execution succeeds, begin the head landmark/projection pilot in the separate workspace; do not return to the prior eye-surface diagnostic loop. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
+**Next action is B-3: run the single HEAD-only alignment pilot in the existing four-view workspace.** Inspect only head views, with the base mesh unchanged. The script performs coarse silhouette alignment, not eye/visor landmark optimization. If the head pilot still has significant errors after one targeted correction, switch to manual UV or geometry rather than repeated automatic guesses. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
 
 ## Source of truth
 
