@@ -591,6 +591,9 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
   - `tools/blender/create_nexia_artwork_projection_trial.py` を追加。元の `nexia_model.blend` と既存 `REF_FRONT`/`REF_BACK`/`REF_RIGHT` を読み込み、背景グレーを連結領域として透過マスク化、前面/背面/RIGHT/LEFT（LEFTはRIGHTを鏡像転用）の4方向の画像テクスチャをサーフェス法線の向きで合成するマテリアルを作成。別ファイル `nexia_artwork_projection_trial.blend` に保存し、元ファイル・頂点位置・トポロジー・各種独立試作を維持。**画像を貼るだけでは形状は変わらない。** 背景色の境界処理、投影接続部、目の立体奥行きには不整合の可能性がある。実機実行・色と位置の品質は未確認。今回のカラー投影版を見て、改善があるか判断する。Tripoの再生成・追加課金は不要。
   - 2026-10-24、ユーザーが正面・右・背面・左のカラー投影プレビューを提示。画像投影自体は成功したが、**全身の装飾位置が3D形状に対応しておらず不採用**。ユーザーはB（4方向参照+部位ごとの高精度投影）を選択。さらに、**左側面は右側面画像を左右反転して代用する方針を明示的に承認**。独立左側面を新規描画しない。実装順、判定基準、頭部だけの試作回数上限、失敗時の手動UV/再モデリングへの切替条件は [`NEXIA_TEXTURE_ALIGNMENT_PLAN.md`](NEXIA_TEXTURE_ALIGNMENT_PLAN.md) にまとめた。旧投影成果を完成版扱いしない。
   - 2026-10-24、`tools/blender/prepare_nexia_mirrored_left_workspace.py` 追加。既存 `reference/right.png` のピクセルを水平反転し、`reference/left.png` に保存、`REF_LEFT` を専用の新規 `nexia_four_view_workspace.blend` に追加。元の `nexia_model.blend`、RIGHT画像や旧試作を変更せず、既存出力の上書きを拒否する。Blender実機実行は未検証。次は新規ワークスペースで頭部対応点の位置合わせへ進む。
+  - 2026-10-24、ユーザーより `nexia_four_view_workspace.blend` の正面/RIGHT/背面/LEFTキャプチャ4枚を受領。RIGHTを左右反転したLEFT参照の表示が確認できた。3D形状の位置・形が参照と異なる箇所は残るため、4方向モデル全体の位置一致や正確なUV適合と判断しない。
+  - B方針の頭部限定初回試作として `tools/blender/create_nexia_head_alignment_trial.py` を追加。4方向作業用ファイルを入力し、上部頭部帯（Z=1.76～1.89）の青系イラスト領域とモデル形状の幅・中心を方向別に測定して各UV投影の横倍率・中心を補正する。頭部Z=1.50～1.56以降だけに色を付け、胴体はグレー表示、元モデルを変更せず `nexia_head_alignment_trial.blend` に新規保存。これは**輪郭幅ベースの暫定位置合わせ**で、目・ひさし・耳などの精密対応までは保証しない。実機の検証待ち。結果が大きくずれる場合、1回だけ修正しても解消しなければ手動UV/リモデリングへ切替。
+
 
 
 
