@@ -60,7 +60,7 @@ def is_background(pixels, idx):
     if alpha < 0.1:
         return True
     return (
-        min(red, green, blue) >= 0.46
+        min(red, green, blue) >= 0.28
         and max(red, green, blue) - min(red, green, blue) < 0.13
     )
 
@@ -161,6 +161,7 @@ def matte_image(source, name):
         name=name, width=width, height=height, alpha=True
     )
     new_image.pixels.foreach_set(pixels)
+    new_image.update()
     new_image.pack()
     print(
         f"IMAGE_MATTE {source.name}: {width}x{height}, "
