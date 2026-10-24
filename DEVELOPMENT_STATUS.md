@@ -593,6 +593,9 @@ Phase 2は以下を上から1項目ずつ進め、各項目の確認が終わる
   - 2026-10-24、`tools/blender/prepare_nexia_mirrored_left_workspace.py` 追加。既存 `reference/right.png` のピクセルを水平反転し、`reference/left.png` に保存、`REF_LEFT` を専用の新規 `nexia_four_view_workspace.blend` に追加。元の `nexia_model.blend`、RIGHT画像や旧試作を変更せず、既存出力の上書きを拒否する。Blender実機実行は未検証。次は新規ワークスペースで頭部対応点の位置合わせへ進む。
   - 2026-10-24、ユーザーより `nexia_four_view_workspace.blend` の正面/RIGHT/背面/LEFTキャプチャ4枚を受領。RIGHTを左右反転したLEFT参照の表示が確認できた。3D形状の位置・形が参照と異なる箇所は残るため、4方向モデル全体の位置一致や正確なUV適合と判断しない。
   - B方針の頭部限定初回試作として `tools/blender/create_nexia_head_alignment_trial.py` を追加。4方向作業用ファイルを入力し、上部頭部帯（Z=1.76～1.89）の青系イラスト領域とモデル形状の幅・中心を方向別に測定して各UV投影の横倍率・中心を補正する。頭部Z=1.50～1.56以降だけに色を付け、胴体はグレー表示、元モデルを変更せず `nexia_head_alignment_trial.blend` に新規保存。これは**輪郭幅ベースの暫定位置合わせ**で、目・ひさし・耳などの精密対応までは保証しない。実機の検証待ち。結果が大きくずれる場合、1回だけ修正しても解消しなければ手動UV/リモデリングへ切替。
+  - 2026-10-24、頭部限定の自動位置補正試作の正面/RIGHTキャプチャ受領。左右の眼位置と瞳の輪郭が大きくずれ、バイザー絵が顔装甲を横切り、耳リング・マスク装飾も対応しないため**不合格**。モデル輪郭幅から画像の中心と倍率を推定する方式ではこれ以上合わせ込まない。
+  - 同日、`tools/blender/create_nexia_head_uv_workspace.py` を実装。`nexia_four_view_workspace.blend` から既に同定してある頭部候補の独立連結形状 PART_01/03/05/14/24/51/63 をコピーして編集可能な7メッシュを作り、面の向きごとにFRONT/RIGHT/BACK/LEFTの独立UVテクスチャ座標を作成。元Tripoメッシュは別保存先内のみ可逆Maskで同じパーツを非表示にして二重表示を防ぐ。**元4方向ワークスペースと本体モデルは不変更**。出力 `nexia_head_uv_workspace.blend` はUV手動調整用の出発点であり、正確な位置合わせ済みではない。画像に現れた目元の形状不一致は別途3Dリモデリングの要否を判断する。Blender 5.2.2実機未検証。
+
 
 
 
