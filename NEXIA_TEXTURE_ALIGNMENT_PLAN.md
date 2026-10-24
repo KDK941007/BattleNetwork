@@ -51,7 +51,8 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 - [ ] Review four orthographic views (plus one perspective view), first with references behind then with references hidden.
 - [x] 2026-10-24 head-only silhouette-calibrated projection screenshot failed: eyes, visor, mask and side headset imagery are still misregistered. **Do not perform another global silhouette correction.** Switch to manual UV work rather than further procedural projection guesswork.
 - [x] Add `tools/blender/create_nexia_head_uv_workspace.py`: construct seven independent editable head-region connected meshes (PART_01/03/05/14/24/51/63), initial FRONT/RIGHT/BACK/LEFT UVs based on per-face orientation, and reversible source-mask in an isolated output `nexia_head_uv_workspace.blend`. These are provisional head pieces only; inspect remaining connected components separately if visible regions are missing.
-- [ ] Execute once in Blender 5.2.2; confirm component meshes and UV layout. Perform **one targeted manual UV placement test on a head surface** (visor/eye), then evaluate whether geometry must be remodeled.
+- [x] 2026-10-24 UV workspace has been opened in Blender; FRONT/RIGHT screenshots show `NEXIA_HEAD_PART_03` selected. Generated per-face dominant-normal UVs produce white/broken seams, duplicated or shifted visor/eye markings, forehead and mask mismatches. This is an unsuccessful **automatic UV initialization**, NOT evidence that manual UV adjustment has already failed.
+- [ ] Next single test: in a **copy** of the UV workspace, select the `NEXIA_HEAD_PART_03` FRONT material faces (Material Properties > `NEXIA_UV_FRONT` > Select) in Edit Mode, then manually align UV island boundaries to forehead/visor illustration in UV Editing. Preserve RIGHT/BACK separately. Do NOT repeat whole-head camera projection. If manual UV succeeds for forehead but eye openings/visor remain geometrically wrong, switch only those structures to head remodeling.
 - [ ] Do not claim success unless eyes, mask boundary, forehead and ear details visually align in both front and side, without obvious projections across unintended faces.
 
 ### B-4. Extend to rest of body
@@ -75,7 +76,7 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 
 ## User workload and next task
 
-**Next action: run the protected HEAD UV editing workspace script once.** A texture-only correction cannot fix the geometry around the eye; work in UV Editing on one selected head part, then decide if its visor/eye surface needs remodeling. Do not restart the automated projection diagnostics. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
+**Next action:** work in the existing `nexia_head_uv_workspace.blend` (save a copy first) rather than running another diagnostic or generation script. Use material-based face selection to attempt ONE manual UV adjustment of the FRONT texture on head PART_03. Separately inspect RIGHT and eye/visor geometry. If the manual mapping still cannot represent the image because the model differs physically, stop UV iteration and rebuild that local geometry. Do not claim completion based on another automatic pass. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
 
 ## Source of truth
 
