@@ -49,7 +49,9 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 
 - [x] Add `tools/blender/create_nexia_head_alignment_trial.py`: head-height-limited material, automatic silhouette-band registration with per-view horizontal scale/shift, and separate output `nexia_head_alignment_trial.blend`. Script is implemented; Blender 5.2.2 execution and visual quality are NOT yet verified.
 - [ ] Review four orthographic views (plus one perspective view), first with references behind then with references hidden.
-- [ ] Permit at most ONE targeted correction cycle for this head pilot. If the result still has large feature offsets or obvious projected facial features on wrong surfaces, **stop this procedural approach** and explicitly choose manual UV/retopology or purpose-built head remodelling. Do not repeat screenshot/debug loops.
+- [x] 2026-10-24 head-only silhouette-calibrated projection screenshot failed: eyes, visor, mask and side headset imagery are still misregistered. **Do not perform another global silhouette correction.** Switch to manual UV work rather than further procedural projection guesswork.
+- [x] Add `tools/blender/create_nexia_head_uv_workspace.py`: construct seven independent editable head-region connected meshes (PART_01/03/05/14/24/51/63), initial FRONT/RIGHT/BACK/LEFT UVs based on per-face orientation, and reversible source-mask in an isolated output `nexia_head_uv_workspace.blend`. These are provisional head pieces only; inspect remaining connected components separately if visible regions are missing.
+- [ ] Execute once in Blender 5.2.2; confirm component meshes and UV layout. Perform **one targeted manual UV placement test on a head surface** (visor/eye), then evaluate whether geometry must be remodeled.
 - [ ] Do not claim success unless eyes, mask boundary, forehead and ear details visually align in both front and side, without obvious projections across unintended faces.
 
 ### B-4. Extend to rest of body
@@ -73,7 +75,7 @@ Exit: Head anchors line up front AND right (and back/left where meaningful). No 
 
 ## User workload and next task
 
-**Next action is B-3: run the single HEAD-only alignment pilot in the existing four-view workspace.** Inspect only head views, with the base mesh unchanged. The script performs coarse silhouette alignment, not eye/visor landmark optimization. If the head pilot still has significant errors after one targeted correction, switch to manual UV or geometry rather than repeated automatic guesses. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
+**Next action: run the protected HEAD UV editing workspace script once.** A texture-only correction cannot fix the geometry around the eye; work in UV Editing on one selected head part, then decide if its visor/eye surface needs remodeling. Do not restart the automated projection diagnostics. No reliable completion time can currently be promised because the genuine left reference, exact correspondence points and shape mismatches are unresolved.
 
 ## Source of truth
 
